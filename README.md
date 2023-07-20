@@ -1,7 +1,7 @@
 [![Status](https://github.com/giis-uniovi/samples-giis-template/actions/workflows/test.yml/badge.svg)](https://github.com/giis-uniovi/samples-giis-template/actions)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my%3Asamples-giis-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my%3Asamples-giis-template)
 
-# samples-giis-template
+# RETORCH: Resource-aware End-to-End Test Orchestration
 
 Template project, includes:
 - Configuration of a maven multi-module java project
