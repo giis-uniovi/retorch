@@ -8,10 +8,10 @@
 	<artifactId>retorch-annotations</artifactId>
 	<packaging>jar</packaging>
 	<name>retorch-annotations</name>
-	<description>Multi-module maven project template, module with dependencies</description>
+	<description>Resource-aware Orchestration of End-to-End Test Cases, module with annotations</description>
 	<url>http://github.com/giis-uniovi/samples-giis-template</url>
 	<organization>
-		<name>Software Engineering Research Group (GIIS) - Universidad de Oviedo, ES</name>
+		<name>Software Engineering Research Group (GIIS) - University of Oviedo, ES</name>
 		<url>http://giis.uniovi.es/</url>
 	</organization>
 	<dependencies>
