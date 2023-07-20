@@ -205,7 +205,7 @@
         <url>https://github.com/giis-uniovi/samples-giis-template</url>
     </scm>
 
-    <!-- To publish packages (mvn deploy) a profile must be specified (Github for snapsots and maven central for releases) -->
+    <!-- To publish packages (mvn deploy) a profile must be specified (GitHub for snapshots and maven central for releases) -->
     <profiles>
         <profile>
             <id>publish-github</id>
