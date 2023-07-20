@@ -25,6 +25,7 @@
 		<module>samples-giis-template-m1</module>
 		<module>samples-giis-template-m2</module>
 		<module>samples-giis-template-bom</module>
+		<module>retorch-annotations</module>
 	</modules>
 
 	<dependencyManagement>
