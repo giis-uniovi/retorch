@@ -4,7 +4,7 @@
 # samples-giis-template
 
 Template project, includes:
-- Configuration of a maven multimodule java project
+- Configuration of a maven multi-module java project
 - Aggregated test reports (surefire and junit style)
 - SonarQube static test (includes coverage results)
 - Publish a snapshot for each branch to GitHub Packages
