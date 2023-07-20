@@ -1,4 +1,4 @@
-package giis.m2;
+package giis.retorch.annotations;
 
 import static org.junit.Assert.assertEquals;
 
@@ -21,7 +21,7 @@ public class TestClass2 {
 	}
 	@Test
 	public void testFunction21() {
-		assertEquals("11-12", new Class2().function21());
+		assertEquals("HELLO WORLD", new Class2().function21());
 	}
 
 }
