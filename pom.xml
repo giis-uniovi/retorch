@@ -213,7 +213,7 @@
                 <snapshotRepository>
                     <id>github</id>
                     <name>GitHub Apache Maven Packages</name>
-                    <url>https://maven.pkg.github.com/giis-uniovi/samples-giis-template</url>
+                    <url>https://maven.pkg.github.com/giis-uniovi/retorch</url>
                 </snapshotRepository>
             </distributionManagement>
         </profile>
