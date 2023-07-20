@@ -7,9 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="retorch-annotations" />
-        <module name="samples-giis-template-m1" />
-        <module name="samples-giis-template-m2" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="samples-giis-template-bom" target="1.8" />
+      <module name="samples-giis-template-m1" target="1.8" />
+      <module name="samples-giis-template-m2" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

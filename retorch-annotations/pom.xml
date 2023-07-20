@@ -8,7 +8,7 @@
 	<artifactId>retorch-annotations</artifactId>
 	<packaging>jar</packaging>
 	<name>retorch-annotations</name>
-	<description>Multimodule maven project template, module with dependencies</description>
+	<description>Multi-module maven project template, module with dependencies</description>
 	<url>http://github.com/giis-uniovi/samples-giis-template</url>
 	<organization>
 		<name>Software Engineering Research Group (GIIS) - Universidad de Oviedo, ES</name>

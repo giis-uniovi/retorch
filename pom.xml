@@ -6,7 +6,7 @@
 	<packaging>pom</packaging>
 
 	<name>samples-giis-template</name>
-	<description>Multimodule maven project template</description>
+	<description>Multi-module maven project template</description>
 	<url>http://github.com/giis-uniovi/samples-giis-template</url>
 	<organization>
 		<name>Software Engineering Research Group (GIIS) - Universidad de Oviedo, ES</name>
@@ -22,9 +22,6 @@
 	</properties>
 
 	<modules>
-		<module>samples-giis-template-m1</module>
-		<module>samples-giis-template-m2</module>
-		<module>samples-giis-template-bom</module>
 		<module>retorch-annotations</module>
 	</modules>
 
@@ -199,7 +196,7 @@
 		<url>https://github.com/giis-uniovi/samples-giis-template</url>
 	</scm>
 
-	<!-- To publish packages (mvn deploy) a profile must be specified (github for snapsots and maven central for releases) -->
+	<!-- To publish packages (mvn deploy) a profile must be specified (Github for snapsots and maven central for releases) -->
 	<profiles>
 		<profile>
 			<id>publish-github</id>
