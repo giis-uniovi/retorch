@@ -9,12 +9,12 @@
 </a >
 </div>
 
-This repository contains a series of components that compose RETORCH, a E2E test orchestration framework which aims
-to optimize E2E test execution reducing the execution time and the number of unnecessary resource
+This repository contains a series of components that compose RETORCH, an E2E test orchestration framework. It's primary
+goal is to optimize E2E test execution by reducing both the execution time and the number of unnecessary resource
 redeployment's.
 
-**NOTE: In this initial version, only the annotations to identify the resources and access modes have been included;
-additional components will be added in future releases.**
+**NOTE: In this initial version, only the annotations to identify the resources and access modes have been included.
+Additional components will be added in future releases.**"
 
 [Explore the docs](https://github.com/giis-uniovi/retorch) - [Report Bug](https://github.com/giis-uniovi/retorch/issues) -
 [Request Feature](https://github.com/giis-uniovi/retorch/issues)
@@ -22,7 +22,6 @@ additional components will be added in future releases.**
 ## Contents
 
 - [RETORCH: Resource-aware End-to-End Test Orchestration:]()
-    - [Contents](#contents)
     - [Quick Start](#quick-start)
     - [RETORCH Annotations](#retorch-annotations)
     - [Contributing](#contributing)
@@ -34,34 +33,33 @@ additional components will be added in future releases.**
 
 [TO-DO]
 
-[(back to the top)](#contents)
+[(Back to the top)](#contents)
 
-## RETORCH annotations
+## RETORCH Annotations
 
-RETORCH Tool provides a series of custom annotations to characterize the resources employed in end-to-end testing,
-group, and schedule them. To use RETORCH Tool to execute the test cases, each test case needs to be annotated with one
-access mode and resource at least. The tester needs to specify the access mode with:
+The RETORCH Tool provides a set of custom annotations to define and manage resources used in end-to-end testing. These annotations allow testers to group, schedule, and characterize resources. To execute test cases using the RETORCH Tool, each test case must be annotated with at least one access mode and resource.
 
-- resID: Resource that belongs to access mode
-- concurrency: upper bound of test cases that can access concurrently to the Resource
-- sharing: allows sharing the resource between several test cases
-- accessMode: type of access mode performed by the test case
+The tester needs to specify the access mode using the following attributes:
+
+- `resID`: Resource identifier for the access mode.
+- `concurrency`: The upper bound of test cases that can access the resource concurrently.
+- `sharing`: Allows sharing the resource between multiple test cases.
+- `accessMode`: The type of access mode performed by the test case.
 
 ```java
 @AccessMode(resID = "LoginService", concurrency = 10, sharing = true, accessMode = "READONLY")
 ```
 
-Each access mode annotation belongs to a concrete resource, the resource needs to be annotated with the following
-attributes:
+Each access mode annotation corresponds to a specific resource, which must be annotated with the following attributes:
 
-- resID: unique resource identifier
-- replaceable: list of resources that can replace the current ones
+- `resID`: A unique identifier for the resource.
+- `replaceable`: A list of resources that can replace the current one.
 
 ```java
-@Resource(resID = "LoginService", replaceable = {}) 
+@Resource(resID = "LoginService", replaceable = {})
 ```
 
-The following code snippets illustrates a tes case annotated with several resources and access modes:
+The following code snippets illustrate a test case annotated with multiple resources and access modes:
 
 ```java
 @Resource(resID = "LoginService", replaceable = {})
@@ -72,12 +70,12 @@ The following code snippets illustrates a tes case annotated with several resour
 @AccessMode(resID = "Course", concurrency = 10, sharing = true, accessMode = "READONLY")
 @ParameterizedTest
 @MethodSource("data")
-void forumLoadEntriesTest(String usermail,String password,String role){
-    this.user=setupBrowser("chrome",TJOB_NAME+"_"+TEST_NAME,usermail,WAIT_SECONDS);
-    driver=user.getDriver();
-    this.slowLogin(user,usermail,password);
+void forumLoadEntriesTest(String usermail, String password, String role) {
+    this.user = setupBrowser("chrome", TJOB_NAME + "_" + TEST_NAME, usermail, WAIT_SECONDS);
+    driver = user.getDriver();
+    this.slowLogin(user, usermail, password);
+}
 ```
-
 [(back to the top)](#contents)
 
 ## Contributing
@@ -111,7 +109,7 @@ https://doi.org/10.1007/s11219-020-09505-2
 
 ## Acknowledgments
 
-This work has been developed under the TestBUS (PID2019-105455GB-C32) projects supported
-by [Ministry of Science and Innovation (SPAIN)](https://www.ciencia.gob.es/)
+This work has been developed under the TestBUS (PID2019-105455GB-C32) project supported
+by the [Ministry of Science and Innovation (SPAIN)](https://www.ciencia.gob.es/)
 
 [(back to the top)](#contents)
