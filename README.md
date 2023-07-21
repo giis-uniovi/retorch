@@ -34,11 +34,11 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#Quick-start">Quick-start</a></li>
- <li><a href="#RETORCH-annotations">RETORCH Annotations</a></li>
-    <li><a href="#Contributing">Contributing</a></li>
+    <li><a href="#quick-start">Quick-start</a></li>
+ <li><a href="#retorch-annotations">RETORCH Annotations</a></li>
+    <li><a href="#contributing">Contributing</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#Citing-this-work">Citing this work</a></li>
+    <li><a href="#citing-this-work">Citing this work</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
