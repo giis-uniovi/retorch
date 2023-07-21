@@ -6,10 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 //Copyright 2020, Cristian Augusto, All rights reserved.
 
 /**
- * RETORCH Elasticity Model custom annotation has the following attributes
- * elasID --> String by default "None"
- * elasticity--> Integer by default -1
- * elasCost--> double by default -1
+ * The RETORCH Elasticity Model custom annotation includes the following attributes:
+ * elasID: A String attribute with a default value of "None."
+ * elasticity: An Integer attribute with a default value of -1.
+ * elasCost: A double attribute with a default value of -1.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

@@ -7,11 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 //Copyright 2020, Cristian Augusto, All rights reserved.
 
 /**
- * Access mode RETORCH custom annotation, has the following attributes :
- * resID--> String with the resource identification, by default None
- * sharing--> Boolean by default false
- * concurrency--> Integer by default -1
- * accessMode -->String by default NOASSIGNED
+ * The RETORCH custom annotation for Access Mode has the following attributes:
+ * resID: A String representing the resource identifier, with a default value of "None."
+ * sharing: A Boolean indicating if sharing is enabled, with a default value of false.
+ * concurrency: An Integer specifying the concurrency level, with a default value of -1.
+ * accessMode: A String representing the access mode, with a default value of "NOASSIGNED"
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(AccessModes.class)

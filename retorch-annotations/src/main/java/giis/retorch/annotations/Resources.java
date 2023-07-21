@@ -6,10 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 //Copyright 2020, Cristian Augusto, All rights reserved.
 
 /**
- * Annotation required to tag over a test several resources.
- * This annotation has also the RUNTIME retention policy to allow retrieve the information of it
- * during the execution of the application
- * This annotation is documented automatically in the Javadoc
+ * This annotation is used to tag multiple resources over a test.
+ * It has the RUNTIME retention policy, which allows retrieving the information during the execution of the application.
+ * Additionally, this annotation is automatically documented in the Javadoc.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

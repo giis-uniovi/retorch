@@ -7,13 +7,13 @@ import java.lang.annotation.RetentionPolicy;
 //Copyright 2020, Cristian Augusto, All rights reserved.
 
 /**
- * RETORCH Resource custom annotation has the following attributes
- * resID --> String by default "None"
- * rType--> String by default "None"
- * parent--> Array of Strings, by default only one item with the "None"
- * replaceable--> Array of Strings, by default only  one item with the "None" Value
- * elasModel --> Elasticity Model, by default is created empty
- * type --> Enum with the different types of resource: PHYSICAL, LOGICAL or COMPUTATIONAL
+ * The RETORCH Resource custom annotation includes the following attributes:
+ * resID: A String attribute with a default value of "None."
+ * rType: A String attribute with a default value of "None."
+ * parent: An array of Strings of, with a default containing only one item set to "None."
+ * replaceable: An array of Strings, with a default containing only one item set to "None."
+ * elasModel: An Elasticity Model attribute, created empty by default.
+ * type: An Enum representing the different types of resources: PHYSICAL, LOGICAL, or COMPUTATIONAL.
  */
 @Repeatable(Resources.class)
 @Retention(RetentionPolicy.RUNTIME)
