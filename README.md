@@ -103,7 +103,7 @@ See the general contribution policies and guidelines for *giis-uniovi* at
 
 ## Contact
 
-Cristian Augusto - [Contact me!](mailto:augustocristian@uniovi.es)
+Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es)
 
 Project
 Link: [https://github.com/giis-uniovi/retorch](https://github.com/giis-uniovi/retorch)
