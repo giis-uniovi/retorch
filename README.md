@@ -2,12 +2,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my%3Aretorch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my%3Aretorch)
 [![Maven Central (annotations)](https://img.shields.io/maven-central/v/io.github.giis-uniovi/retorch-annotations)](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations)
 
-<h1 align="center"> RETORCH: Resource-aware End-to-End Test Orchestration</h1>
-<div align="center">
- <a href="https://giis.uniovi.es/?lang=en">
-    <img src="https://giis.uniovi.es/icons/giis-color-medium.gif" alt="Logo" width="110" height="75">
-</a >
-</div>
+# RETORCH: Resource-aware End-to-End Test Orchestration
 
 This repository contains a series of components that compose RETORCH, an E2E test orchestration framework. It's primary
 goal is to optimize E2E test execution by reducing both the execution time and the number of unnecessary resource
@@ -30,10 +25,7 @@ Additional components will be added in future releases.**
     - [Acknowledgments](#acknowledgments)
 
 ## Quick-start
-
 [TO-DO]
-
-[(Back to the top)](#contents)
 
 ## RETORCH Annotations
 
@@ -79,20 +71,19 @@ void forumLoadEntriesTest(String usermail,String password,String role){
         }
 ```
 
-[(back to the top)](#contents)
+
 
 ## Contributing
 
 See the general contribution policies and guidelines for *giis-uniovi* at
 [CONTRIBUTING.md](https://github.com/giis-uniovi/.github/blob/main/profile/CONTRIBUTING.md).
 
-[(back to the top)](#contents)
+
 
 ## Contact
 
 Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es)
 
-[(back to the top)](#contents)
 
 ## Citing this work
 
@@ -100,15 +91,14 @@ RETORCH E2E Test Orchestration framework:
 
 - Cristian Augusto, Jesús Morán, Antonia Bertolino, Claudio de la Riva, and Javier Tuya,
   “RETORCH: an approach for resource-aware orchestration of end-to-end test cases,”
-  Software Quality Journal, vol. 28, no. 3, 2020.
+  *Software Quality Journal*, vol. 28, no. 3, 2020.
   https://doi.org/10.1007/s11219-020-09505-2 - [Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) -
   [Download citation](https://citation-needed.springer.com/v2/references/10.1007/s11219-020-09505-2?format=refman&flavour=citation)
 
-[(back to the top)](#contents)
+
 
 ## Acknowledgments
 
 This work has been developed under the TestBUS (PID2019-105455GB-C32) project supported
 by the [Ministry of Science and Innovation (SPAIN)](https://www.ciencia.gob.es/)
 
-[(back to the top)](#contents)
