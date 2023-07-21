@@ -93,16 +93,12 @@ Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es)
 
 ## Citing this work
 
-RETORCH test orchestration framework:
+RETORCH E2E Test Orchestration framework:
 
-```
-Cristian Augusto, Jesús Morán, Antonia Bertolino, Claudio de la Riva, and Javier Tuya, 
+- Cristian Augusto, Jesús Morán, Antonia Bertolino, Claudio de la Riva, and Javier Tuya, 
 “RETORCH: an approach for resource-aware orchestration of end-to-end test cases,” 
 Software Quality Journal, vol. 28, no. 3, 2020.
-https://doi.org/10.1007/s11219-020-09505-2
-```
-
-[Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) -
+https://doi.org/10.1007/s11219-020-09505-2 - [Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) -
 [Download citation](https://citation-needed.springer.com/v2/references/10.1007/s11219-020-09505-2?format=refman&flavour=citation)
 
 [(back to the top)](#contents)
