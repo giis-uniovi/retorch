@@ -2,56 +2,39 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my%3Aretorch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my%3Aretorch)
 [![Maven Central (annotations)](https://img.shields.io/maven-central/v/io.github.giis-uniovi/retorch-annotations)](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations)
 
-<a name="readme-top"></a>     
-
-
-
-# RETORCH: Resource-aware End-to-End Test Orchestration
-
-<br />
+<h1 align="center"> RETORCH: Resource-aware End-to-End Test Orchestration</h1>
 <div align="center">
-  <a href="https://giis.uniovi.es/?lang=en">
+ <a href="https://giis.uniovi.es/?lang=en">
     <img src="https://giis.uniovi.es/icons/giis-color-medium.gif" alt="Logo" width="110" height="75">
-  </a>
-
-<h3 align="center"></h3>
-
-  <p align="center">
-    This repository contains a series of components that compose RETORCH, a E2E test orchestration rchestration framework which aims
-        to optimize E2E test execution reducing the execution time and the number of unnecessary resource
-        redeployment's.
-
-**NOTE: In this initial version, only the annotations to identify the resources and access modes have been included;
-        additional components will be added in future releases.**
-    <br />
-    <a href="https://github.com/giis-uniovi/retorch"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/giis-uniovi/retorch">View Demo</a>
-    ·
-    <a href="https://github.com/giis-uniovi/retorch/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/giis-uniovi/retorch/issues">Request Feature</a>
-  </p>
+</a >
 </div>
 
+This repository contains a series of components that compose RETORCH, a E2E test orchestration framework which aims
+to optimize E2E test execution reducing the execution time and the number of unnecessary resource
+redeployment's.
+
+**NOTE: In this initial version, only the annotations to identify the resources and access modes have been included;
+additional components will be added in future releases.**
+
+[Explore the docs](https://github.com/giis-uniovi/retorch) - [Report Bug](https://github.com/giis-uniovi/retorch/issues) -
+[Request Feature](https://github.com/giis-uniovi/retorch/issues)
 
 ## Contents
 
-- [RETORCH: Resource-aware End-to-End Test Orchestration:](#retorhc-resource-aware-end-to-end-test-orchestration)
+- [RETORCH: Resource-aware End-to-End Test Orchestration:]()
     - [Contents](#contents)
     - [Quick Start](#quick-start)
     - [RETORCH Annotations](#retorch-annotations)
     - [Contributing](#contributing)
     - [Contact](#contact)
     - [Citing this work](#citing-this-work)
-    - [Acknoledgments](#acknowledgments)
-
-    
+    - [Acknowledgments](#acknowledgments)
 
 ## Quick-start
 
 [TO-DO]
+
+[(back to the top)](#contents)
 
 ## RETORCH annotations
 
@@ -65,7 +48,7 @@ access mode and resource at least. The tester needs to specify the access mode w
 - accessMode: type of access mode performed by the test case
 
 ```java
-    @AccessMode(resID = "LoginService", concurrency = 10, sharing = true, accessMode = "READONLY")
+@AccessMode(resID = "LoginService", concurrency = 10, sharing = true, accessMode = "READONLY")
 ```
 
 Each access mode annotation belongs to a concrete resource, the resource needs to be annotated with the following
@@ -75,13 +58,13 @@ attributes:
 - replaceable: list of resources that can replace the current ones
 
 ```java
-    @Resource(resID = "LoginService", replaceable = {}) 
+@Resource(resID = "LoginService", replaceable = {}) 
 ```
 
 The following code snippets illustrates a tes case annotated with several resources and access modes:
 
 ```java
-    @Resource(resID = "LoginService", replaceable = {})
+@Resource(resID = "LoginService", replaceable = {})
 @AccessMode(resID = "LoginService", concurrency = 10, sharing = true, accessMode = "READONLY")
 @Resource(resID = "OpenVidu", replaceable = {"OpenViduMock"})
 @AccessMode(resID = "OpenVidu", concurrency = 10, sharing = true, accessMode = "NOACCESS")
@@ -89,47 +72,46 @@ The following code snippets illustrates a tes case annotated with several resour
 @AccessMode(resID = "Course", concurrency = 10, sharing = true, accessMode = "READONLY")
 @ParameterizedTest
 @MethodSource("data")
-    void forumLoadEntriesTest(String usermail,String password,String role){
-
-
-            this.user=setupBrowser("chrome",TJOB_NAME+"_"+TEST_NAME,usermail,WAIT_SECONDS);
-            driver=user.getDriver();
-            this.slowLogin(user,usermail,password);//24 lines
+void forumLoadEntriesTest(String usermail,String password,String role){
+    this.user=setupBrowser("chrome",TJOB_NAME+"_"+TEST_NAME,usermail,WAIT_SECONDS);
+    driver=user.getDriver();
+    this.slowLogin(user,usermail,password);
 ```
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+[(back to the top)](#contents)
 
 ## Contributing
 
 See the general contribution policies and guidelines for *giis-uniovi* at
 [CONTRIBUTING.md](https://github.com/giis-uniovi/.github/blob/main/profile/CONTRIBUTING.md).
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+[(back to the top)](#contents)
 
 ## Contact
 
 Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es)
 
-Project
-Link: [https://github.com/giis-uniovi/retorch](https://github.com/giis-uniovi/retorch)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+[(back to the top)](#contents)
 
 ## Citing this work
+
 RETORCH test orchestration framework:
+
 ```
 Cristian Augusto, Jesús Morán, Antonia Bertolino, Claudio de la Riva, and Javier Tuya, 
 “RETORCH: an approach for resource-aware orchestration of end-to-end test cases,” 
 Software Quality Journal, vol. 28, no. 3, 2020.
 https://doi.org/10.1007/s11219-020-09505-2
 ```
-[Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) - 
+
+[Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) -
 [Download citation](https://citation-needed.springer.com/v2/references/10.1007/s11219-020-09505-2?format=refman&flavour=citation)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+[(back to the top)](#contents)
 
 ## Acknowledgments
 
-This work has been developed under the TestBUS (PID2019-105455GB-C32) and EQUAVEL (PID2022-137646OB-C32) projects supported by [Ministry of Science and Innovation (SPAIN)](https://www.ciencia.gob.es/)
+This work has been developed under the TestBUS (PID2019-105455GB-C32) projects supported
+by [Ministry of Science and Innovation (SPAIN)](https://www.ciencia.gob.es/)
 
-
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+[(back to the top)](#contents)
