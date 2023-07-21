@@ -3,5 +3,7 @@ pom.xml.versionsBackup
 TESTS-TestSuites.xml
 *.db
 */dat/out
+#Directories
+.idea
 # to allow each developer customize sonarlint
 org.sonarlint.eclipse.core.prefs
