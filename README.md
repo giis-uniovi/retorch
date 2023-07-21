@@ -17,6 +17,9 @@
     This repository contains a series of components that compose RETORCH, a E2E test orchestration rchestration framework which aims
         to optimize E2E test execution reducing the execution time and the number of unnecessary resource
         redeployment's.
+
+**NOTE: In this initial version, only the annotations to identify the resources and access modes have been included;
+        additional components will be added in future releases.**
     <br />
     <a href="https://github.com/giis-uniovi/retorch"><strong>Explore the docs »</strong></a>
     <br />
