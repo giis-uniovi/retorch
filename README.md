@@ -4,14 +4,17 @@
 
 <a name="readme-top"></a>     
 
-<!-- PROJECT LOGO -->
+
+
+# RETORCH: Resource-aware End-to-End Test Orchestration
+
 <br />
 <div align="center">
   <a href="https://giis.uniovi.es/?lang=en">
     <img src="https://giis.uniovi.es/icons/giis-color-medium.gif" alt="Logo" width="110" height="75">
   </a>
 
-<h3 align="center">RETORCH: Resource-aware End-to-End Test Orchestration</h3>
+<h3 align="center"></h3>
 
   <p align="center">
     This repository contains a series of components that compose RETORCH, a E2E test orchestration rchestration framework which aims
@@ -33,18 +36,18 @@
 </div>
 
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#quick-start">Quick-start</a></li>
- <li><a href="#retorch-annotations">RETORCH Annotations</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#citing-this-work">Citing this work</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+## Contents
+
+- [RETORCH: Resource-aware End-to-End Test Orchestration:](#retorhc-resource-aware-end-to-end-test-orchestration)
+    - [Contents](#contents)
+    - [Quick Start](#quick-start)
+    - [RETORCH Annotations](#retorch-annotations)
+    - [Contributing](#contributing)
+    - [Contact](#contact)
+    - [Citing this work](#citing-this-work)
+    - [Acknoledgments](#acknowledgments)
+
+    
 
 ## Quick-start
 
