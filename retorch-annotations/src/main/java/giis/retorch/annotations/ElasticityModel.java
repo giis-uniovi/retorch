@@ -3,7 +3,6 @@ package giis.retorch.annotations;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-//Copyright 2020, Cristian Augusto, All rights reserved.
 
 /**
  * The RETORCH Elasticity Model custom annotation includes the following attributes:

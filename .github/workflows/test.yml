@@ -49,7 +49,7 @@ jobs:
             **/target/surefire-reports
 
   sonarqube:
-    needs: [test-java]
+    needs: [ test-java ]
     #if: ${{ false }}  # disable for now
     #This job fails when comming from a dependabot PR (can't read the sonarqube token for security reasons).
     #Links to discussions and workaround at: https://github.com/giis-uniovi/samples-giis-template/issues/4
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: javiertuya/sonarqube-action@v1.0.0
-        with: 
+        with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           restore-artifact-name1: "test-report-files"
@@ -72,7 +72,7 @@ jobs:
       packages: write
     steps:
       - uses: javiertuya/branch-snapshots-action@v1.2.0
-        with: 
+        with:
           token: ${{ secrets.GITHUB_TOKEN }}
           java-version: '8'
           mvn-deploy-args: '-P publish-github -DskipTests=true -Dmaven.test.failure.ignore=false -U --no-transfer-progress'

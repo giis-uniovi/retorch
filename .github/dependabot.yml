@@ -5,12 +5,12 @@ updates:
     #avoids loback 1.4 to keep compatibility with java 8
     ignore:
       - dependency-name: "ch.qos.logback*"
-        update-types: ["version-update:semver-minor"]
+        update-types: [ "version-update:semver-minor" ]
     schedule:
       interval: weekly
       day: "friday"
     assignees:
-      - "javiertuya" 
+      - "javiertuya"
     open-pull-requests-limit: 20
 
   - package-ecosystem: github-actions

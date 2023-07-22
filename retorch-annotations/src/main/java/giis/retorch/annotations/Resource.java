@@ -4,7 +4,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-//Copyright 2020, Cristian Augusto, All rights reserved.
+
 
 /**
  * The RETORCH Resource custom annotation includes the following attributes:

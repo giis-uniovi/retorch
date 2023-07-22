@@ -4,7 +4,6 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-//Copyright 2020, Cristian Augusto, All rights reserved.
 
 /**
  * The RETORCH custom annotation for Access Mode has the following attributes:
