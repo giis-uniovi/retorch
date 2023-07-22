@@ -25,6 +25,7 @@ Additional components will be added in future releases.**
     - [Acknowledgments](#acknowledgments)
 
 ## Quick-start
+
 [TO-DO]
 
 ## RETORCH Annotations
@@ -71,19 +72,14 @@ void forumLoadEntriesTest(String usermail,String password,String role){
         }
 ```
 
-
-
 ## Contributing
 
 See the general contribution policies and guidelines for *giis-uniovi* at
 [CONTRIBUTING.md](https://github.com/giis-uniovi/.github/blob/main/profile/CONTRIBUTING.md).
 
-
-
 ## Contact
 
 Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es)
-
 
 ## Citing this work
 
@@ -94,8 +90,6 @@ RETORCH E2E Test Orchestration framework:
   *Software Quality Journal*, vol. 28, no. 3, 2020.
   https://doi.org/10.1007/s11219-020-09505-2 - [Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) -
   [Download citation](https://citation-needed.springer.com/v2/references/10.1007/s11219-020-09505-2?format=refman&flavour=citation)
-
-
 
 ## Acknowledgments
 
