@@ -22,7 +22,7 @@ jobs:
           cache: 'maven'
 
       - name: Build Annotation project
-        run: mvn compile -Daggregate=true -Dmaven.test.failure.ignore=true -U --no-transfer-progress
+        run: mvn compile -U --no-transfer-progress
 
 
   sonarqube:

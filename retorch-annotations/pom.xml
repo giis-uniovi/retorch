@@ -8,17 +8,19 @@
     </parent>
     <artifactId>retorch-annotations</artifactId>
     <packaging>jar</packaging>
+
     <name>retorch-annotations</name>
-    <description>Resource-aware Orchestration of End-to-End Test Cases, module with the annotations required to identify
-        the resources with their attributes and access-modes performed
+    <description>RETORCH - Annotations to identify resources, attributes and access modes
     </description>
     <url>https://github.com/giis-uniovi/retorch</url>
     <organization>
         <name>Software Engineering Research Group (GIIS) - University of Oviedo, ES</name>
         <url>http://giis.uniovi.es/</url>
     </organization>
+
     <dependencies>
     </dependencies>
+    
     <build>
         <plugins>
             <plugin>

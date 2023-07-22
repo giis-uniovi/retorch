@@ -7,11 +7,7 @@
     <packaging>pom</packaging>
 
     <name>retorch</name>
-    <description>RETORCH: Resource-aware Orchestration of End-to-End Test Cases is an orchestration framework which aims
-        to optimize E2E test execution reducing the execution time and the number of unnecessary resource
-        redeployment's.
-        In this initial version, only the annotations to identify the resources and access modes have been included;
-        additional components will be added in future releases.
+    <description>RETORCH: Resource-aware Orchestration of End-to-End Test Cases
     </description>
     <url>https://github.com/giis-uniovi/retorch</url>
     <organization>
@@ -76,6 +72,14 @@
 
     <developers>
         <developer>
+            <name>Cristian Augusto</name>
+            <url>http://giis.uniovi.es</url>
+        </developer>
+        <developer>
+            <name>Claudio de la Riva</name>
+            <url>http://giis.uniovi.es</url>
+        </developer>
+        <developer>
             <name>Javier Tuya</name>
             <url>http://giis.uniovi.es</url>
         </developer>
@@ -83,11 +87,11 @@
     <licenses>
         <license>
             <name>Apache-2.0</name>
-            <url>https://github.com/giis-uniovi/samples-giis-template/blob/main/LICENSE</url>
+            <url>https://github.com/giis-uniovi/retorch/blob/main/LICENSE</url>
         </license>
     </licenses>
     <scm>
-        <url>https://github.com/giis-uniovi/samples-giis-template</url>
+        <url>https://github.com/giis-uniovi/retorch</url>
     </scm>
 
     <!-- To publish packages (mvn deploy) a profile must be specified (GitHub for snapshots and maven central for releases) -->

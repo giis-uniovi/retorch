@@ -1,18 +1,15 @@
-[![Status](https://github.com/giis-uniovi/retorch/actions/workflows/test.yml/badge.svg)](https://github.com/giis-uniovi/retorch/actions)
+[![Status](https://github.com/giis-uniovi/retorch/actions/workflows/build.yml/badge.svg)](https://github.com/giis-uniovi/retorch/actions)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=my%3Aretorch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=my%3Aretorch)
 [![Maven Central (annotations)](https://img.shields.io/maven-central/v/io.github.giis-uniovi/retorch-annotations)](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations)
 
 # RETORCH: Resource-aware End-to-End Test Orchestration
 
-This repository contains a series of components that compose RETORCH, an E2E test orchestration framework. It's primary
+This repository contains a series of components of the RETORCH End-to-End (E2E) test orchestration framework. It's primary
 goal is to optimize E2E test execution by reducing both the execution time and the number of unnecessary resource
 redeployment's.
 
-**NOTE: In this initial version, only the annotations to identify the resources and access modes have been included.
-Additional components will be added in future releases.**
-
-[Explore the docs](https://github.com/giis-uniovi/retorch) - [Report Bug](https://github.com/giis-uniovi/retorch/issues) -
-[Request Feature](https://github.com/giis-uniovi/retorch/issues)
+NOTE: In this initial version, only the annotations to identify the resources and access modes have been included.
+Additional components will be added in future releases.
 
 ## Contents
 
@@ -26,12 +23,15 @@ Additional components will be added in future releases.**
 
 ## Quick-start
 
-[TO-DO]
+- Add the dependency 
+  [`io.github.giis-uniovi:retorch-annotations`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations) to the pom.xml of your SUT.
+- Add the annotations to the test classes as indicated below
+- [TO-DO]
 
 ## RETORCH Annotations
 
-The RETORCH Tool provides a set of custom annotations to define and manage resources used in end-to-end testing. These
-annotations allow testers to group, schedule, and characterize resources. To execute test cases using the RETORCH Tool,
+The RETORCH framework provides a set of custom annotations to define and manage resources used in end-to-end testing. These
+annotations allow testers to group, schedule, and characterize resources. To execute test cases using RETORCH,
 each test case must be annotated with at least one access mode and resource.
 
 The tester needs to specify the access mode using the following attributes:
@@ -80,6 +80,7 @@ See the general contribution policies and guidelines for *giis-uniovi* at
 ## Contact
 
 Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es)
+- [Software Engineering Research Group (GIIS) - University of Oviedo, ES](https://giis.uniovi.es)
 
 ## Citing this work
 
