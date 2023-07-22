@@ -1,4 +1,4 @@
-name: Publish to Maven and NuGet
+name: publish
 on:
   release:
     types: [ created ]
