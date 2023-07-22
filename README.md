@@ -79,8 +79,8 @@ See the general contribution policies and guidelines for *giis-uniovi* at
 
 ## Contact
 
-Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es)
-- [Software Engineering Research Group (GIIS) - University of Oviedo, ES](https://giis.uniovi.es)
+Cristian Augusto - [augustocristian@uniovi.es](mailto:augustocristian@uniovi.es) - 
+[Software Engineering Research Group (GIIS) - University of Oviedo, ES](https://giis.uniovi.es)
 
 ## Citing this work
 
