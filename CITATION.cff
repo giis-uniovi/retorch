@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Augusto"
+  given-names: "Cristian"
+  orcid: "https://orcid.org/0000-0001-6140-1375"
+- family-names: "Morán"
+  given-names: "Jesús"
+  orcid: "https://orcid.org/0000-0002-7544-3901"
+- family-names: "Bertolino"
+  given-names: "Antonia"
+  orcid: "https://orcid.org/0000-0001-8749-1356"
+- family-names: "De la Riva"
+  given-names: "Claudio"
+  orcid: "https://orcid.org/0000-0001-5592-9683"
+- family-names: "Tuya"
+  given-names: "Javier"
+  orcid: "https://orcid.org/0000-0002-1091-934X"
+title: "RETORCH: Resource-aware End-to-End Test Orchestration Framework"
+version: 1.1.0
+doi: "TO-DO"
+date-released: 2023-07-22
+url: "https://github.com/giis-uniovi/retorch"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Augusto"
+      given-names: "Cristian"
+      orcid: "https://orcid.org/0000-0001-6140-1375"
+    - family-names: "Morán"
+      given-names: "Jesús"
+      orcid: "https://orcid.org/0000-0002-7544-3901"
+    - family-names: "Bertolino"
+      given-names: "Antonia"
+      orcid: "https://orcid.org/0000-0001-8749-1356"
+    - family-names: "De la Riva"
+      given-names: "Claudio"
+      orcid: "https://orcid.org/0000-0001-5592-9683"
+    - family-names: "Tuya"
+      given-names: "Javier"
+      orcid: "https://orcid.org/0000-0002-1091-934X"
+  doi: "10.1007/s11219-020-09505-2"
+  journal: "Software Quality Journal"
+  month: 3
+  start: 1147 # First page number
+  end: 1171 # Last page number
+  title: "RETORCH: an approach for resource-aware orchestration of end-to-end test cases"
+  issue: 3
+  volume: 28
+  year: 2020
