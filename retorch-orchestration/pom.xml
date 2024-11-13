@@ -1,0 +1,90 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>io.github.giis-uniovi</groupId>
+		<artifactId>retorch</artifactId>
+		<version>1.1.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>retorch-orchestration</artifactId>
+	<packaging>jar</packaging>
+	<name>retorch-orchestration</name>
+	<description>Multimodule maven project template, module without dependencies</description>
+	<url>http://github.com/giis-uniovi/samples-giis-template</url>
+	<organization>
+		<name>Software Engineering Research Group (GIIS) - Universidad de Oviedo, ES</name>
+		<url>http://giis.uniovi.es/</url>
+	</organization>
+	<properties>
+		<!--Separate all dependencies by a blank line to avoid problems creating combined dependencies in dependabot.-->
+		<jacksonjson.version>2.18.1</jacksonjson.version>
+
+		<mockito.version>5.14.2</mockito.version>
+
+		<logback-classic.version>1.5.12</logback-classic.version>
+
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+		<dependency><!-- This package allows to serialize the resources -->
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jacksonjson.version}</version>
+		</dependency>
+		<dependency><!-- Mockito is used to get the logs and check that the errors appear  https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback-classic.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.github.giis-uniovi</groupId>
+			<artifactId>retorch-annotations</artifactId>
+			<version>1.1.1-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>16</source>
+					<target>16</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

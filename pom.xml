@@ -16,17 +16,29 @@
     </organization>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>16</maven.compiler.source>
+        <maven.compiler.target>16</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <modules>
         <module>retorch-annotations</module>
+        <module>retorch-orchestration</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>2.0.16</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -71,7 +83,7 @@
     <developers>
         <developer>
             <name>Cristian Augusto</name>
-            <url>http://giis.uniovi.es</url>
+            <url>http://www.augustocristian.es</url>
         </developer>
         <developer>
             <name>Claudio de la Riva</name>
@@ -79,6 +91,10 @@
         </developer>
         <developer>
             <name>Javier Tuya</name>
+            <url>http://giis.uniovi.es</url>
+        </developer>
+        <developer>
+            <name>Jesús Morán</name>
             <url>http://giis.uniovi.es</url>
         </developer>
     </developers>

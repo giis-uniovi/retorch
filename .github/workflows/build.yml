@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: '16'
           cache: 'maven'
 
       - name: Build Annotation project
@@ -50,7 +50,7 @@ jobs:
       - uses: javiertuya/branch-snapshots-action@v1.2.3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          java-version: '8'
+          java-version: '16'
           mvn-deploy-args: '-P publish-github -DskipTests=true -Dmaven.test.failure.ignore=false -U --no-transfer-progress'
           delete-old-snapshots: true
           min-snapshots-to-keep: 2
