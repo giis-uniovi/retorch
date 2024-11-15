@@ -15,18 +15,15 @@
 		<name>Software Engineering Research Group (GIIS) - Universidad de Oviedo, ES</name>
 		<url>https://giis.uniovi.es/</url>
 	</organization>
+
 	<properties>
-		<!--Separate all dependencies by a blank line to avoid problems creating combined dependencies in dependabot.-->
-		<retorchannotations.version>1.1.1-SNAPSHOT</retorchannotations.version>
-
-		<mockito.version>5.14.2</mockito.version>
-
 	</properties>
+
 	<dependencies>
 		<dependency><!--Dependencies on other modules of this project should be the first ones to reduce the risk of transitive dependencies issues-->
 			<groupId>io.github.giis-uniovi</groupId>
 			<artifactId>retorch-annotations</artifactId>
-			<version>${retorchannotations.version}</version>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -40,15 +37,13 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 		</dependency>
-		<dependency><!-- This package allows to serialize the resources -->
+		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
-		<dependency><!-- Mockito is used to get the logs and check that the errors appear  https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>${mockito.version}</version>
-			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>

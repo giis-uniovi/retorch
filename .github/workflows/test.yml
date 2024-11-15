@@ -10,7 +10,8 @@ on:
     branches:
       - 'main'
 jobs:
-  build-java:
+  test-retorch:
+    needs:
     runs-on: ubuntu-latest
     # if: ${{ false }}  # disable for now
     steps:
@@ -21,23 +22,8 @@ jobs:
           java-version: '16'
           cache: 'maven'
 
-      - name: Build RETORCH project
-        run: mvn compile -U --no-transfer-progress
-
-  test-retorch-orchestration:
-    needs: [build-java]
-    runs-on: ubuntu-latest
-    # if: ${{ false }}  # disable for now
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '16'
-          cache: 'maven'
-
-      - name: Test RETORCH orchestration module
-        run: mvn test -pl retorch-orchestration -am -U --no-transfer-progress
+      - name:  Test RETORCH and aggregate surefire report
+        run: mvn test surefire-report:report -Daggregate=true -Dmaven.test.failure.ignore=true -U --no-transfer-progress
 
       - name: Generate report checks
         if: always()
@@ -58,48 +44,18 @@ jobs:
             **/target/surefire-reports
 
   sonarqube:
-    needs: [ build-java, test-retorch-orchestration ]
+    needs: [ test-retorch ]
     #if: ${{ false }}  # disable for now
     #This job fails when comming from a dependabot PR (can't read the sonarqube token for security reasons).
     #Links to discussions and workaround at: https://github.com/giis-uniovi/samples-giis-template/issues/4
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4.1.8
-        if: always()
-        with:
-          name: "test-report-files-orchestration"
-      - name: Aggregated junit html report
-        if: always()
-        uses: javiertuya/junit-report-action@v1.2.0
-        with:
-          surefire-files: "**/target/surefire-reports/TEST-*.xml"
-          report-dir: target-ALL/site
-          report-title: "Test Report: ALL - Branch: ${{ github.ref_name }} - Run #${{ github.run_number }}"
-      - name: Index file to html reports
-        run: |
-          echo "<html><head><title>Latest Test Reports</title></head><body>"  > target-ALL/site/index.html
-          echo "<h2>Latest Test Reports - Branch: ${{ github.ref_name }} - Run #${{ github.run_number }}</h2>"  >> target-ALL/site/index.html
-          echo "<p><a href=\"junit-noframes/junit-noframes.html\">Single page reports</a></p>"                  >> target-ALL/site/index.html
-          echo "<p><a href=\"junit-frames/index.html\">Multiple page reports with frames</a></p>"               >> target-ALL/site/index.html
-          echo "</body></html>"                                              >> target-ALL/site/index.html
-      - if: always()
-        name: Publish test report files
-        uses: actions/upload-artifact@v4
-        with:
-          name: "test-report-ALL"
-          path: |
-            target-ALL/site
-            **/target/surefire-reports
-            **/target/*.html
-            **/target/*.log
-            **/reports/*.html
-            **/reports/*.log
       - uses: javiertuya/sonarqube-action@v1.4.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
-          restore-artifact-name1: "test-report-files-orchestration"
+          restore-artifact-name1: "test-report-files"
 
   publish-java-snapshot:
     #if: ${{ false }}  # disable for now

@@ -39,6 +39,8 @@
 
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
 
+        <mockito.version>5.14.2</mockito.version>
+
     </properties>
 
     <modules>
@@ -69,6 +71,12 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jacksonjson.version}</version>
+            </dependency>
+            <dependency><!-- Mockito is used to get the logs and check that the errors appear  https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
