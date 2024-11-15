@@ -1,4 +1,4 @@
-package giis.retorch.orchestration.testdata;
+package giis.retorch.orchestration.classifier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

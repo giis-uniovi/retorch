@@ -1,4 +1,4 @@
-package giis.retorch.orchestration.testdata;
+package giis.retorch.orchestration.classifier;
 
 import giis.retorch.annotations.AccessModes;
 import giis.retorch.orchestration.model.*;
