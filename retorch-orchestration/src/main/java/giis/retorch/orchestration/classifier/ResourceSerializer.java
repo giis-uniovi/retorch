@@ -130,7 +130,7 @@ public class ResourceSerializer {
      *                     read
      */
     public Map<String, Resource> deserializeResources(String name) throws IOException {
-        return deserialize(FOLDER_RESOURCES + name + "SystemResources.json", new TypeReference<>() {
+        return deserialize(FOLDER_RESOURCES + name + "SystemResources.json", new TypeReference<Map<String, Resource>>() {
         });
     }
 }

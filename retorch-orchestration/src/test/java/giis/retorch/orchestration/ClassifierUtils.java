@@ -8,6 +8,7 @@ import giis.retorch.orchestration.testdata.synteticpackage.insidepackage.Synthet
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ClassifierUtils extends GenericUtils {
 
@@ -34,7 +35,7 @@ public class ClassifierUtils extends GenericUtils {
         expectedSystem.addResourceClass(this.getJSONSavedInelasticResource());
         expectedSystem.addResourceClass(this.getJSONSavedElasticResource());
         expectedSystem.getResources().sort(Comparator.comparing(Resource::toString));
-        expectedSystem.addListTestCases(getAllTestCases().stream().sorted(Comparator.comparing(TestCase::getName)).toList());
+        expectedSystem.addListTestCases(getAllTestCases().stream().sorted(Comparator.comparing(TestCase::getName)).collect(Collectors.toList()));
         return expectedSystem;
     }
 

@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -73,7 +74,7 @@ public class ClassifierTests {
                 ArgumentCaptor.forClass(ch.qos.logback.classic.spi.LoggingEvent.class);
         verify(appender, atLeast(25)).doAppend(argument.capture());
         List<LoggingEvent> listEvents = argument.getAllValues();
-        List<String> listMessages = listEvents.stream().map(LoggingEvent::getMessage).toList();
+        List<String> listMessages = listEvents.stream().map(LoggingEvent::getMessage).collect(Collectors.toList());
         // Omission of attributes in the accessMode
         assertTrue(listMessages.contains("The AccessModeType in method testThreeAttributesLoosingAccessMode is not specified")); // Check that the omitted AccessMode is detected
         assertTrue(listMessages.contains("The Concurrency Attribute in method testTwoAttributesLoosingAccessMode is not present")); // Check that the concurrency omitted is detected

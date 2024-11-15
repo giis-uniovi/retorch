@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The {@code TJobClass} class represents a TJob with a name, stage, and a set of {@code  ResourceClass}.
@@ -108,9 +109,9 @@ public class TJob {
 
     @Override
     public String toString() {
-        List<String> testCasesNames = listTestCases.stream().map(TestCase::getName).toList();
+        List<String> testCasesNames = listTestCases.stream().map(TestCase::getName).collect(Collectors.toList());
         List<String> resourceNames =
-                listResourceEntities.stream().map(Resource::getResourceID).toList();
+                listResourceEntities.stream().map(Resource::getResourceID).collect(Collectors.toList());
         return "TJobClass [\n" + "listTc:{\n" + testCasesNames + "}, listRes " + resourceNames + ", intraSchedule '" +
                 intraTJobSchedule + '\'' + ", con " + tJobConcurrency + ']';
     }
@@ -125,7 +126,7 @@ public class TJob {
     }
 
     public Set<Capacity> getTotalCapacities() {return totalCapacities;}
-    public List<String> getCapacityNames() {return this.getTotalCapacities().stream().map(Capacity::getName).toList();}
+    public List<String> getCapacityNames() {return this.getTotalCapacities().stream().map(Capacity::getName).collect(Collectors.toList());}
     public double getElasticityCostResources() {return elasticityCostResources;}
     public double getEndExec() {return endExec;}
     public double getEndSetUp() {return endSetUp;}

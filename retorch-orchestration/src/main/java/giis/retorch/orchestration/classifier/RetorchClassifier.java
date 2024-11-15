@@ -15,6 +15,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RetorchClassifier {
 
@@ -243,7 +244,7 @@ public class RetorchClassifier {
         List<Method> methods = Arrays.stream(testClass.getDeclaredMethods())
                 .sorted(Comparator.comparing(Method::toString)) // Sort methods
                 .filter(meth -> !meth.getName().equals("$jacocoInit")) // Filter out methods with name "$jacocoInit"
-                .toList(); // Collect results to a list
+                .collect(Collectors.toList());// Collect results to a list
         methods.forEach(meth -> log.info("The method name its : {}", meth.getName()));
         return methods;
     }
@@ -367,8 +368,7 @@ public class RetorchClassifier {
     private System checkSystemClass(System systemToCheck) {
         System systemOutput = new System(systemToCheck.getName());
         List<String> idResourcesList = listAllResources.values().stream()
-                .map(Resource::getResourceID)
-                .toList();
+                .map(Resource::getResourceID).collect(Collectors.toList());
         systemToCheck.getResources().stream()
                 .filter(res -> idResourcesList.containsAll(res.getReplaceable()))
                 .forEach(systemOutput::addResourceClass);
