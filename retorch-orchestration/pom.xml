@@ -21,6 +21,8 @@
 
 		<maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
 
+		<jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+
 		<jacksonjson.version>2.18.1</jacksonjson.version>
 
 		<mockito.version>5.14.2</mockito.version>
@@ -97,12 +99,45 @@
 						<exclude>**/testdata/**</exclude>
 					</excludes>
 					<!-- END This configuration excludes the test cases for analysis purposes -->
+					<!-- Sets the VM argument line used when unit tests are run under JaCoCo -->
+					<argLine>${surefireArgLine}</argLine>
 					<testFailureIgnore>true</testFailureIgnore>
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 					<!-- Avoids Jenkins slave fail in linux and openjdk: https://stackoverflow.com/questions/23260057/the-forked-vm-terminated-without-saying-properly-goodbye-vm-crash-or-system-exi/53070605 -->
 					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 			</plugin>
+			<!-- jacoco plugin for code coverage, only includes ut. Ver: https://www.petrikainulainen.net/programming/maven/creating-code-coverage-reports-for-unit-and-integration-tests-with-the-jacoco-maven-plugin/ -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>pre-unit-test</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+						<configuration>
+							<destFile>${project.build.directory}/coverage-reports/jacoco.exec</destFile>
+							<propertyName>surefireArgLine</propertyName>
+
+						</configuration>
+					</execution>
+					<execution>
+						<id>post-unit-test</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/coverage-reports/jacoco.exec</dataFile>
+							<outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 </project>
