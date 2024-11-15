@@ -22,14 +22,20 @@ jobs:
           java-version: '16'
           cache: 'maven'
 
-      - name:  Test RETORCH and aggregate surefire report
+      - name: Test and aggregate surefire report
         run: mvn test surefire-report:report -Daggregate=true -Dmaven.test.failure.ignore=true -U --no-transfer-progress
+
+      - name: Additional aggregated junit report
+        uses: javiertuya/junit-report-action@v1
+        with:
+          surefire-files: "**/target/surefire-reports/TEST-*.xml"
+          report-dir: target/site
 
       - name: Generate report checks
         if: always()
         uses: mikepenz/action-junit-report@v5
         with:
-          check_name: "test-result-orchestration"
+          check_name: "test-result"
           report_paths: "**/surefire-reports/TEST-*.xml"
           fail_on_failure: 'true'
 
@@ -37,7 +43,7 @@ jobs:
         name: Publish test report files
         uses: actions/upload-artifact@v4
         with:
-          name: "test-report-files-orchestration"
+          name: "test-report-files"
           path: |
             target/site
             **/target/site/jacoco/jacoco.xml
