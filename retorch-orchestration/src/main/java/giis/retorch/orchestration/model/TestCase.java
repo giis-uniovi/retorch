@@ -3,18 +3,18 @@ package giis.retorch.orchestration.model;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TestCaseEntity {
+public class TestCase {
 
     private final String name;
     private final Class<?> testClass;
-    private List<AccessModeEntity> accessMode;  //List with the access modes (one access mode for each resource)
+    private List<AccessMode> accessMode;  //List with the access modes (one access mode for each resource)
 
     /**
      * RETORCH Test Case has the test name, its class and the access mode that performs over the resource
      * @param nameTestCase  String with the test case name
      * @param classTestCase Class that contains the test case
      */
-    public TestCaseEntity(String nameTestCase, Class<?> classTestCase) {
+    public TestCase(String nameTestCase, Class<?> classTestCase) {
         this.name = nameTestCase;
         this.testClass = classTestCase;
         this.accessMode = new LinkedList<>();
@@ -23,7 +23,7 @@ public class TestCaseEntity {
     public Class<?> getTestClass() {
         return testClass;
     }
-    public void addAccessMode(AccessModeEntity accessMode) {
+    public void addAccessMode(AccessMode accessMode) {
         this.accessMode.add(accessMode);
     }
 
@@ -36,7 +36,7 @@ public class TestCaseEntity {
     public boolean equals(Object obj) {
         if ((obj == null) || (!obj.getClass().equals(this.getClass()))) return false;
 
-        TestCaseEntity objectToCompare = ((TestCaseEntity) obj);
+        TestCase objectToCompare = ((TestCase) obj);
         boolean conditionOne = objectToCompare.getAccessMode().equals(this.accessMode);
         boolean conditionTwo = objectToCompare.getName().equals(this.name);
         return conditionOne && conditionTwo;
@@ -47,14 +47,14 @@ public class TestCaseEntity {
         return "tc{" + "'" + name + '\'' + ", " + accessMode + '}';
     }
 
-    public List<AccessModeEntity> getAccessMode() {
+    public List<AccessMode> getAccessMode() {
         return accessMode;
     }
     public String getName() {
         return name;
     }
 
-    public void setAccessMode(List<AccessModeEntity> accessMode) {
+    public void setAccessMode(List<AccessMode> accessMode) {
         this.accessMode = accessMode;
     }
 

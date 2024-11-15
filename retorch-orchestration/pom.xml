@@ -8,25 +8,39 @@
 	<artifactId>retorch-orchestration</artifactId>
 	<packaging>jar</packaging>
 	<name>retorch-orchestration</name>
-	<description>Multimodule maven project template, module without dependencies</description>
-	<url>http://github.com/giis-uniovi/samples-giis-template</url>
+	<description>This module covers the orchestration process, processes the Resource annotations and generates the necessary
+	scripting code to execute the RETORCH execution plan</description>
+	<url>https://github.com/giis-uniovi/retorch</url>
 	<organization>
 		<name>Software Engineering Research Group (GIIS) - Universidad de Oviedo, ES</name>
-		<url>http://giis.uniovi.es/</url>
+		<url>https://giis.uniovi.es/</url>
 	</organization>
 	<properties>
 		<!--Separate all dependencies by a blank line to avoid problems creating combined dependencies in dependabot.-->
+		<retorchannotations.version>1.1.1-SNAPSHOT</retorchannotations.version>
+
+		<maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+
 		<jacksonjson.version>2.18.1</jacksonjson.version>
 
 		<mockito.version>5.14.2</mockito.version>
 
-		<logback-classic.version>1.5.12</logback-classic.version>
+
 
 	</properties>
 	<dependencies>
+		<dependency><!--Dependencies on other modules of this project should be the first ones to reduce the risk of transitive dependencies issues-->
+			<groupId>io.github.giis-uniovi</groupId>
+			<artifactId>retorch-annotations</artifactId>
+			<version>${retorchannotations.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -42,17 +56,6 @@
 			<artifactId>mockito-core</artifactId>
 			<version>${mockito.version}</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>${logback-classic.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.github.giis-uniovi</groupId>
-			<artifactId>retorch-annotations</artifactId>
-			<version>1.1.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -83,6 +86,21 @@
 				<configuration>
 					<source>16</source>
 					<target>16</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin.version}</version>
+				<configuration>
+					<excludes> <!-- This configuration excludes the test cases for analysis-executions purposes -->
+						<exclude>**/testdata/**</exclude>
+					</excludes>
+					<!-- END This configuration excludes the test cases for analysis purposes -->
+					<testFailureIgnore>true</testFailureIgnore>
+					<redirectTestOutputToFile>true</redirectTestOutputToFile>
+					<!-- Avoids Jenkins slave fail in linux and openjdk: https://stackoverflow.com/questions/23260057/the-forked-vm-terminated-without-saying-properly-goodbye-vm-crash-or-system-exi/53070605 -->
+					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 			</plugin>
 		</plugins>

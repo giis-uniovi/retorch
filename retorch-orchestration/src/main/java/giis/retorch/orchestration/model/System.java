@@ -8,15 +8,15 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-public class SystemEntity {
+public class System {
 
-    private static final Logger logSystemClass = LoggerFactory.getLogger(SystemEntity.class);
+    private static final Logger logSystemClass = LoggerFactory.getLogger(System.class);
 
     private final String name;
-    private final LinkedList<ResourceEntity> resources;
-    private final List<TestCaseEntity> testCases;
+    private final LinkedList<Resource> resources;
+    private final List<TestCase> testCases;
 
-    public SystemEntity(String name) {
+    public System(String name) {
         this.name = name;
         this.testCases = new LinkedList<>();
         this.resources = new LinkedList<>();
@@ -30,7 +30,7 @@ public class SystemEntity {
     @Override
     public boolean equals(Object obj) {
         if ((obj == null)||(!obj.getClass().equals(this.getClass()))) return false;
-        SystemEntity objectToCompare = ((SystemEntity) obj);
+        System objectToCompare = ((System) obj);
         if (!objectToCompare.getName().equals(this.name)) return false;
         boolean containAllResources = new HashSet<>(objectToCompare.getResources()).containsAll(this.getResources());
         boolean containsAllTestCases = new HashSet<>(objectToCompare.getTestCases()).containsAll(this.getTestCases());
@@ -41,40 +41,40 @@ public class SystemEntity {
         StringBuilder sb = new StringBuilder();
         sb.append("System ID: ").append(getName()).append("\n");
         sb.append("Resources:\n");
-        for (ResourceEntity res : getResources()){
+        for (Resource res : getResources()){
             sb.append("\t").append(res).append("\n");
         }
         sb.append("TestCases:\n");
-        for (TestCaseEntity tc : getTestCases()){
+        for (TestCase tc : getTestCases()){
             sb.append("\t").append(tc).append("\n");
         }
         return sb.toString();
     }
 
     public String getName() {return name;}
-    public List<ResourceEntity> getResources() {return resources;}
-    public List<TestCaseEntity> getTestCases() {return testCases;}
+    public List<Resource> getResources() {return resources;}
+    public List<TestCase> getTestCases() {return testCases;}
 
-    public void addTestCase(TestCaseEntity test) {
+    public void addTestCase(TestCase test) {
         this.testCases.add(test);
-        this.testCases.sort(Comparator.comparing(TestCaseEntity::getName));
+        this.testCases.sort(Comparator.comparing(TestCase::getName));
     }
 
-    public void addListOfResources(List<ResourceEntity> listResources) {
+    public void addListOfResources(List<Resource> listResources) {
         this.resources.addAll(listResources);
-        this.resources.sort(Comparator.comparing(ResourceEntity::getResourceID));
+        this.resources.sort(Comparator.comparing(Resource::getResourceID));
     }
 
-    public void addResourceClass(ResourceEntity resource) {
+    public void addResourceClass(Resource resource) {
         if (!this.resources.contains(resource)) {
             this.resources.add(resource);
         } else logSystemClass.info("The resource {} is contained in the system", resource.getResourceID());
-        this.resources.sort(Comparator.comparing(ResourceEntity::getResourceID));
+        this.resources.sort(Comparator.comparing(Resource::getResourceID));
     }
 
-    public void addListTestCases(List<TestCaseEntity> listTestCases) {
+    public void addListTestCases(List<TestCase> listTestCases) {
         this.testCases.addAll(listTestCases);
-        this.testCases.sort(Comparator.comparing(TestCaseEntity::getName));
+        this.testCases.sort(Comparator.comparing(TestCase::getName));
     }
 
 }

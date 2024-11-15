@@ -1,30 +1,30 @@
 package giis.retorch.orchestration.model;
 
-public class AccessModeEntity {
+public class AccessMode {
 
-    private AccessModeTypesEntity accessMode;
+    private AccessModeTypes type;
     private boolean sharing = false;
     private int concurrency = 1;
-    private ResourceEntity resource;
+    private Resource resource;
 
-    public AccessModeEntity() {}
+    public AccessMode() {}
 
-    public AccessModeEntity(AccessModeEntity accessMode) {
-        this.accessMode = accessMode.getAccessMode();
-        this.concurrency = accessMode.getConcurrency();
-        this.resource = accessMode.getResource();
-        this.sharing = accessMode.getSharing();
+    public AccessMode(AccessMode type) {
+        this.type = type.getType();
+        this.concurrency = type.getConcurrency();
+        this.resource = type.getResource();
+        this.sharing = type.getSharing();
     }
 
     /**
      * Access mode constructor
-     * @param accessMode  {@link AccessModeTypesEntity} that could be READONLY,WRITEONLY,READWRITE,DYNAMIC or NOACCESS
+     * @param type  {@link AccessModeTypes} that could be READONLY,WRITEONLY,READWRITE,DYNAMIC or NOACCESS
      * @param sharing     Boolean that represents if the resource can be shared or not
      * @param concurrency Integer with the max number of concurrent access
      * @param resource    Resource on which the access mode is performed
      */
-    public AccessModeEntity(AccessModeTypesEntity accessMode, boolean sharing, int concurrency, ResourceEntity resource) {
-        this.accessMode = accessMode;
+    public AccessMode(AccessModeTypes type, boolean sharing, int concurrency, Resource resource) {
+        this.type = type;
         this.sharing = sharing;
         this.concurrency = concurrency;
         this.resource = resource;
@@ -38,24 +38,24 @@ public class AccessModeEntity {
     @Override
     public boolean equals(Object obj) {
         if ((obj == null) || (!obj.getClass().equals(this.getClass()))) return false;
-        AccessModeEntity objToCompare = ((AccessModeEntity) obj);
+        AccessMode objToCompare = ((AccessMode) obj);
 
         return objToCompare.getSharing() == this.sharing && objToCompare.getConcurrency() == this.concurrency
-                && objToCompare.getAccessMode().equals(this.accessMode) && objToCompare.getResource().equals(this.resource);
+                && objToCompare.getType().equals(this.type) && objToCompare.getResource().equals(this.resource);
     }
 
     @Override
     public String toString() {
-        return "a.m.{" + accessMode + ", " + sharing + ", " + concurrency + ",'" + resource + '\'' + '}';
+        return "a.m.{" + type + ", " + sharing + ", " + concurrency + ",'" + resource + '\'' + '}';
     }
 
-    public AccessModeTypesEntity getAccessMode() {
-        return accessMode;
+    public AccessModeTypes getType() {
+        return type;
     }
     public int getConcurrency() {
         return concurrency;
     }
-    public ResourceEntity getResource() {
+    public Resource getResource() {
         return resource;
     }
     public boolean getSharing() {
@@ -65,14 +65,14 @@ public class AccessModeEntity {
     public void setSharing(boolean sharing) {
         this.sharing = sharing;
     }
-    public void setResource(ResourceEntity resource) {
+    public void setResource(Resource resource) {
         this.resource = resource;
     }
     public void setConcurrency(int concurrency) {
         this.concurrency = concurrency;
     }
-    public void setAccessMode(AccessModeTypesEntity accessMode) {
-        this.accessMode = accessMode;
+    public void setType(AccessModeTypes type) {
+        this.type = type;
     }
 
 }

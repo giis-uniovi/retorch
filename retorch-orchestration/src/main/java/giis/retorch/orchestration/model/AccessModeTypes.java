@@ -4,7 +4,7 @@ package giis.retorch.orchestration.model;
  * This class is used as AccessMode  parser for given a string representation of a RETORCH access mode (i.e:
  * READONLY,READWRITE...) convert it into the proper enumeration. Also provides
  */
-public class AccessModeTypesEntity {
+public class AccessModeTypes {
 
     public enum type {READONLY, READWRITE, WRITEONLY, DYNAMIC, NOACCESS}
 
@@ -12,7 +12,7 @@ public class AccessModeTypesEntity {
 
     private type accessModeType;
 
-    public AccessModeTypesEntity(String typeOfAccess) {
+    public AccessModeTypes(String typeOfAccess) {
         this.accessStringType = typeOfAccess;
         switch (typeOfAccess) {
             case "READONLY":
@@ -47,7 +47,7 @@ public class AccessModeTypesEntity {
     @Override
     public boolean equals(Object obj) {
         if ((obj == null)||(!obj.getClass().equals(this.getClass()))) return false;
-        AccessModeTypesEntity currentType = ((AccessModeTypesEntity) obj);
+        AccessModeTypes currentType = ((AccessModeTypes) obj);
         return currentType.getAccessModeType() == this.getAccessModeType();
     }
 

@@ -1,7 +1,8 @@
-package giis.retorch.orchestration.resourceidentification;
+package giis.retorch.orchestration.testdata;
 
 import giis.retorch.annotations.AccessModes;
 import giis.retorch.orchestration.model.*;
+import giis.retorch.orchestration.model.System;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import giis.retorch.annotations.AccessMode;
 
 public class RetorchClassifier {
 
@@ -22,15 +22,15 @@ public class RetorchClassifier {
 
     private static final String CHORUS_ATTRIBUTES = " is not present";
     private static final String NO_EXIST = " doesn't exist";
-    private final RetorchClassifierUtils deserializer; //Serializer employed to deserialize the resources info
+    private final ResourceSerializer deserializer; //Serializer employed to deserialize the resources info
 
-    private Map<String, ResourceEntity> listAllResources;
+    private Map<String, Resource> listAllResources;
 
     /**
      * Empty constructor used to validate RETORCH in the test case
      */
     public RetorchClassifier() {
-        deserializer = new RetorchClassifierUtils();
+        deserializer = new ResourceSerializer();
     }
     /**
      * This method gets the file specified as package, in order to do this, instantiates the classLoader
@@ -95,19 +95,19 @@ public class RetorchClassifier {
      * @param systemName  String with the system name (must be the same as specified in the resource attributes JSON
      *                    file
      */
-    public SystemEntity getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
+    public System getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
             IOException, ClassNotFoundException, URISyntaxException {
         this.listAllResources= new HashMap<>();
-        for (ResourceEntity res:deserializer.deserializeResources(systemName).values()){
+        for (Resource res:deserializer.deserializeResources(systemName).values()){
             if (resourceChecker(res)){
                 this.listAllResources.put(res.getResourceID(),res);
             }
         }
-        SystemEntity systemRetorch = new SystemEntity(systemName);
+        System systemRetorch = new System(systemName);
         File directory = getPackageSourceDirectory(packageName);
         List<Class<?>> listClassesPackage = findClasses(directory, packageName);
         for (Class<?> currentClass : listClassesPackage) {
-            SystemEntity temporalSystem = getSystemFromClass(systemName, currentClass);
+            System temporalSystem = getSystemFromClass(systemName, currentClass);
             addUniqueResources(systemRetorch, temporalSystem);
             systemRetorch.addListTestCases(temporalSystem.getTestCases());
         }
@@ -115,15 +115,15 @@ public class RetorchClassifier {
         return checkSystemClass(systemRetorch);
     }
 
-    private void addUniqueResources(SystemEntity systemRetorch, SystemEntity temporalSystem) {
+    private void addUniqueResources(System systemRetorch, System temporalSystem) {
         temporalSystem.getResources().stream()
                 .filter(res -> !systemRetorch.getResources().contains(res))
                 .forEach(systemRetorch::addResourceClass);
     }
 
-    private void sortSystemClass(SystemEntity systemRetorch) {
-        systemRetorch.getTestCases().sort(Comparator.comparing(TestCaseEntity::getName));
-        systemRetorch.getResources().sort(Comparator.comparing(ResourceEntity::toString));
+    private void sortSystemClass(System systemRetorch) {
+        systemRetorch.getTestCases().sort(Comparator.comparing(TestCase::getName));
+        systemRetorch.getResources().sort(Comparator.comparing(Resource::toString));
     }
 
     /**
@@ -135,14 +135,14 @@ public class RetorchClassifier {
      * @param systemName    String with the system name
      * @param testCaseClass Class with the test cases annotated
      */
-    public SystemEntity getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
+    public System getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
             IOException {
         this.listAllResources = deserializer.deserializeResources(systemName);
-        SystemEntity systemRetorch = new SystemEntity(systemName);
+        System systemRetorch = new System(systemName);
         List<Method> listMethods = this.getClassMethods(testCaseClass);
         systemRetorch.addListOfResources(new ArrayList<>(listAllResources.values()));
         for (Method m : listMethods) {
-            TestCaseEntity testCase = getTestCasesFromMethod(m, testCaseClass);
+            TestCase testCase = getTestCasesFromMethod(m, testCaseClass);
             if (validateTestCase(testCase)) {
                 systemRetorch.addTestCase(testCase);
             }
@@ -159,7 +159,7 @@ public class RetorchClassifier {
      * remains to the annotated resources (3) The access mode is not empty
      * @param testCase       testCase to be validated
      */
-    public boolean validateTestCase(TestCaseEntity testCase) {
+    public boolean validateTestCase(TestCase testCase) {
         boolean output = true;
         String message;
         if (testCase.getAccessMode().isEmpty()) {
@@ -177,11 +177,11 @@ public class RetorchClassifier {
      * @param currentClass  Class that belongs the method
      * @param currentMethod Test case Method
      */
-    public TestCaseEntity getTestCasesFromMethod(Method currentMethod, Class<?> currentClass) {
+    public TestCase getTestCasesFromMethod(Method currentMethod, Class<?> currentClass) {
         String methodName = currentMethod.getName();
         // Directly assign the result of getAccessModesFromMethod to listAccessModesMethod
-        List<AccessModeEntity> listAccessModesMethod = this.getAccessModesFromMethod(currentMethod);
-        TestCaseEntity newTestCase = new TestCaseEntity(methodName, currentClass);
+        List<AccessMode> listAccessModesMethod = this.getAccessModesFromMethod(currentMethod);
+        TestCase newTestCase = new TestCase(methodName, currentClass);
         newTestCase.setAccessMode(listAccessModesMethod);
         return newTestCase;
     }
@@ -194,26 +194,26 @@ public class RetorchClassifier {
      * the accessModes with all the information retrieved from the annotations ( resource,elasticity,sharing...)
      * @param testMethod Method to retrieve the annotations.
      */
-    public List<AccessModeEntity> getAccessModesFromMethod(Method testMethod) {
-        List<AccessModeEntity> listAccessModes = new ArrayList<>(); // Use ArrayList instead of LinkedList for better
+    public List<AccessMode> getAccessModesFromMethod(Method testMethod) {
+        List<AccessMode> listAccessModes = new ArrayList<>(); // Use ArrayList instead of LinkedList for better
 
-        List<AccessMode> listAccessModesTag = new ArrayList<>();  // random access performance
+        List<giis.retorch.annotations.AccessMode> listAccessModesTag = new ArrayList<>();  // random access performance
 
-        if (testMethod.isAnnotationPresent(AccessMode.class)) {       // Check for single annotation presence
-            listAccessModesTag.add(testMethod.getAnnotation(AccessMode.class));
+        if (testMethod.isAnnotationPresent(giis.retorch.annotations.AccessMode.class)) {       // Check for single annotation presence
+            listAccessModesTag.add(testMethod.getAnnotation(giis.retorch.annotations.AccessMode.class));
         }
         if (testMethod.isAnnotationPresent(AccessModes.class) ) {        // Check for multiple annotations presence
             listAccessModesTag.addAll(Arrays.asList(testMethod.getAnnotation(AccessModes.class).value())); // Use
             // addAll instead of assignment to avoid overwriting previous values
            }
-        for (AccessMode accessTag : listAccessModesTag) {
+        for (giis.retorch.annotations.AccessMode accessTag : listAccessModesTag) {
             if (this.accessModeTagChecker(accessTag, testMethod.getName())) {
-                AccessModeEntity currentAccessMode = new AccessModeEntity();
+                AccessMode currentAccessMode = new AccessMode();
                 currentAccessMode.setConcurrency(accessTag.concurrency());
-                ResourceEntity requiredResource = getRequiredResource(accessTag.resID());
+                Resource requiredResource = getRequiredResource(accessTag.resID());
                 currentAccessMode.setResource(requiredResource);
                 currentAccessMode.setSharing(accessTag.sharing());
-                currentAccessMode.setAccessMode(new AccessModeTypesEntity(accessTag.accessMode()));
+                currentAccessMode.setType(new AccessModeTypes(accessTag.accessMode()));
                 listAccessModes.add(currentAccessMode);
             }
         }
@@ -223,14 +223,14 @@ public class RetorchClassifier {
     /**
      * Support method that checks the resources annotated with the access mode
      */
-    public ResourceEntity getRequiredResource(String idResource) {
+    public Resource getRequiredResource(String idResource) {
         String message;
         if (listAllResources.containsKey(idResource)) {
             return listAllResources.get(idResource);
         } else {
             message=String.format("The resource %s is not tagged", idResource);
             log.info(message);
-            return new ResourceEntity("Resource Not valid");
+            return new Resource("Resource Not valid");
         }
     }
 
@@ -256,7 +256,7 @@ public class RetorchClassifier {
      * for finally  (3) check if there is only there are one Hierarchy Parent
      * @param resource   ResourceClass with the resource to check
      */
-    private boolean resourceChecker(ResourceEntity resource) {
+    private boolean resourceChecker(Resource resource) {
         List<String> listMessages = new LinkedList<>();
         if (resource.getHierarchyParent().contains("None")) {
             listMessages.add(String.format("The Hierarchy Parent Attribute in resource %s%s",resource.getResourceID(), CHORUS_ATTRIBUTES));
@@ -282,7 +282,7 @@ public class RetorchClassifier {
      * of the attributes : id,elasticity or cost, (2) If the elasticity or the cost is invalid (negative)
      * @param resource   Resource  with all the attributes
      */
-    private boolean elasticityChecker(ResourceEntity resource) {
+    private boolean elasticityChecker(Resource resource) {
         boolean isOutElasticityID = resource.getElasticityModel().getElasticityID().equals("None");
         boolean isOutElasticity = resource.getElasticityModel().getElasticity() == -1;
         boolean isOutElasticityCost = resource.getElasticityModel().getElasticityCost() == -1;
@@ -321,7 +321,7 @@ public class RetorchClassifier {
      * @param accessModeTag AccessMode tag
      * @param methodName    String with the method name
      */
-    private boolean accessModeTagChecker(AccessMode accessModeTag, String methodName) {
+    private boolean accessModeTagChecker(giis.retorch.annotations.AccessMode accessModeTag, String methodName) {
         List<String> listMessages = new LinkedList<>();
 
         checkConcurrency(accessModeTag, methodName, listMessages);
@@ -339,7 +339,7 @@ public class RetorchClassifier {
         return listMessages.isEmpty();
     }
 
-    private void checkConcurrency(AccessMode accessModeTag, String methodName, List<String> listMessages) {
+    private void checkConcurrency(giis.retorch.annotations.AccessMode accessModeTag, String methodName, List<String> listMessages) {
         if (accessModeTag.concurrency() == -1) {
             listMessages.add(String.format("The Concurrency Attribute in method %s%s", methodName, CHORUS_ATTRIBUTES));
         }
@@ -351,8 +351,8 @@ public class RetorchClassifier {
         }
     }
 
-    private void checkAccessModeType(AccessMode accessModeTag, String methodName, List<String> listMessages) {
-        if (!AccessModeTypesEntity.isValidAccessMode(accessModeTag.accessMode())) {
+    private void checkAccessModeType(giis.retorch.annotations.AccessMode accessModeTag, String methodName, List<String> listMessages) {
+        if (!AccessModeTypes.isValidAccessMode(accessModeTag.accessMode())) {
             String message = accessModeTag.accessMode().equals("NOASSIGNED")
                     ? String.format("The AccessModeType in method %s is not specified", methodName)
                     : String.format("The AccessModeType in method %s%s", methodName, NO_EXIST);
@@ -364,19 +364,19 @@ public class RetorchClassifier {
      * Support method that validates the System provided as parameter. It checks  that the replaceable resources exists
      * @param systemToCheck System to check tag
      */
-    private SystemEntity checkSystemClass(SystemEntity systemToCheck) {
-        SystemEntity systemEntityOutput = new SystemEntity(systemToCheck.getName());
+    private System checkSystemClass(System systemToCheck) {
+        System systemOutput = new System(systemToCheck.getName());
         List<String> idResourcesList = listAllResources.values().stream()
-                .map(ResourceEntity::getResourceID)
+                .map(Resource::getResourceID)
                 .toList();
         systemToCheck.getResources().stream()
                 .filter(res -> idResourcesList.containsAll(res.getReplaceable()))
-                .forEach(systemEntityOutput::addResourceClass);
+                .forEach(systemOutput::addResourceClass);
         systemToCheck.getResources().stream()
                 .filter(res -> !idResourcesList.containsAll(res.getReplaceable()))
                 .forEach(res -> log.error("The Replaceable of resource {}{}", res.getResourceID(), NO_EXIST));
-        systemEntityOutput.addListTestCases(systemToCheck.getTestCases());
+        systemOutput.addListTestCases(systemToCheck.getTestCases());
 
-        return systemEntityOutput;
+        return systemOutput;
     }
 }

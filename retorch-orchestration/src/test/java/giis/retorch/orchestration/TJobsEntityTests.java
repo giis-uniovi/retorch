@@ -1,4 +1,4 @@
-package giis.retorch.orchestration.unitary.entities;
+package giis.retorch.orchestration;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -6,10 +6,10 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import giis.retorch.orchestration.model.CapacityEntity;
-import giis.retorch.orchestration.model.ResourceEntity;
-import giis.retorch.orchestration.model.TJobEntity;
-import giis.retorch.orchestration.model.ResourceInstanceEntity;
+import giis.retorch.orchestration.model.Capacity;
+import giis.retorch.orchestration.model.Resource;
+import giis.retorch.orchestration.model.TJob;
+import giis.retorch.orchestration.model.ResourceInstance;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -21,7 +21,7 @@ public class TJobsEntityTests {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    TJobEntity tjob;
+    TJob tjob;
 
     @Rule
     public TestName testName = new TestName();
@@ -29,13 +29,13 @@ public class TJobsEntityTests {
     @Before
     public void setUp() {
         log.info("****** Running test: {} ******", testName.getMethodName());
-        LinkedList<CapacityEntity> listCapacities = new LinkedList<>();
-        listCapacities.add(new CapacityEntity("memory", 4));
-        listCapacities.add(new CapacityEntity("processor", 3));
-        ResourceInstanceEntity resourceOne = new ResourceInstanceEntity("webserver", listCapacities);
-        LinkedList<ResourceEntity> listResources = new LinkedList<>();
+        LinkedList<Capacity> listCapacities = new LinkedList<>();
+        listCapacities.add(new Capacity("memory", 4));
+        listCapacities.add(new Capacity("processor", 3));
+        ResourceInstance resourceOne = new ResourceInstance("webserver", listCapacities);
+        LinkedList<Resource> listResources = new LinkedList<>();
         listResources.add(resourceOne);
-        tjob = new TJobEntity("tjoba", 0, listResources);
+        tjob = new TJob("tjoba", 0, listResources);
 
         log.info("****** Set-up for test: {} ended ******", testName.getMethodName());
     }
@@ -61,10 +61,10 @@ public class TJobsEntityTests {
     @Test
     public void testLifecycleCapacities() {
         tjob.setAvgTime(2, 10, 11, 16, 17, 21);
-        CapacityEntity capacityOne = new CapacityEntity("memory", 4);
-        CapacityEntity capacityTwo = new CapacityEntity("processor", 3);
+        Capacity capacityOne = new Capacity("memory", 4);
+        Capacity capacityTwo = new Capacity("processor", 3);
 
-        Map.Entry<String, Set<CapacityEntity>> output;
+        Map.Entry<String, Set<Capacity>> output;
         output = tjob.getCapacitiesGivenTime(1, 0);
         assertEquals("noexec", output.getKey());
         assertTrue(output.getValue().isEmpty());

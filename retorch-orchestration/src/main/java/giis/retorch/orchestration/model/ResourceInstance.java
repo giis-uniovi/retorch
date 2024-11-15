@@ -9,9 +9,9 @@ import java.util.List;
  * It provides methods to get and set the name and capacities, and overrides the {@code equals}, {@code hashCode},
  * and {@code toString} methods for comparison and representation purposes taking into account the list of capacities.
  */
-public class ResourceInstanceEntity extends ResourceEntity {
+public class ResourceInstance extends Resource {
 
-    public ResourceInstanceEntity(String name, List<CapacityEntity> capacities) {
+    public ResourceInstance(String name, List<Capacity> capacities) {
         this.setMinimalCapacities(capacities);
         this.setResourceID(name);
     }

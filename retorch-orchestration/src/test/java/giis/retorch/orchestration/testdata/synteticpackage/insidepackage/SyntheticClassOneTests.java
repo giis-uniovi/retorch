@@ -1,4 +1,4 @@
-package giis.retorch.orchestration.unitary.testdata.classifier.synteticpackage.insidepackage;
+package giis.retorch.orchestration.testdata.synteticpackage.insidepackage;
 
 import giis.retorch.annotations.AccessMode;
 import org.junit.Assert;

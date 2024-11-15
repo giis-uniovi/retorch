@@ -10,11 +10,11 @@ import java.util.*;
  * When the TJob is created, it calculates the total amount of {@code Capacity} that is used by the list of
  * {@code ResourceClass} required
  */
-public class TJobEntity {
+public class TJob {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private  Set<CapacityEntity> totalCapacities;
+    private  Set<Capacity> totalCapacities;
     private  int stage;
     private double startSetUp;
     private double endSetUp;
@@ -22,8 +22,8 @@ public class TJobEntity {
     private double endExec;
     private double startTearDown;
     private double endTearDown;
-    private  List<TestCaseEntity> listTestCases;
-    private  List<ResourceEntity> listResourceEntities;
+    private  List<TestCase> listTestCases;
+    private  List<Resource> listResourceEntities;
     private String idTJob = "Default";
     private String intraTJobSchedule = "SequentialScheduling";
     private Integer tJobConcurrency=50;
@@ -47,38 +47,38 @@ public class TJobEntity {
      * new test
      * case is added.
      */
-    public TJobEntity() {
+    public TJob() {
         this.listResourceEntities = new LinkedList<>();
         this.listTestCases = new LinkedList<>();
     }
-    public TJobEntity(String idTJob, int stage, List<ResourceEntity> resourceInstances) {
+    public TJob(String idTJob, int stage, List<Resource> resourceInstances) {
         //Attributes required by the tool
         this.listTestCases=new LinkedList<>();
         //Attributes required for the cost model
         this.idTJob = idTJob;
         this.listResourceEntities = resourceInstances;
         this.stage = stage;
-        CapacityEntity memory = new CapacityEntity(CapacityEntity.MEMORY_NAME, 0);
-        CapacityEntity processors = new CapacityEntity(CapacityEntity.PROCESSOR_NAME, 0);
-        CapacityEntity slots = new CapacityEntity(CapacityEntity.SLOTS_NAME, 0);
-        CapacityEntity storage = new CapacityEntity(CapacityEntity.STORAGE_NAME, 0);
-        for (ResourceEntity resource : resourceInstances) {
-            for (CapacityEntity capacityEntity : resource.getMinimalCapacities())
-                switch (capacityEntity.getName()) {
-                    case CapacityEntity.PROCESSOR_NAME:
-                        processors.addQuantity(capacityEntity.getQuantity());
+        Capacity memory = new Capacity(Capacity.MEMORY_NAME, 0);
+        Capacity processors = new Capacity(Capacity.PROCESSOR_NAME, 0);
+        Capacity slots = new Capacity(Capacity.SLOTS_NAME, 0);
+        Capacity storage = new Capacity(Capacity.STORAGE_NAME, 0);
+        for (Resource resource : resourceInstances) {
+            for (Capacity capacity : resource.getMinimalCapacities())
+                switch (capacity.getName()) {
+                    case Capacity.PROCESSOR_NAME:
+                        processors.addQuantity(capacity.getQuantity());
                         break;
-                    case CapacityEntity.MEMORY_NAME:
-                        memory.addQuantity(capacityEntity.getQuantity());
+                    case Capacity.MEMORY_NAME:
+                        memory.addQuantity(capacity.getQuantity());
                         break;
-                    case CapacityEntity.STORAGE_NAME:
-                        storage.addQuantity(capacityEntity.getQuantity());
+                    case Capacity.STORAGE_NAME:
+                        storage.addQuantity(capacity.getQuantity());
                         break;
-                    case CapacityEntity.SLOTS_NAME:
-                        slots.addQuantity(capacityEntity.getQuantity());
+                    case Capacity.SLOTS_NAME:
+                        slots.addQuantity(capacity.getQuantity());
                         break;
                     default:
-                        log.warn("Capacity {} not found", capacityEntity.getName());
+                        log.warn("Capacity {} not found", capacity.getName());
                         break;
                 }
         }
@@ -98,8 +98,8 @@ public class TJobEntity {
     public boolean equals(Object obj) {
         if ((obj == null) || (!obj.getClass().equals(this.getClass())))  return false;
 
-        TJobEntity objectToCompare = ((TJobEntity) obj);
-        for (TestCaseEntity tc : objectToCompare.getListTestCases()) {
+        TJob objectToCompare = ((TJob) obj);
+        for (TestCase tc : objectToCompare.getListTestCases()) {
             if (!this.getListTestCases().contains(tc)) {return false;}
         }
         return this.getListResourceClasses().equals(objectToCompare.getListResourceClasses()) &&
@@ -108,9 +108,9 @@ public class TJobEntity {
 
     @Override
     public String toString() {
-        List<String> testCasesNames = listTestCases.stream().map(TestCaseEntity::getName).toList();
+        List<String> testCasesNames = listTestCases.stream().map(TestCase::getName).toList();
         List<String> resourceNames =
-                listResourceEntities.stream().map(ResourceEntity::getResourceID).toList();
+                listResourceEntities.stream().map(Resource::getResourceID).toList();
         return "TJobClass [\n" + "listTc:{\n" + testCasesNames + "}, listRes " + resourceNames + ", intraSchedule '" +
                 intraTJobSchedule + '\'' + ", con " + tJobConcurrency + ']';
     }
@@ -118,22 +118,22 @@ public class TJobEntity {
     public static Set<String> getListTJobLifecyclesNames() {return LIST_TJOB_LIFECYCLE;}
     public static List<String> getListTJobLifecyclesWithDesiredOrder() {
         LinkedList<String> desiredDataOrder = new LinkedList<>();
-        desiredDataOrder.add(TJobEntity.LIFECYCLE_SETUP_NAME);
-        desiredDataOrder.add(TJobEntity.LIFECYCLE_TESTEXECUTION_NAME);
-        desiredDataOrder.add(TJobEntity.LIFECYCLE_TEARDOWN_NAME);
+        desiredDataOrder.add(TJob.LIFECYCLE_SETUP_NAME);
+        desiredDataOrder.add(TJob.LIFECYCLE_TESTEXECUTION_NAME);
+        desiredDataOrder.add(TJob.LIFECYCLE_TEARDOWN_NAME);
         return desiredDataOrder;
     }
 
-    public Set<CapacityEntity> getTotalCapacities() {return totalCapacities;}
-    public List<String> getCapacityNames() {return this.getTotalCapacities().stream().map(CapacityEntity::getName).toList();}
+    public Set<Capacity> getTotalCapacities() {return totalCapacities;}
+    public List<String> getCapacityNames() {return this.getTotalCapacities().stream().map(Capacity::getName).toList();}
     public double getElasticityCostResources() {return elasticityCostResources;}
     public double getEndExec() {return endExec;}
     public double getEndSetUp() {return endSetUp;}
     public double getEndTearDown() {return endTearDown;}
     public String getIdTJob() {return idTJob.toLowerCase(Locale.ENGLISH);}
     public String getIntraTJobSchedule() {return intraTJobSchedule;}
-    public List<ResourceEntity> getListResourceClasses() {return listResourceEntities;}
-    public List<TestCaseEntity> getListTestCases() {
+    public List<Resource> getListResourceClasses() {return listResourceEntities;}
+    public List<TestCase> getListTestCases() {
         return listTestCases;
     }
     public int getStage() {return stage;}
@@ -166,7 +166,7 @@ public class TJobEntity {
         }
     }
 
-    public Map.Entry<String, Set<CapacityEntity>> getCapacitiesGivenTime(double currentTime, double startExecutionTime) {
+    public Map.Entry<String, Set<Capacity>> getCapacitiesGivenTime(double currentTime, double startExecutionTime) {
         double adjustedStartSetUp = this.getStartSetUp() + startExecutionTime;
         double adjustedEndSetUp = this.getEndSetUp() + startExecutionTime;
         double adjustedStartExec = this.getStartExec() + startExecutionTime;
@@ -187,7 +187,7 @@ public class TJobEntity {
         return new AbstractMap.SimpleEntry<>("noexec", Collections.emptySet());
     }
 
-    public boolean addTestCase(TestCaseEntity subject) {
+    public boolean addTestCase(TestCase subject) {
         if (listTestCases.contains(subject)) return false;
         listTestCases.add(subject);
         this.updateIntraTestCaseSchedule();
@@ -203,8 +203,8 @@ public class TJobEntity {
      */
     public void updateIntraTestCaseSchedule() {
         boolean thereAreAtLeastOneSequential = false;
-        for (TestCaseEntity subject : this.listTestCases) {
-            for (AccessModeEntity subjectAccessMode : subject.getAccessMode()) {
+        for (TestCase subject : this.listTestCases) {
+            for (AccessMode subjectAccessMode : subject.getAccessMode()) {
                 if (!subjectAccessMode.getSharing()) thereAreAtLeastOneSequential = true;
                 //  Checks if the given concurrency is lower than stored (if its lower overwrite the value)
                 if (subjectAccessMode.getConcurrency() < this.tJobConcurrency) this.tJobConcurrency = subjectAccessMode.getConcurrency();
@@ -218,19 +218,19 @@ public class TJobEntity {
      * This method add a lis of test cases updating the intra- schedule after it.
      * @param testCases List with the test cases  to be added
      */
-    public void addListTestCases(List<TestCaseEntity> testCases) {
+    public void addListTestCases(List<TestCase> testCases) {
         this.listTestCases.addAll(testCases);
         this.updateIntraTestCaseSchedule();
     }
 
-    public void addListResources(List<ResourceEntity> listResources) {
-        for (ResourceEntity res : listResources) this.addResource(res);
+    public void addListResources(List<Resource> listResources) {
+        for (Resource res : listResources) this.addResource(res);
     }
     /**
      * This method add a new resource to the current TJob. First check that the resource is not contained in the
      * TJob for after add it and increase the total elasticity cost of the TJob.
      */
-    public boolean addResource(ResourceEntity subject) {
+    public boolean addResource(Resource subject) {
         if (listResourceEntities.contains(subject)) {
             return false;
         }
@@ -240,7 +240,7 @@ public class TJobEntity {
         return true;
     }
 
-    public void removeTestCase(TestCaseEntity tc) {
+    public void removeTestCase(TestCase tc) {
         this.listTestCases.remove(tc);
         this.updateIntraTestCaseSchedule();
     }
@@ -249,7 +249,7 @@ public class TJobEntity {
      */
     public int getMinimalElasticity() {
         int minimalElasticity = 50;
-        for (ResourceEntity res : this.getListResourceClasses()) {
+        for (Resource res : this.getListResourceClasses()) {
             int currentElasticity = res.getElasticityModel().getElasticity();
             if (currentElasticity < minimalElasticity) minimalElasticity = currentElasticity;
         }
@@ -262,8 +262,8 @@ public class TJobEntity {
      */
     public int getMinimalConcurrency() {
         int minimalConcurrency = 50;
-        for (TestCaseEntity tc : this.getListTestCases()) {
-            for (AccessModeEntity acc : tc.getAccessMode()) {
+        for (TestCase tc : this.getListTestCases()) {
+            for (AccessMode acc : tc.getAccessMode()) {
                 int concurrency = acc.getConcurrency();
                 if (concurrency < minimalConcurrency) minimalConcurrency = concurrency;
             }

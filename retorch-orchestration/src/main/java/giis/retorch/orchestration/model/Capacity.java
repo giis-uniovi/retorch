@@ -15,9 +15,9 @@ import java.util.Set;
  * are supported are specified in {@code CapacityTypes}: memory, processor,slots and storage.
  * If the provided name is not in the list of valid capacities, it defaults to "Wrong Capacity".
  */
-public class CapacityEntity {
+public class Capacity {
 
-    private static final Logger log = LoggerFactory.getLogger(CapacityEntity.class);
+    private static final Logger log = LoggerFactory.getLogger(Capacity.class);
     public static final String MEMORY_NAME = "memory";
     public static final String PROCESSOR_NAME = "processor";
     public static final String SLOTS_NAME = "slots";
@@ -29,7 +29,7 @@ public class CapacityEntity {
     protected static final Set<String> LIST_CAPACITIES = new HashSet<>();
     static {Collections.addAll(LIST_CAPACITIES, MEMORY_NAME, PROCESSOR_NAME, SLOTS_NAME, STORAGE_NAME);}
 
-    public CapacityEntity(@JsonProperty("name") String name, @JsonProperty("quantity") double quantity) {
+    public Capacity(@JsonProperty("name") String name, @JsonProperty("quantity") double quantity) {
         if (LIST_CAPACITIES.contains(name)) {
             setName(name);
         } else {
@@ -53,7 +53,7 @@ public class CapacityEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CapacityEntity that = (CapacityEntity) o;
+        Capacity that = (Capacity) o;
         return Objects.equals(this.getName(), that.getName()) && Objects.equals(this.getQuantity(), that.getQuantity());
     }
 

@@ -1,14 +1,14 @@
-package giis.retorch.orchestration.unitary.components;
+package giis.retorch.orchestration;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
-import giis.retorch.orchestration.model.SystemEntity;
-import giis.retorch.orchestration.resourceidentification.EmptyInputException;
-import giis.retorch.orchestration.resourceidentification.RetorchClassifier;
-import giis.retorch.orchestration.unitary.testdata.classifier.SyntheticInvalidClassTests;
+import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.testdata.EmptyInputException;
+import giis.retorch.orchestration.testdata.RetorchClassifier;
+import giis.retorch.orchestration.testdata.SyntheticInvalidClassTests;
 import giis.retorch.orchestration.utils.ClassifierUtils;
-import giis.retorch.orchestration.unitary.testdata.classifier.synteticpackage.insidepackage.SyntheticClassOneTests;
+import giis.retorch.orchestration.testdata.synteticpackage.insidepackage.SyntheticClassOneTests;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -44,18 +44,18 @@ public class ClassifierTests {
     @Test
     public void testUnitArchIResValidPackage() throws EmptyInputException, IOException, ClassNotFoundException,
             URISyntaxException {
-        String packageName = "giis.retorch.orchestration.unitary.testdata.classifier.synteticpackage";
-        SystemEntity currentSystem = classifier.getSystemFromPackage(SYSTEM_NAME, packageName);
-        SystemEntity expectedSystem = utilsClassifier.generateSystemPackage();
+        String packageName = "giis.retorch.orchestration.testdata.synteticpackage";
+        System currentSystem = classifier.getSystemFromPackage(SYSTEM_NAME, packageName);
+        System expectedSystem = utilsClassifier.generateSystemPackage();
         assertEquals(expectedSystem.toString(), currentSystem.toString());
     }
 
     @Test
     public void testUnitArchIResValidClass() throws EmptyInputException, IOException {
         Class<?> testClass = SyntheticClassOneTests.class;
-        SystemEntity systemEntity = classifier.getSystemFromClass(SYSTEM_NAME, testClass);
-        SystemEntity expectedSystem = utilsClassifier.generateSystemFromClass();
-        assertEquals(expectedSystem.toString(), systemEntity.toString());
+        System system = classifier.getSystemFromClass(SYSTEM_NAME, testClass);
+        System expectedSystem = utilsClassifier.generateSystemFromClass();
+        assertEquals(expectedSystem.toString(), system.toString());
     }
 
     @Test(expected = EmptyInputException.class)
@@ -81,7 +81,7 @@ public class ClassifierTests {
         assertTrue(listMessages.contains("The ResourceID Attribute in method testTwoAttributesLoosingAccessMode is not present")); // Check that the resourceId omitted is detected
         // Validation of the attributes
         assertTrue(listMessages.contains("The AccessModeType in method validationAccessModeAttributes doesn't exist")); // AccessMode Invalid
-        assertTrue(listMessages.contains("The Concurrency in method validationAccessModeAttributes is not valid:  non shareable resource with  >1 concurrency")); // Concurrency Invalid sharing=true && <2 and sharing
-        assertTrue(listMessages.contains("The Concurrency in method validationAccessModeAttributes is not valid: shareable resource with  >2 concurrency")); // Concurrency Invalid
+        assertTrue(listMessages.contains("Invalid Concurrency in method validationAccessModeAttributes: non-shareable resource with concurrency > 1")); // Concurrency Invalid sharing=true && <2 and sharing
+        assertTrue(listMessages.contains("Invalid Concurrency in method validationAccessModeAttributes: shareable resource with concurrency < 2")); // Concurrency Invalid
     }
 }

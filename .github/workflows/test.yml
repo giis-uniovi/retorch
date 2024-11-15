@@ -1,0 +1,119 @@
+name: build-retorch
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**' #avoid duplicates: only run the PR, not the commit
+      - 'gh-pages' #GitHub pages do not trigger all tests
+    tags-ignore:
+      - 'v*' #avoid rerun existing commit on release
+  pull_request:
+    branches:
+      - 'main'
+jobs:
+  build-java:
+    runs-on: ubuntu-latest
+    # if: ${{ false }}  # disable for now
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '16'
+          cache: 'maven'
+
+      - name: Build RETORCH project
+        run: mvn compile -U --no-transfer-progress
+
+  test-retorch-orchestration:
+    runs-on: ubuntu-latest
+    # if: ${{ false }}  # disable for now
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '16'
+          cache: 'maven'
+
+      - name: Test RETORCH orchestration module
+        run: mvn test -Dtest=* -pl retorch-orchestration -U --no-transfer-progress
+
+      - name: Generate report checks
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          check_name: "test-result-orchestration"
+          report_paths: "**/surefire-reports/TEST-*.xml"
+          fail_on_failure: 'true'
+
+      - if: always()
+        name: Publish test report files
+        uses: actions/upload-artifact@v4
+        with:
+          name: "test-report-files-orchestration"
+          path: |
+            target/site
+            **/target/site/jacoco/jacoco.xml
+            **/target/surefire-reports
+
+  sonarqube:
+    needs: [ build-java, test-retorch-orchestration ]
+    #if: ${{ false }}  # disable for now
+    #This job fails when comming from a dependabot PR (can't read the sonarqube token for security reasons).
+    #Links to discussions and workaround at: https://github.com/giis-uniovi/samples-giis-template/issues/4
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4.1.8
+        if: always()
+        with:
+          name: "test-report-files-orchestration"
+      - name: Aggregated junit html report
+        if: always()
+        uses: javiertuya/junit-report-action@v1.2.0
+        with:
+          surefire-files: "**/target/surefire-reports/TEST-*.xml"
+          report-dir: target-ALL/site
+          report-title: "Test Report: ALL - Branch: ${{ github.ref_name }} - Run #${{ github.run_number }}"
+      - name: Index file to html reports
+        run: |
+          echo "<html><head><title>Latest Test Reports</title></head><body>"  > target-ALL/site/index.html
+          echo "<h2>Latest Test Reports - Branch: ${{ github.ref_name }} - Run #${{ github.run_number }}</h2>"  >> target-ALL/site/index.html
+          echo "<p><a href=\"junit-noframes/junit-noframes.html\">Single page reports</a></p>"                  >> target-ALL/site/index.html
+          echo "<p><a href=\"junit-frames/index.html\">Multiple page reports with frames</a></p>"               >> target-ALL/site/index.html
+          echo "</body></html>"                                              >> target-ALL/site/index.html
+      - if: always()
+        name: Publish test report files
+        uses: actions/upload-artifact@v4
+        with:
+          name: "test-report-ALL"
+          path: |
+            target-ALL/site
+            **/target/surefire-reports
+            **/target/*.html
+            **/target/*.log
+            **/reports/*.html
+            **/reports/*.log
+      - uses: javiertuya/sonarqube-action@v1.4.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          restore-artifact-name1: "test-report-files-orchestration"
+
+  publish-java-snapshot:
+    #if: ${{ false }}  # disable for now
+    #avoid publishing PRs and dependabot branches
+    if: ${{ github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/heads/dependabot/') && !startsWith(github.ref, 'refs/heads/dashgit/combined/') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: javiertuya/branch-snapshots-action@v1.2.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          java-version: '16'
+          mvn-deploy-args: '-P publish-github -DskipTests=true -Dmaven.test.failure.ignore=false -U --no-transfer-progress'
+          delete-old-snapshots: true
+          min-snapshots-to-keep: 2
+          always-keep-regex: "\\d*\\.\\d*\\.\\d*-main-SNAPSHOT$"

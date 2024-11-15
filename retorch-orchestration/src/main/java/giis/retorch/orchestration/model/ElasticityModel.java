@@ -2,13 +2,13 @@ package giis.retorch.orchestration.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ElasticityModelEntity {
+public class ElasticityModel {
 
     private String elasticityID;
     private int elasticity;
     private double elasticityCost;
 
-    public ElasticityModelEntity(String idElasticity) {this.elasticityID = idElasticity;}
+    public ElasticityModel(String idElasticity) {this.elasticityID = idElasticity;}
 
     /**
      * Elasticity model constructor
@@ -16,9 +16,9 @@ public class ElasticityModelEntity {
      * @param elasticityCost Double with the cost of one instance deployment
      * @param elasticityID   String with the ElasticityID
      */
-    public ElasticityModelEntity(@JsonProperty("elasticityID") String elasticityID,
-                                 @JsonProperty("elasticity") int elasticity,
-                                 @JsonProperty("elasticityCost") double elasticityCost) {
+    public ElasticityModel(@JsonProperty("elasticityID") String elasticityID,
+                           @JsonProperty("elasticity") int elasticity,
+                           @JsonProperty("elasticityCost") double elasticityCost) {
         this.elasticityID = elasticityID;
         this.elasticity = elasticity;
         this.elasticityCost = elasticityCost;
@@ -37,7 +37,7 @@ public class ElasticityModelEntity {
     @Override
     public boolean equals(Object obj) {
         if ((obj == null) ||(!obj.getClass().equals(this.getClass()))) return false;
-        ElasticityModelEntity currentType = ((ElasticityModelEntity) obj);
+        ElasticityModel currentType = ((ElasticityModel) obj);
         return currentType.getElasticity() == this.elasticity && currentType.getElasticityCost() == this.elasticityCost &&
                 currentType.getElasticityID().equals(this.getElasticityID());
     }

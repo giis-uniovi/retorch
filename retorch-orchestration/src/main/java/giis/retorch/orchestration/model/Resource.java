@@ -10,29 +10,29 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ResourceEntity {
+public class Resource {
 
     public enum type {PHYSICAL, LOGICAL, COMPUTATIONAL}
 
-    private final Logger logResourceClass=LoggerFactory.getLogger(ResourceEntity.class);
+    private final Logger logResourceClass = LoggerFactory.getLogger(Resource.class);
 
     Marker errorMarker = MarkerFactory.getMarker("Error");
     private String resourceID;
     private List<String> hierarchyParent;
     private List<String> replaceable;
-    private List<CapacityEntity> minimalCapacities;
-    private ElasticityModelEntity elasticityModel;
+    private List<Capacity> minimalCapacities;
+    private ElasticityModel elasticityModel;
     private type resourceType = type.LOGICAL;
     private String dockerImage;
 
-    public ResourceEntity(String resourceID) {
+    public Resource(String resourceID) {
         super();
         this.resourceID = resourceID;
         this.replaceable = new LinkedList<>();
         this.hierarchyParent = new LinkedList<>();
     }
 
-    public ResourceEntity() {}
+    public Resource() {}
 
     /**
      * Resource constructor
@@ -41,16 +41,16 @@ public class ResourceEntity {
      * @param replaceable     List with the ids of those resources that could replace the resource
      * @param resourceType    type of the resource (LOGICAL, PHYSICAL or COMPUTATIONAL)
      * @param hierarchyParent String with the  resource hierarchical parent
-     * @param minimalCapacities List with the minimal {@link CapacityEntity}  required by the resource
+     * @param minimalCapacities List with the minimal {@link Capacity}  required by the resource
      * @param dockerImage String with the Resource docker image name
      */
-    public ResourceEntity(@JsonProperty("resourceId") String resourceID,
-                          @JsonProperty("hierarchyParent") List<String> hierarchyParent,
-                          @JsonProperty("replaceable") List<String> replaceable,
-                          @JsonProperty("elasticityModel") ElasticityModelEntity elasticityModel,
-                          @JsonProperty("resourceType") type resourceType,
-                          @JsonProperty("minimalCapacities")List<CapacityEntity> minimalCapacities,
-                          @JsonProperty("dockerImage") String dockerImage) {
+    public Resource(@JsonProperty("resourceId") String resourceID,
+                    @JsonProperty("hierarchyParent") List<String> hierarchyParent,
+                    @JsonProperty("replaceable") List<String> replaceable,
+                    @JsonProperty("elasticityModel") ElasticityModel elasticityModel,
+                    @JsonProperty("resourceType") type resourceType,
+                    @JsonProperty("minimalCapacities")List<Capacity> minimalCapacities,
+                    @JsonProperty("dockerImage") String dockerImage) {
         this.resourceID = resourceID;
         this.hierarchyParent = hierarchyParent;
         this.replaceable = replaceable;
@@ -60,17 +60,17 @@ public class ResourceEntity {
         this.dockerImage=dockerImage;
     }
 
-    public ResourceEntity(ResourceEntity resourceEntity) {
-        this.dockerImage = resourceEntity.dockerImage;
-        this.elasticityModel = resourceEntity.getElasticityModel();
-        this.errorMarker = resourceEntity.errorMarker;
+    public Resource(Resource resource) {
+        this.dockerImage = resource.dockerImage;
+        this.elasticityModel = resource.getElasticityModel();
+        this.errorMarker = resource.errorMarker;
         this.hierarchyParent = new LinkedList<>();
-        this.hierarchyParent.addAll(resourceEntity.getHierarchyParent());
-        this.minimalCapacities = resourceEntity.getMinimalCapacities();
+        this.hierarchyParent.addAll(resource.getHierarchyParent());
+        this.minimalCapacities = resource.getMinimalCapacities();
         this.replaceable = new LinkedList<>();
-        this.replaceable.addAll(resourceEntity.getReplaceable());
-        this.resourceID = resourceEntity.getResourceID();
-        this.resourceType = resourceEntity.getResourceType();
+        this.replaceable.addAll(resource.getReplaceable());
+        this.resourceID = resource.getResourceID();
+        this.resourceType = resource.getResourceType();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class ResourceEntity {
     public boolean equals(Object obj) {
         String message;
         if (obj == null || !obj.getClass().equals(this.getClass())) return false;
-        ResourceEntity resClass = (ResourceEntity) obj;
+        Resource resClass = (Resource) obj;
         if (!this.elasticityModel.equals(resClass.elasticityModel)) {
             if (this.elasticityModel.getElasticityID().equals(resClass.elasticityModel.getElasticityID())){
                 message=String.format("The elasticityModel of the resources with the same identifier " + "%s differ", resClass.getResourceID());
@@ -102,9 +102,9 @@ public class ResourceEntity {
     }
 
     public String getDockerImage() {return dockerImage;}
-    public ElasticityModelEntity getElasticityModel() {return elasticityModel;}
+    public ElasticityModel getElasticityModel() {return elasticityModel;}
     public List<String> getHierarchyParent() {return hierarchyParent;}
-    public List<CapacityEntity> getMinimalCapacities() {return minimalCapacities;}
+    public List<Capacity> getMinimalCapacities() {return minimalCapacities;}
     public String getResourceID() {return resourceID;}
     public type getResourceType() {return resourceType;}
     public List<String> getReplaceable() {
@@ -113,10 +113,10 @@ public class ResourceEntity {
     }
 
     public void setDockerImage(String dockerImage) {this.dockerImage = dockerImage;}
-    public void setElasticityModel(ElasticityModelEntity elasticityModel) {this.elasticityModel = elasticityModel;}
+    public void setElasticityModel(ElasticityModel elasticityModel) {this.elasticityModel = elasticityModel;}
     public void setHierarchyParent(List<String> hierarchyParent) {this.hierarchyParent = hierarchyParent;}
-    public void setMinimalCapacities(List<CapacityEntity> minimalCapacities) {
-        minimalCapacities.sort(Comparator.comparing(CapacityEntity::getName));
+    public void setMinimalCapacities(List<Capacity> minimalCapacities) {
+        minimalCapacities.sort(Comparator.comparing(Capacity::getName));
         this.minimalCapacities = minimalCapacities;
     }
     public void setReplaceable(List<String> replaceable) {this.replaceable = replaceable;}

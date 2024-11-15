@@ -1,11 +1,11 @@
-package giis.retorch.orchestration.resourceidentification;
+package giis.retorch.orchestration.testdata;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import giis.retorch.orchestration.model.ElasticityModelEntity;
-import giis.retorch.orchestration.model.ResourceEntity;
+import giis.retorch.orchestration.model.ElasticityModel;
+import giis.retorch.orchestration.model.Resource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,19 +13,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class RetorchClassifierUtils {
+public class ResourceSerializer {
 
-    private final Logger logSerializer = LoggerFactory.getLogger(RetorchClassifierUtils.class);
+    private final Logger logSerializer = LoggerFactory.getLogger(ResourceSerializer.class);
     private static final String FOLDER_RESOURCES = "retorchfiles/configurations/";//Base path of the resource files
 
-    final HashMap<String, ResourceEntity> resourcesToSerialize;//Map with the dictionary of resources to serialize
+    final HashMap<String, Resource> resourcesToSerialize;//Map with the dictionary of resources to serialize
     final ObjectMapper mapper;
 
     /**
      * RETORCH Serializer provides utils to deserialize the configuration files, and create them from scratch with the
      * RETORCH entities that they want to serialize in these files.
      */
-    public RetorchClassifierUtils() {
+    public ResourceSerializer() {
         resourcesToSerialize = new HashMap<>();
         mapper = new ObjectMapper();
     }
@@ -43,10 +43,10 @@ public class RetorchClassifierUtils {
      */
     public void addResourceToSerialize(String resourceId, double elasticityCost, int elasticity, String resourceType,
                                        String hierarchyParent) {
-        ElasticityModelEntity elasModel = new ElasticityModelEntity("elasModel" + resourceId);
+        ElasticityModel elasModel = new ElasticityModel("elasModel" + resourceId);
         elasModel.setElasticityCost(elasticityCost);
         elasModel.setElasticity(elasticity);
-        resourcesToSerialize.put(resourceId, new ResourceEntity(resourceId,
+        resourcesToSerialize.put(resourceId, new Resource(resourceId,
                 new LinkedList<>(Collections.singletonList(hierarchyParent)), new LinkedList<>(), elasModel,
                 getResourceTypeFromAnnotation(resourceType), new LinkedList<>(), "someimage"));
     }
@@ -56,11 +56,11 @@ public class RetorchClassifierUtils {
      *
      * @param type String with the type i.e. LOGICAL,COMPUTATIONAL or PHYSICAL
      */
-    private ResourceEntity.type getResourceTypeFromAnnotation(String type) {
+    private Resource.type getResourceTypeFromAnnotation(String type) {
         try {
-            return ResourceEntity.type.valueOf(type);
+            return Resource.type.valueOf(type);
         } catch (IllegalArgumentException e) {
-            return ResourceEntity.type.LOGICAL; // Default to LOGICAL if type is not recognized
+            return Resource.type.LOGICAL; // Default to LOGICAL if type is not recognized
         }
     }
 
@@ -73,10 +73,10 @@ public class RetorchClassifierUtils {
      * @param resourceId     String with the resource ID
      */
     public void addResourceToSerialize(String resourceId, double elasticityCost, int elasticity, String resourceType) {
-        ElasticityModelEntity elasModel = new ElasticityModelEntity("elasModel" + resourceId);
+        ElasticityModel elasModel = new ElasticityModel("elasModel" + resourceId);
         elasModel.setElasticityCost(elasticityCost);
         elasModel.setElasticity(elasticity);
-        resourcesToSerialize.put(resourceId, new ResourceEntity(resourceId, new LinkedList<>(), new LinkedList<>(),
+        resourcesToSerialize.put(resourceId, new Resource(resourceId, new LinkedList<>(), new LinkedList<>(),
                 elasModel, getResourceTypeFromAnnotation(resourceType), new LinkedList<>(), "someImage"));
     }
 
@@ -129,7 +129,7 @@ public class RetorchClassifierUtils {
      * @throws IOException if an I/O error occurs reading from the file or a malformed or unmappable byte sequence is
      *                     read
      */
-    public Map<String, ResourceEntity> deserializeResources(String name) throws IOException {
+    public Map<String, Resource> deserializeResources(String name) throws IOException {
         return deserialize(FOLDER_RESOURCES + name + "SystemResources.json", new TypeReference<>() {
         });
     }

@@ -1,4 +1,4 @@
-package giis.retorch.orchestration.resourceidentification;
+package giis.retorch.orchestration.testdata;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
