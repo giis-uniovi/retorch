@@ -36,7 +36,7 @@ jobs:
           cache: 'maven'
 
       - name: Test RETORCH orchestration module
-        run: mvn test -Dtest=* -pl retorch-orchestration -U --no-transfer-progress
+        run: mvn test -pl retorch-orchestration -am -U --no-transfer-progress
 
       - name: Generate report checks
         if: always()
