@@ -25,6 +25,7 @@ jobs:
         run: mvn compile -U --no-transfer-progress
 
   test-retorch-orchestration:
+    needs: [build-java]
     runs-on: ubuntu-latest
     # if: ${{ false }}  # disable for now
     steps:
