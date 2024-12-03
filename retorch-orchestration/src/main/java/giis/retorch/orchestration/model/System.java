@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * The {@code System} class represents the whole RETORCH System composed by the Lists of {@code Resources} and {@code TestCase}
+ */
 public class System {
 
     private static final Logger logSystemClass = LoggerFactory.getLogger(System.class);

@@ -7,9 +7,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * The {@code TJobClass} class represents a TJob with a name, stage, and a set of {@code  ResourceClass}.
+ * The {@code TJob} class represents a TJob with a name, stage, and a set of {@code  Resource}.
  * When the TJob is created, it calculates the total amount of {@code Capacity} that is used by the list of
- * {@code ResourceClass} required
+ * {@code Resource} required
  */
 public class TJob {
 

@@ -17,6 +17,9 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
+/**
+ * {@code TJobsEntityTests} class provides the unitary tests of the different {@code TJob} methods
+ */
 public class TJobsEntityTests {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());

@@ -3,7 +3,7 @@ package giis.retorch.orchestration.model;
 import java.util.List;
 
 /**
- * The {@code ResourceInstance} class represents a resource with a name and a list of {@code Capacity} that requires
+ * The {@code ResourceInstance} class represents a Resource with a name and a list of {@code Capacity} that requires
  * for its instantiation.This class is used during the profile generation to calculate the overall {@code Capacity} that
  * are used-required.
  * It provides methods to get and set the name and capacities, and overrides the {@code equals}, {@code hashCode},

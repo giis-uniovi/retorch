@@ -1,5 +1,10 @@
 package giis.retorch.orchestration.model;
 
+/**
+ * The {@code AccessMode} class represents the Access Mode performed by a {@code TestCase} on a {@code Resource}.
+ * It defines the type of access, the max number of concurrent test cases that can access the {@code Resource},
+ * and whether the {@code Resource} can be shared.
+ */
 public class AccessMode {
 
     private AccessModeTypes type;

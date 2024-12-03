@@ -3,6 +3,10 @@ package giis.retorch.orchestration.model;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * The {@code TestCase} class represents a test case that compose the End-to-End test suite. It has a name, its class
+ * and the list of {@code AccessMode} performed over the different {@code Resource}
+ */
 public class TestCase {
 
     private final String name;

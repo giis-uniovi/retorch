@@ -2,6 +2,10 @@ package giis.retorch.orchestration.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * The {@code ElasticityModel} class represents the Elasticity Model of one {@code Resource}. It defines the Elasticity
+ * Model attributes: the id, the upper bound of {@code Resource} that we can instantiate and its individual cost.
+ */
 public class ElasticityModel {
 
     private String elasticityID;

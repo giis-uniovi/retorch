@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This exception is thrown when the classifier receives an input that is empty or its invalid i.e: null, no exist
- * directories...
+ * The {@code EmptyInputException}  is thrown when the {@code RetorchClassifier} receives an input that is empty
+ * or its invalid i.e: null, no exist directories...
  */
 public class EmptyInputException extends Exception {
 

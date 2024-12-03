@@ -13,6 +13,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * The {@code ResourceSerializer} class provides utilities for managing Resource configurations
+ * in the RETORCH orchestration Tool. Supports the serialization of Resources into JSON files and
+ * its deserialization back into Java objects, enabling the retrieval of Resources attributes from Resources
+ * JSON configuration files.
+ */
 public class ResourceSerializer {
 
     private final Logger logSerializer = LoggerFactory.getLogger(ResourceSerializer.class);

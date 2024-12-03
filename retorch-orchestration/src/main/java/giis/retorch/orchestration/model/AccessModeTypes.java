@@ -1,8 +1,8 @@
 package giis.retorch.orchestration.model;
 
 /**
- * This class is used as AccessMode  parser for given a string representation of a RETORCH access mode (i.e:
- * READONLY,READWRITE...) convert it into the proper enumeration. Also provides
+ * The {@code AccessModeTypes} class is used as AccessMode parser for given a string representation of a RETORCH access mode (i.e:
+ * READONLY,READWRITE...) convert it into the proper enumeration.
  */
 public class AccessModeTypes {
 

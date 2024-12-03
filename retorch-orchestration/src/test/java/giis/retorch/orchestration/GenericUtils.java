@@ -4,7 +4,10 @@ import giis.retorch.orchestration.model.*;
 
 import java.util.LinkedList;
 import java.util.List;
-
+/**
+ * {@code GenericUtils} class provides a series of methods that creates different types of Resources for
+ * being used during the integration and unitary testing.
+ */
 public class GenericUtils {
 
     protected static final String READONLY = "READONLY";

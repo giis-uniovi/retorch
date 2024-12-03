@@ -17,6 +17,11 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The {@code RetorchClassifier} class provides utilities for performing the Resource Identification phase. Provides
+ * methods to retrieve the test cases from a package, reads the {@code AccessMode}, deserializes the Resource file, and
+ * starts creating the different {@code Resources} and {@code TestCases} that compose the {@code System}
+  */
 public class RetorchClassifier {
 
     private static final Logger log = LoggerFactory.getLogger(RetorchClassifier.class);

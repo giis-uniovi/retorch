@@ -16,6 +16,7 @@ Additional components will be added in future releases.
 - [RETORCH: Resource-aware End-to-End Test Orchestration:]()
     - [Quick Start](#quick-start)
     - [RETORCH Annotations](#retorch-annotations)
+    - [RETORCH Orchestration](#retorch-orchestration)
     - [Contributing](#contributing)
     - [Contact](#contact)
     - [Citing this work](#citing-this-work)
@@ -71,6 +72,10 @@ void forumLoadEntriesTest(String usermail,String password,String role){
         this.slowLogin(user,usermail,password);
         }
 ```
+## RETORCH Orchestration
+The RETORCH framework provides a tool that generates an Execution Plan, along with the required pipelining and script 
+files for execution in a CI environment. The generation of scripts and pipelining code is based on the Access Modes 
+annotated within the test cases and the Resource information specified in `/retorchfiles/[SUT_NAME]SystemResources.json`.
 
 ## Contributing
 
@@ -91,7 +96,6 @@ RETORCH E2E Test Orchestration framework:
   *Software Quality Journal*, vol. 28, no. 3, 2020.
   https://doi.org/10.1007/s11219-020-09505-2 - [Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) -
   [Download citation](https://citation-needed.springer.com/v2/references/10.1007/s11219-020-09505-2?format=refman&flavour=citation)
-
 ## Acknowledgments
 
 This work has been developed under the TestBUS (PID2019-105455GB-C32) project supported

@@ -10,6 +10,11 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * The {@code Resource} class represents a Resource required by one or more {@code TestCases}. Provides the different
+ * Resource attributes: identifier, hierarchy Parent, {@code Resource} that can replace it, the minimal {@code Capacity}
+ * required,the {@code ElasticityModel}, the type and its docker image.
+ */
 public class Resource {
 
     public enum type {PHYSICAL, LOGICAL, COMPUTATIONAL}

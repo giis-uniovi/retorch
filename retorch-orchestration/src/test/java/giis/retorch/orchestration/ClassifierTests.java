@@ -23,6 +23,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
+/**
+ * {@code ClassifierTests} class provides the unitary tests of the different {@code RetorchClassifier} methods
+ * */
 public class ClassifierTests {
 
     private static final String SYSTEM_NAME = "ClassifierUnitTests";

@@ -10,6 +10,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * {@code ClassifierUtils} class extends {@code GenericUtils}  providing a series of utils that generates
+ * a {@code System} with its Lists of {@code TestCase} and {@code Resource} for being used
+ * in the {@code ClassifierTests} class
+ */
 public class ClassifierUtils extends GenericUtils {
 
     public List<TestCase> getAllTestCases() {
