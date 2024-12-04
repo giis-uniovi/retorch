@@ -80,7 +80,7 @@ void forumLoadEntriesTest(String usermail,String password,String role){
 ## RETORCH Orchestration
 The RETORCH framework provides a tool that generates an Execution Plan, along with the required pipelining and script 
 files for execution in a CI environment. The generation of scripts and pipelining code is based on the Access Modes 
-annotated within the test cases and the Resource information specified in `/retorchfiles/[SUT_NAME]SystemResources.json`.
+annotated within the test cases and the Resource information specified in `[SUT_NAME]SystemResources.json`.
 
 The RETORCH orchestration tool requires 4 inputs:
 - The annotated E2E test cases with the [RETORCH access modes](#retorch-annotations).
@@ -94,8 +94,8 @@ suite into a Continuous Integration system.
 ### Prepare the E2E Test suite
 Execute the RETORCH Orchestration tool and generate the script and pipelining code requires to perform a series of configurations
 into the test suite. The first step is to create several folders to store the configurations and place the `docker-compose.yml`
-in the project repository.
-The resulting tree directory might look like as:
+in the project root.
+The resulting directory tree might look like as:
 ```
 .
 ├── src
@@ -162,15 +162,15 @@ The following snippet shows an example of two Resources declared in the JSON fil
 
 #### Create the retorchCI.properties file
 The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` containing several parameters 
-related to the SUT and the Continuous Integration Infrastructure has the following parameters:
+related to the SUT and the Continuous Integration Infrastructure, these parameters are the following:
 - `agentCIName`: the specific Jenkins agent used to execute the test suite.
-- `sut-wait-html`: State in the frontend (html displayed) when the SUT is ready to execute the test SUITE.
-- `sut-location`: Location of the docker-compose file used to deploy the SUT.
+- `sut-wait-html`: state in the frontend (html displayed) when the SUT is ready to execute the test SUITE.
+- `sut-location`: location of the `docker-compose.yml` file used to deploy the SUT.
 - `docker-frontend-name`: ID of the container used as frontend .
-- `docker-frontend-port`: PORT on which the frontend is available.
+- `docker-frontend-port`: PORT on which the frontend container is available.
 - `external-binded-port`: EXTERNAL PORT where the frontend is made available (if its available).
 - `external-frontend-url`: EXTERNAL URI where the frontend is made available.
-- `testsBasePath`: Path to the java project.
+- `testsBasePath`: Path to the Java project root.
 
 The following snippet provides an example of how this file looks like:
 
@@ -186,7 +186,7 @@ The following snippet provides an example of how this file looks like:
 ```
 
 #### Preparing the docker-compose.yml file
-The RETORCH tool also requires to parametrize the docker-compose used to deploy the application by means including the
+The RETORCH tool also requires to parametrize the `docker-compose.yml` used to deploy the application by means including the
 necessary environment variables in the containers names and URIs, as well as the placeholders of the images specified above.
 The following snippet present how it was done in one of the services of the [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching):
 
@@ -241,7 +241,7 @@ the environment declaration of each TJob. To include it, the tester must create 
 Examples of the three snippets files can be consulted in [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching)
 and [eShopOnContainers](https://github.com/giis-uniovi/retorch-st-eShopContainers)
 
-Once created the different properties and configuration files, the tree directory might look like:
+Once created the different properties and configuration files, the directory tree might look like:
 
 ```
 .
@@ -262,7 +262,7 @@ Once created the different properties and configuration files, the tree director
 
 ### RETORCH Orchestration Tool outputs
 The tool provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
-the infrastructure(`/retorchfiles/tjoblifecycles`) and the different environment files of each TJob (`/retorchfiles/envfiles`) :
+the infrastructure(`/retorchfiles/coilifecycles`) and the different environment files of each TJob (`/retorchfiles/envfiles`) :
 - `Jenkinsfile`: located in the root of the project, contains the pipelining code with the different stages in sequential-parallel 
 that perform the different TJob lifecycle stages.
 - `/retorchfiles/tjoblifecycles` and `/retorchfiles/coilifecycles` contains the set up, execution, and tear down scripts for the TJobs and infrastructure
