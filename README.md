@@ -8,7 +8,8 @@ This repository contains a series of components of the RETORCH End-to-End (E2E) 
 goal is to optimize E2E test execution by reducing both the execution time and the number of unnecessary resource
 redeployment's.
 
-NOTE: In this initial version, only the annotations to identify the resources and access modes have been included.
+NOTE: The repository is a work in progress, the initial version only made available the annotations, and currently we're 
+migrating the orchestration module.
 Additional components will be added in future releases.
 
 ## Contents
@@ -33,8 +34,8 @@ Additional components will be added in future releases.
 
 ## RETORCH Annotations
 
-The RETORCH framework provides a set of custom annotations to define and manage resources used in end-to-end testing. These
-annotations allow testers to group, schedule, and characterize resources. To execute test cases using RETORCH,
+The RETORCH framework provides a set of custom annotations to define and manage Resources used in end-to-end testing. These
+annotations allow testers to group, schedule, and characterize Resources. To execute test cases using RETORCH,
 each test case must be annotated with at least one access mode and resource.
 
 The tester needs to specify the access mode using the following attributes:
@@ -51,13 +52,13 @@ The tester needs to specify the access mode using the following attributes:
 Each access mode annotation corresponds to a specific resource, which must be annotated with the following attributes:
 
 - `resID`: A unique identifier for the resource.
-- `replaceable`: A list of resources that can replace the current one.
+- `replaceable`: A list of Resources that can replace the current one.
 
 ```java
 @Resource(resID = "LoginService", replaceable = {})
 ```
 
-The following code snippets illustrate a test case annotated with multiple resources and access modes:
+The following code snippets illustrate a test case annotated with multiple Resources and access modes:
 
 ```java
 @Resource(resID = "LoginService", replaceable = {})
@@ -92,7 +93,7 @@ suite into a Continuous Integration system.
 Execute the RETORCH Orchestration tool and generate the script and pipelining code requires to perform a series of configurations
 into the test suite. The first step is to create several folders to store the configurations and place the `docker-compose.yml`
 in the project repository.
-The resulting directory tree should look like as:
+The resulting tree directory might look like as:
 ```
 .
 ├── src
@@ -113,7 +114,7 @@ The following subsections explain how to create each configuration file and how 
 
 #### Create the Resource.json file
 The Resource file must be placed in the `retorchfiles/configurations/` and named with the system or test suite name, followed
-by `SystemResources.json`. This file contains a map with a series of resources, using their unique ResourceID as a key. For each
+by `SystemResources.json`. This file contains a map with a series of Resources, using their unique ResourceID as a key. For each
 Resource the tester needs to specify the following attributes:
 - `resourceID`: A unique identifier for the Resource.
 - `replaceable`: A list of Resources that can replace the current one.
