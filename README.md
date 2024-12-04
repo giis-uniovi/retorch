@@ -83,13 +83,13 @@ The RETORCH orchestration tool requires 4 inputs:
 - A properties file with the Environment configuration.
 - A custom `docker-compose.yml` file.
 
-Give this inputs, the tool generates as output the necessary scripting code and the `Jenkinsfile` to execute the E2E test
+Given these inputs, the tool generates as output the necessary scripting code and the `Jenkinsfile` to execute the E2E test
 suite into a Continuous Integration system.
 
 ### Prepare the E2E Test suite
-To execute the RETORCH Orchestration tool and generate the script and pipelining code, requires to perform series of configurations
-into the test suite. The first step is create several folders to store the configurations and place the docker-compose.yml
-in the root of the repository.
+Execute the RETORCH Orchestration tool and generate the script and pipelining code requires to perform a series of configurations
+into the test suite. The first step is to create several folders to store the configurations and place the `docker-compose.yml`
+in the project repository.
 The resulting directory tree should look like as:
 ```
 .
@@ -101,30 +101,30 @@ The resulting directory tree should look like as:
 
 ```
 - The `retorchfiles/` directory would contain all the configuration files and scripting snippets that would be used to generate the
-pipelining code as well as the scripts to set-up, deploy and tear-down the different Resources and TJob. Contains two subdirectories:
-  - `configurations/`: contains the Resource and CI configuration files
+pipelining code and the scripts to set up, deploy, and tear down the different Resources and TJob. Contains two subdirectories:
+  - `configurations/`: stores the Resource and CI configuration files.
   - `customscriptscode/`: stores the different script snippets for the tear-down, set-up and environment.
 - The `docker-compose.yml` in the root of the directory.
-- The different project directories-files.
+- The different project directories and files.
 
 The following subsections explain how to create each configuration file and how to prepare the docker-compose.yml file.
 
 #### Create the Resource.json file
 The Resource file must be placed in the `retorchfiles/configurations/` and named with the system or test suite name, followed
-by `SystemResources.json`. This file contains a Map with a series of Resources, using as key their unique ResourceID. For each
-Resource the tester needs specify the following attributes:
+by `SystemResources.json`. This file contains a map with a series of resources, using their unique ResourceID as a key. For each
+Resource the tester needs to specify the following attributes:
 - `resourceID`: A unique identifier for the Resource.
 - `replaceable`: A list of Resources that can replace the current one.
 - `hierarchyParent`: A resourceID of the hierarchical parent of the Resource.
 - `elasticityModel`: The elasticity model of the Resource, is composed by the following attributes:
   - `elasticityID`: A unique identifier for the elasticity model.
-  - `elasticity`: Integer with the available Resources
-  - `elasticityCost`: Instantiation cost of each Resource
-- `resourceType`:  String with the type of the Resource(e.g. LOGICAL, PHYSICAL or COMPUTATIONAL)
-- `minimalCapacities`: List with the Minimal Capacities required by the Resource, each Capacity is composed by:
-  - `name`: String between "memory","processor" and "storage"
-  - `quantity`: float with the amount fo Capacity Required:
-- `dockerImage`: String with the concatenation of the placeholder name in the docker-compose, "[IMG:]" and the image name
+  - `elasticity`: Integer with the available Resources.
+  - `elasticityCost`: Instantiation cost of each Resource.
+- `resourceType`:  String with the type of the Resource(e.g. LOGICAL, PHYSICAL or COMPUTATIONAL).
+- `minimalCapacities`: List with the Minimal Capacities required by the Resource; each Capacity is composed by:
+  - `name`: String between "memory", "processor" and "storage".
+  - `quantity`: float with the amount of Capacity Required.
+- `dockerImage`: String with the concatenation of the placeholder name in the docker-compose, "[IMG:]" and the image name.
 
 The following snippet shows an example of two Resources declared in the JSON file:
 
@@ -156,10 +156,10 @@ The following snippet shows an example of two Resources declared in the JSON fil
 ```
 
 #### Create the retorchCI.properties file
-The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` contain several parameters 
-related to the SUT and the Continuous Integration Infrastructure, has the following parameters:
-- `agentCIName`: Specific Jenkins agent used to execute the test suite.
-- `sut-wait-html`: State in the frontend (html displayed) when the SUT is ready for execute the test SUITE.
+The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` containing several parameters 
+related to the SUT and the Continuous Integration Infrastructure has the following parameters:
+- `agentCIName`: the specific Jenkins agent used to execute the test suite.
+- `sut-wait-html`: State in the frontend (html displayed) when the SUT is ready to execute the test SUITE.
 - `sut-location`: Location of the docker-compose file used to deploy the SUT.
 - `docker-frontend-name`: ID of the container used as frontend .
 - `docker-frontend-port`: PORT on which the frontend is available.
@@ -181,9 +181,9 @@ The following snippet provides an example of how this file looks like:
 ```
 
 #### Preparing the docker-compose.yml file
-The RETORCH tool also requires to parametrize the docker-compose used to deploy the application, by means include the
-necessary environment variables in the containers names and URIs, as well as the placeholders of the images above specified.
-The next code present how was done in one of the services of the [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching):
+The RETORCH tool also requires to parametrize the docker-compose used to deploy the application by means including the
+necessary environment variables in the containers names and URIs, as well as the placeholders of the images specified above.
+The following snippet present how it was done in one of the services of the [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching):
 
 ```diff
 services:
@@ -227,7 +227,7 @@ services:
 ```
 
 #### (Optional) Specify script snippets to include in the set-up tear-down and environment
-The RETORCH orchestration tool allows to specify scripting code/commands to be included in the generated set-up, tear-down and 
+The RETORCH orchestration tool allows to specify scripting code/commands to be included in the generated set-up, tear-down, and 
 the environment declaration of each TJob. To include it, the tester must create the following files in `retorch\customscriptscode` 
 - `custom-tjob-setup`: Contains the custom set-up code (e.g. deploy the SUT) or custom logging systems.
 - `custom-tjob-teardown`: Contains the custom tear-down code (e.g. tear-down the SUT)
@@ -256,11 +256,11 @@ Once created the different properties and configuration files, the tree director
 [TO-DO] Pending to decide-implement the final version
 
 ### RETORCH Orchestration Tool outputs
-The tool provides four different outputs, the pipelining code, the necessary scripts to set-up, tear-down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
+The tool provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
 the infrastructure(`/retorchfiles/tjoblifecycles`) and the different environment files of each TJob (`/retorchfiles/envfiles`) :
 - `Jenkinsfile`: located in the root of the project, contains the pipelining code with the different stages in sequential-parallel 
-that perform the set-up, execute and tear-down the TJobs.
-- `/retorchfiles/tjoblifecycles` and `/retorchfiles/coilifecycles` contains the set-up, execution and tear-down scripts for the TJobs and infrastructure
+that perform the different TJob lifecycle stages.
+- `/retorchfiles/tjoblifecycles` and `/retorchfiles/coilifecycles` contains the set up, execution, and tear down scripts for the TJobs and infrastructure
 - `/retorchfiles/envfiles`: contains the generated custom environment of each TJob.
 
 
