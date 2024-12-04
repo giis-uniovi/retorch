@@ -5,12 +5,14 @@
 # RETORCH: Resource-aware End-to-End Test Orchestration
 
 This repository contains a series of components of the RETORCH End-to-End (E2E) test orchestration framework. It's primary
-goal is to optimize E2E test execution by reducing both the execution time and the number of unnecessary resource
+goal is to optimize E2E test execution by reducing both the execution time and the number of unnecessary Resource[^1]
 redeployment's.
 
 NOTE: The repository is a work in progress, the initial version only made available the annotations, and currently we're 
 migrating the orchestration module.
 Additional components will be added in future releases.
+
+[^1]: Henceforth, we will use the term "Resources" (capitalized) when referring to the ones required by the E2E test suite.
 
 ## Contents
 
