@@ -27,6 +27,8 @@ Additional components will be added in future releases.
 - Add the dependency 
   [`io.github.giis-uniovi:retorch-annotations`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations) to the pom.xml of your SUT.
 - Add the annotations to the test classes as indicated below
+- Configure the E2E test suite as indicated below
+- Execute the orchestration tool and generate the pipelining-scripting code
 - [TO-DO]
 
 ## RETORCH Annotations
@@ -283,6 +285,15 @@ RETORCH E2E Test Orchestration framework:
   *Software Quality Journal*, vol. 28, no. 3, 2020.
   https://doi.org/10.1007/s11219-020-09505-2 - [Full Article available](https://link.springer.com/article/10.1007/s11219-020-09505-2) - [Authors version](https://digibuo.uniovi.es/dspace/bitstream/handle/10651/55405/RETORCHSQJExtension_BUO.pdf;jsessionid=0E661594C8732B8D2CA53636A31E4FD5?sequence=1) -
   [Download citation](https://citation-needed.springer.com/v2/references/10.1007/s11219-020-09505-2?format=refman&flavour=citation)
+
+RETORCH*: A Cost and Resource aware Model for E2E Testing in the Cloud:
+
+- Cristian Augusto, Jesús Morán, Antonia Bertolino, Claudio de la Riva, and Javier Tuya,
+  “RETORCH*: A Cost and Resource aware Model for E2E Testing in the Cloud”,
+  *Journal of Systems and Software*, vol. 221 , pages. 112237, 2025.
+  https://doi.org/10.1016/j.jss.2024.112237 - [Full Paper available](https://www.sciencedirect.com/science/article/pii/S0164121224002814?via%3Dihub) - [Authors version](https://hdl.handle.net/10651/75794) -
+  [Download citation](https://www.sciencedirect.com/science/article/pii/S0164121224002814?via%3Dihub#:~:text=Export%20citation%20to%20text)
+
 ## Acknowledgments
 
 This work has been developed under the TestBUS (PID2019-105455GB-C32) project supported
