@@ -9,7 +9,7 @@ goal is to optimize E2E test execution by reducing both the execution time and t
 redeployment's.
 
 NOTE: The repository is a work in progress, the initial version only made available the annotations, and currently we're 
-migrating the orchestration module.
+migrating the orchestration generator module.
 Additional components will be added in future releases.
 
 [^1]: Henceforth, we will use the term "Resources" (capitalized) when referring to the ones required by the E2E test suite.
@@ -31,7 +31,7 @@ Additional components will be added in future releases.
   [`io.github.giis-uniovi:retorch-annotations`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations) to the pom.xml of your SUT.
 - Add the annotations to the test classes as indicated below
 - Configure the E2E test suite as indicated below
-- Execute the orchestration tool and generate the pipelining-scripting code
+- Execute the orchestration generator and generate the pipelining-scripting code
 - [TO-DO]
 
 ## RETORCH Annotations
@@ -78,22 +78,21 @@ void forumLoadEntriesTest(String usermail,String password,String role){
         }
 ```
 ## RETORCH Orchestration
-The RETORCH framework provides a tool that generates an Execution Plan, along with the required pipelining and script 
+The RETORCH framework provides a generator that creates the Execution Plan, along with the required pipelining and script 
 files for execution in a CI environment. The generation of scripts and pipelining code is based on the Access Modes 
 annotated within the test cases and the Resource information specified in `[SUT_NAME]SystemResources.json`.
 
-The RETORCH orchestration tool requires 4 inputs:
+The RETORCH orchestration generator requires 4 inputs:
 - The annotated E2E test cases with the [RETORCH access modes](#retorch-annotations).
 - A file with the Resources in JSON format.
 - A properties file with the Environment configuration.
 - A custom `docker-compose.yml` file.
 
-Given these inputs, the tool generates as output the necessary scripting code and the `Jenkinsfile` to execute the E2E test
+Given these inputs, the generator gives as output the necessary scripting code and the `Jenkinsfile` to execute the E2E test
 suite into a Continuous Integration system.
 
 ### Prepare the E2E Test suite
-Execute the RETORCH Orchestration tool and generate the script and pipelining code requires to perform a series of configurations
-into the test suite. The first step is to create several folders to store the configurations and place the `docker-compose.yml`
+The first step is to create several folders to store the configurations and place the `docker-compose.yml`
 in the project root.
 The resulting directory tree might look like as:
 ```
@@ -108,11 +107,11 @@ The resulting directory tree might look like as:
 - The `retorchfiles/` directory would contain all the configuration files and scripting snippets that would be used to generate the
 pipelining code and the scripts to set up, deploy, and tear down the different Resources and TJob. Contains two subdirectories:
   - `configurations/`: stores the Resource and CI configuration files.
-  - `customscriptscode/`: stores the different script snippets for the tear-down, set-up and environment.
-- The `docker-compose.yml` in the root of the directory.
+  - `customscriptscode/`: stores the different script snippets for the tear down, set up and environment.
+- The `docker-compose.yml` in the root of the project.
 - The different project directories and files.
 
-The following subsections explain how to create each configuration file and how to prepare the docker-compose.yml file.
+The following subsections explain how to create each configuration file and how to prepare the `docker-compose.yml` file.
 
 #### Create the Resource.json file
 The Resource file must be placed in the `retorchfiles/configurations/` and named with the system or test suite name, followed
@@ -164,7 +163,7 @@ The following snippet shows an example of two Resources declared in the JSON fil
 The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` containing several parameters 
 related to the SUT and the Continuous Integration Infrastructure, these parameters are the following:
 - `agentCIName`: the specific Jenkins agent used to execute the test suite.
-- `sut-wait-html`: state in the frontend (html displayed) when the SUT is ready to execute the test SUITE.
+- `sut-wait-html`: state in the frontend (HTML displayed) when the SUT is ready to execute the test SUITE.
 - `sut-location`: location of the `docker-compose.yml` file used to deploy the SUT.
 - `docker-frontend-name`: ID of the container used as frontend .
 - `docker-frontend-port`: PORT on which the frontend container is available.
@@ -186,7 +185,7 @@ The following snippet provides an example of how this file looks like:
 ```
 
 #### Preparing the docker-compose.yml file
-The RETORCH tool also requires to parametrize the `docker-compose.yml` used to deploy the application by means including the
+The orchestration generator also requires to parametrize the `docker-compose.yml` used to deploy the application by means including the
 necessary environment variables in the containers names and URIs, as well as the placeholders of the images specified above.
 The following snippet present how it was done in one of the services of the [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching):
 
@@ -232,14 +231,14 @@ services:
 ```
 
 #### (Optional) Specify script snippets to include in the set-up tear-down and environment
-The RETORCH orchestration tool allows to specify scripting code/commands to be included in the generated set-up, tear-down, and 
-the environment declaration of each TJob. To include it, the tester must create the following files in `retorch\customscriptscode` 
-- `custom-tjob-setup`: Contains the custom set-up code (e.g. deploy the SUT) or custom logging systems.
-- `custom-tjob-teardown`: Contains the custom tear-down code (e.g. tear-down the SUT)
-- `custom.env`: Contains environment variables common to all TJobs
+The RETORCH orchestration generator allows to specify scripting code/commands to be included in the generated set up, tear down, and 
+the environment declaration of each TJob. To include it, the tester must create the following files in `retorch\customscriptscode`: 
+- `custom-tjob-setup`: Contains the custom set up code (e.g. declare some environment variable specific for each TJob) or custom logging systems.
+- `custom-tjob-teardown`: Contains the custom tear down code (e.g. save some generated outputs).
+- `custom.env`: Contains  configurations and environment variables common to all TJobs.
 
 Examples of the three snippets files can be consulted in [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching)
-and [eShopOnContainers](https://github.com/giis-uniovi/retorch-st-eShopContainers)
+and [eShopOnContainers](https://github.com/giis-uniovi/retorch-st-eShopContainers).
 
 Once created the different properties and configuration files, the directory tree might look like:
 
@@ -257,17 +256,30 @@ Once created the different properties and configuration files, the directory tre
         └── custom.env
 ```
 
-### Executing the Orchestration tool
-[TO-DO] Pending to decide-implement the final version
+### Executing the Orchestration generator
+Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to create a 
+main class and instantiate an `OrchestratinGenericToolbox` object. Calling the `generateJenkinsFile()` method with 
+the package route, the system name and the destination for the `Jenkinsfile`.
+The following code snippet shows an example of the method invocation:
+ ```java
+import retorch.orchestration.main.OrchestrationGenericToolBox;
 
-### RETORCH Orchestration Tool outputs
-The tool provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
+public class SutExampleRetorchMain {
+
+    public static void main(String[] args)  {
+        OrchestrationGenericToolBox toolBox = new OrchestrationGenericToolBox();
+        toolBox.generateJenkinsfile("giis.sutexample.e2e.functional.tests", "sutexample", "./");
+    }
+}
+```
+
+### RETORCH Orchestration generator outputs
+The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
 the infrastructure(`/retorchfiles/coilifecycles`) and the different environment files of each TJob (`/retorchfiles/envfiles`) :
 - `Jenkinsfile`: located in the root of the project, contains the pipelining code with the different stages in sequential-parallel 
 that perform the different TJob lifecycle stages.
 - `/retorchfiles/tjoblifecycles` and `/retorchfiles/coilifecycles` contains the set up, execution, and tear down scripts for the TJobs and infrastructure
 - `/retorchfiles/envfiles`: contains the generated custom environment of each TJob.
-
 
 ## Contributing
 
@@ -299,6 +311,6 @@ RETORCH*: A Cost and Resource aware Model for E2E Testing in the Cloud:
 
 ## Acknowledgments
 
-This work has been developed under the TestBUS (PID2019-105455GB-C32) project supported
+This work has been developed under the TestBUS (PID2019-105455GB-C32) and project supported
 by the [Ministry of Science and Innovation (SPAIN)](https://www.ciencia.gob.es/)
 
