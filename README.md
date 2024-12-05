@@ -83,7 +83,7 @@ files for execution in a CI environment. The generation of scripts and pipelinin
 annotated within the test cases and the Resource information specified in `[SUT_NAME]SystemResources.json`.
 
 The RETORCH orchestration generator requires 4 inputs:
-- The annotated E2E test cases with the [RETORCH access modes](#retorch-annotations).
+- The annotated E2E test cases with the [RETORCH access modes](#retorch-annotations) into a **single module** Maven project.
 - A file with the Resources in JSON format.
 - A properties file with the Environment configuration.
 - A custom `docker-compose.yml` file.
@@ -93,7 +93,7 @@ suite into a Continuous Integration system.
 
 ### Prepare the E2E Test suite
 The first step is to create several folders to store the configurations and place the `docker-compose.yml`
-in the project root.
+in the single module project root.
 The resulting directory tree might look like as:
 ```
 .
@@ -240,7 +240,7 @@ the environment declaration of each TJob. To include it, the tester must create 
 Examples of the three snippets files can be consulted in [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching)
 and [eShopOnContainers](https://github.com/giis-uniovi/retorch-st-eShopContainers).
 
-Once created the different properties and configuration files, the directory tree might look like:
+Once created the different properties and configuration files, the single module directory tree might look like:
 
 ```
 .
