@@ -258,8 +258,12 @@ Once created the different properties and configuration files, the directory tre
 
 ### Executing the Orchestration generator
 Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to create a 
-main class and instantiate an `OrchestratinGenericToolbox` object. Calling the `generateJenkinsFile()` method with 
-the package route, the system name and the destination for the `Jenkinsfile`.
+main class and instantiate an `OrchestratinGenericToolbox` object. Calling the `generateJenkinsFile()` method with the following 
+parameters:
+- `packageRoute`: String that specifies the complete package name to the E2E annotated tests folder.
+- `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
+- `jenkinsFilePath`: String with the destination of the `Jenkinsfile`.
+
 The following code snippet shows an example of the method invocation:
  ```java
 import retorch.orchestration.main.OrchestrationGenericToolBox;
