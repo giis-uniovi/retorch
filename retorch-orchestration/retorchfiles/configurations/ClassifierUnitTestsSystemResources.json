@@ -1,0 +1,70 @@
+{
+  "mockElasticResource": {
+    "hierarchyParent": [],
+    "replaceable": ["lightElasticResource","heavyInElasRest"],
+    "elasticityModel": {
+      "elasticityID": "elasModelmockElasticResource",
+      "elasticity": 50,
+      "elasticityCost": 0.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "mockElasticResource",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 0.5
+      },
+      {
+        "name": "processor",
+        "quantity": 2
+      }
+    ],
+    "dockerImage": "someplaceholder1[IMG:]docker.someImage"
+  },
+  "heavyInElasRest": {
+    "hierarchyParent": [
+      "parentAllInelastic"
+    ],
+    "replaceable": [],
+    "elasticityModel": {
+      "elasticityID": "elasModelHeavyInElasRest",
+      "elasticity": 1,
+      "elasticityCost": 50.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "heavyInElasRest",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 4
+      },
+      {
+        "name": "processor",
+        "quantity": 0.6
+      }
+    ],
+    "dockerImage": "someplaceholder2[IMG:]docker.someImage"
+  },
+  "lightElasticResource": {
+    "hierarchyParent": [],
+    "replaceable": [],
+    "elasticityModel": {
+      "elasticityID": "elasModelLightElasticResource",
+      "elasticity": 35,
+      "elasticityCost": 15.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "lightElasticResource",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 1
+      },
+      {
+        "name": "processor",
+        "quantity": 0.5
+      }
+    ],
+    "dockerImage": "someplaceholder3[IMG:]docker.someImage"
+  }
+}
