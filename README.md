@@ -187,48 +187,14 @@ The following snippet provides an example of how this file looks like:
 #### Preparing the docker-compose.yml file
 The orchestration generator also requires to parametrize the `docker-compose.yml` used to deploy the application by means including the
 necessary environment variables in the containers names and URIs, as well as the placeholders of the images specified above.
-The following snippet present how it was done in one of the services of the [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching):
+Examples of the necessary changes in the `docker-compose.yml` can consulted in the FullTeaching and eShopOnContainers repositories:
 
-```diff
-services:
-  full-teaching-mysql:
--   container_name: full-teaching-mysql
-+   container_name: full-teaching-mysql-${tjobname}
-     ...
-+    networks:
-+      - jenkins_network
-
-  full-teaching-openvidu-server-kms:
--    container_name: full-teaching-openvidu-server-kms
--    image: openvidu/openvidu-server-kms:1.7.0
-+    container_name: full-teaching-${tjobname}-openvidu-server-kms
-+    image: ${mediaserver}
-    ...
-    environment:
--     - openvidu.publicurl=https://full-teaching-openvidu-server-kms:8443
-+     - openvidu.publicurl=https://full-teaching-${tjobname}-openvidu-server-kms:8443
-+    networks:
-+      - jenkins_network
-
-  full-teaching:
--   container_name: full-teaching
-+   container_name: full-teaching-${tjobname}
-    ...
-    environment:
--     - WAIT_HOSTS=full-teaching-mysql:3306
-+     - WAIT_HOSTS=full-teaching-mysql-${tjobname}:3306
--     - MYSQL_PORT_3306_TCP_ADDR=full-teaching-mysql
-+     - MYSQL_PORT_3306_TCP_ADDR=full-teaching-mysql-${tjobname}
--     - openvidu.url=https://full-teaching-openvidu-server-kms:8443
-+     - openvidu.url=https://full-teaching-${tjobname}-openvidu-server-kms:8443
-      - ...
-+    networks:
-+      - jenkins_network
-
-+ networks:
-+  jenkins_network:
-+    external: true
-```
+- FullTeaching:
+  - [Original `docker-compose.yml`](https://github.com/elastest/full-teaching/blob/master/application/docker-compose/docker-compose.yml)
+  - [RETORCH `docker-compose.yml`](https://github.com/giis-uniovi/retorch-st-fullteaching/blob/main/docker-compose.yml)
+- EshopContainers:
+  - [Original `docker-compose.yml`](https://github.com/erjain/eShopOnContainers/blob/dev/src/docker-compose.yml) and [ `docker-compose.prod.yml`](https://github.com/erjain/eShopOnContainers/blob/dev/src/docker-compose.prod.yml)
+  - [RETORCH `docker-compose.yml`](https://github.com/giis-uniovi/retorch-st-eShopContainers/blob/main/sut/src/docker-compose.yml)
 
 #### (Optional) Specify script snippets to include in the set-up tear-down and environment
 The RETORCH orchestration generator allows to specify scripting code/commands to be included in the generated set up, tear down, and 
@@ -262,11 +228,11 @@ main class and instantiate an `OrchestratinGenericToolbox` object. Calling the `
 parameters:
 - `packageRoute`: String that specifies the complete package name to the E2E annotated tests folder.
 - `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
-- `jenkinsFilePath`: String with the destination of the `Jenkinsfile`.
+- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created (usually the root of the project: `./`).
 
 The following code snippet shows an example of the method invocation:
  ```java
-import retorch.orchestration.main.OrchestrationGenericToolBox;
+import giis.retorch.orchestration.main.OrchestrationGenericToolBox;
 
 public class SutExampleRetorchMain {
 
