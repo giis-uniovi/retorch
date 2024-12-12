@@ -16,13 +16,21 @@ public class System {
     private static final Logger logSystemClass = LoggerFactory.getLogger(System.class);
 
     private final String name;
-    private final LinkedList<Resource> resources;
+    private final List<Resource> resources;
     private final List<TestCase> testCases;
 
     public System(String name) {
         this.name = name;
         this.testCases = new LinkedList<>();
         this.resources = new LinkedList<>();
+    }
+
+    public System(String name, List<TestCase> testCases, List<Resource> resources) {
+        this.name = name;
+        resources.sort(Comparator.comparing(Resource::getResourceID));
+        testCases.sort(Comparator.comparing(TestCase::getName));
+        this.testCases = testCases;
+        this.resources = resources;
     }
 
     @Override

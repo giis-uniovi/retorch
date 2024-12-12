@@ -1,0 +1,13 @@
+copy_and_replace_envoy_configs() {
+    local tjobname="$1"
+    cp -p "$SUT_LOCATION/src/ApiGateways/Envoy/config/mobileshopping/envoy.yaml" "$SUT_LOCATION/src/tmp/$tjobname/mobileshopping/"
+    cp -p "$SUT_LOCATION/src/ApiGateways/Envoy/config/webshopping/envoy.yaml" "$SUT_LOCATION/src/tmp/$tjobname/webshopping/"
+
+    sed -i "s/\${tjobname}/$tjobname/g" "$SUT_LOCATION/src/tmp/$tjobname/mobileshopping/envoy.yaml"
+    sed -i "s/\${tjobname}/$tjobname/g" "$SUT_LOCATION/src/tmp/$tjobname/webshopping/envoy.yaml"
+}
+# COI setup
+mkdir -p "$SUT_LOCATION/src/tmp/$1/mobileshopping"
+mkdir -p "$SUT_LOCATION/src/tmp/$1/webshopping"
+
+copy_and_replace_envoy_configs "$1"

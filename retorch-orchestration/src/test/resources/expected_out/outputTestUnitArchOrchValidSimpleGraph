@@ -1,0 +1,92 @@
+pipeline {
+  agent {label 'any'}
+  environment {
+    SELENOID_PRESENT = "TRUE"
+    SUT_LOCATION = "$WORKSPACE"
+    SCRIPTS_FOLDER = "$WORKSPACE/retorchfiles/scripts"
+  } // EndEnvironment
+  options {
+    disableConcurrentBuilds()
+  } // EndPipOptions
+  stages {
+    stage('Clean Workspace') {
+        steps {
+            cleanWs()
+        } // EndStepsCleanWS
+    } // EndStageCleanWS
+    stage('Clone Project') {
+        steps {
+            checkout scm
+        } // EndStepsCloneProject
+    } // EndStageCloneProject
+    stage('SETUP-Infrastructure') {
+        steps {
+            sh 'chmod +x -R $SCRIPTS_FOLDER'
+            sh '$SCRIPTS_FOLDER/coilifecycles/coi-setup.sh'
+        } // EndStepsSETUPINF
+    } // EndStageSETUPInf
+    stage('Stage 0') {
+      failFast false
+      parallel {
+        stage('tjoba IdResource: MedInElasRest mediumElasticResource ') {
+          steps {
+            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjoba 0'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjoba 0 https://full-teaching- 5000 "AggregatorClassTests#tActSimpleOneFiveSch,AggregatorClassTests#tActSimpleOnetFourSch,AggregatorClassTests#tActSimpleOnetThreeSch"'
+            }// EndExecutionStageErrortjoba
+            sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjoba 0'
+          }// EndStepstjoba
+        }// EndStagetjoba
+        stage('tjobb IdResource: MedInElasRest mediumElasticResource ') {
+          steps {
+            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobb 0'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobb 0 https://full-teaching- 5000 "AggregatorClassTests#tActSimpleTwoFiveSch,AggregatorClassTests#tActSimpleTwotFourSch,AggregatorClassTests#tActSimpleTwotThreeSch"'
+            }// EndExecutionStageErrortjobb
+            sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobb 0'
+          }// EndStepstjobb
+        }// EndStagetjobb
+        stage('tjobc IdResource: MedInElasRest mediumElasticResource ') {
+          steps {
+            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobc 0'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobc 0 https://full-teaching- 5000 "AggregatorClassTests#tActSimpleThreeFiveSch,AggregatorClassTests#tActSimpleThreetFourSch,AggregatorClassTests#tActSimpleThreetThreeSch"'
+            }// EndExecutionStageErrortjobc
+            sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobc 0'
+          }// EndStepstjobc
+        }// EndStagetjobc
+        stage('tjobd IdResource: MedInElasRest mediumElasticResource ') {
+          steps {
+            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobd 0'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobd 0 https://full-teaching- 5000 "AggregatorClassTests#tActSimpleFourFiveSch,AggregatorClassTests#tActSimpleFourtFourSch,AggregatorClassTests#tActSimpleFourtThreeSch"'
+            }// EndExecutionStageErrortjobd
+            sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobd 0'
+          }// EndStepstjobd
+        }// EndStagetjobd
+        stage('tjobe IdResource: MedInElasRest mediumElasticResource ') {
+          steps {
+            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobe 0'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobe 0 https://full-teaching- 5000 "AggregatorClassTests#tActSimpleFiveFiveSch,AggregatorClassTests#tActSimpleFivetFourSch,AggregatorClassTests#tActSimpleFivetThreeSch"'
+            }// EndExecutionStageErrortjobe
+            sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobe 0'
+          }// EndStepstjobe
+        }// EndStagetjobe
+      } // End Parallel
+    } // End Stage
+stage('TEARDOWN-Infrastructure') {
+      failFast false
+      steps {
+          sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'
+      } // EndStepsTearDownInf
+} // EndStageTearDown
+} // EndStagesPipeline
+post {
+    always {
+        archiveArtifacts artifacts: 'artifacts/*.csv', onlyIfSuccessful: true
+        archiveArtifacts artifacts: 'target/testlogs/**/*.*', onlyIfSuccessful: false
+        archiveArtifacts artifacts: 'target/containerlogs/**/*.*', onlyIfSuccessful: false
+    }// EndAlways
+} // EndPostActions
+} // EndPipeline 

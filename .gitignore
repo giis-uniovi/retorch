@@ -7,3 +7,6 @@ TESTS-TestSuites.xml
 .idea
 # to allow each developer customize sonarlint
 org.sonarlint.eclipse.core.prefs
+# Files created by RETORCH orch tool
+/retorch-orchestration/retorchfiles/envfiles/
+/retorch-orchestration/retorchfiles/scripts/
