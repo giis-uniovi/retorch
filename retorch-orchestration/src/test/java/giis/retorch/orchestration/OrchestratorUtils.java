@@ -69,7 +69,6 @@ public class OrchestratorUtils extends GenericUtils {
     }
 
     private Activity getEmptyActivity() {
-
         return new Activity(new TJob());
     }
 
@@ -108,6 +107,5 @@ public class OrchestratorUtils extends GenericUtils {
         String expectedOutput = FileUtils.readFileToString(new File(expectedOutputPath), ENCODING).replace("\r\n", "\n");
         String actualOutput = FileUtils.readFileToString(new File(outputPath), ENCODING).replace("\r\n", "\n");
         assertEquals("The avg file generated differs from expected", expectedOutput, actualOutput);
-
     }
 }

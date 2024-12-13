@@ -16,16 +16,17 @@ import java.util.stream.Stream;
  * {@code SchedulerTests} unitary tests
  */
 public class SchedulerUtils extends GenericUtils {
+
     @Override
     public Resource getMockElasticResource() {
         Resource mockElasticResource = new Resource(this.getMediumElasticResource());
         mockElasticResource.addReplaceableResource(LIGHT_ELASTIC_ID);
         mockElasticResource.addReplaceableResource(MOCK_ELASTIC_ID);
+
         return mockElasticResource;
     }
 
     public Resource getSingleSchedulerTestCaseResource() {
-
         ElasticityModel otherResourceModel = getElasticityModelMockResource();
         otherResourceModel.setElasticityCost(5);
 
@@ -37,6 +38,7 @@ public class SchedulerUtils extends GenericUtils {
     public AccessMode getNewMockElasticAccessMode() {
         AccessMode expectedAccessModeMySQLMedium = new AccessMode(this.getMockElasticAccessMode());
         expectedAccessModeMySQLMedium.setResource(this.getMockElasticResource());
+
         return expectedAccessModeMySQLMedium;
     }
 
@@ -56,6 +58,7 @@ public class SchedulerUtils extends GenericUtils {
     private TestCase getSchedulerTestCaseClassWithOneResource(String name, AccessMode accessModeFirstResource) {
         TestCase tCHSeven = new TestCase(name, AggregatorClassTests.class);
         tCHSeven.addAccessMode(accessModeFirstResource);
+
         return tCHSeven;
     }
 
@@ -103,6 +106,7 @@ public class SchedulerUtils extends GenericUtils {
         TestCase tCHSeven = new TestCase("tSevenAgg", AggregatorClassTests.class, Arrays.asList(this.getNewMockElasticAccessMode(),
                 this.getMediumInelasticAccessMode()));
         listTestCases.add(tCHSeven);
+
         return listTestCases;
     }
 
@@ -192,7 +196,6 @@ public class SchedulerUtils extends GenericUtils {
 
         AccessMode readOnlyAccessModeMediumInelastic = this.getAccessModeHeavyInElasticResource();
         readOnlyAccessModeMediumInelastic.setType(new AccessModeTypes(READONLY));
-
         AccessMode readOnlyAccessModeLightElastic = this.getAccessModeLightElasticResource();
         readOnlyAccessModeLightElastic.setType(new AccessModeTypes(READONLY));
 
@@ -222,6 +225,7 @@ public class SchedulerUtils extends GenericUtils {
         requiredCapacities.add(new Capacity(Capacity.MEMORY_NAME, 2));
         requiredCapacities.add(new Capacity(Capacity.PROCESSOR_NAME, 1));
         expectedMediumElasticResource.setMinimalCapacities(requiredCapacities);
+
         return expectedMediumElasticResource;
     }
 
@@ -230,6 +234,7 @@ public class SchedulerUtils extends GenericUtils {
         resLight.addReplaceableResource(MEDIUM_INELASTIC_ID);
         resLight.setMinimalCapacities(Arrays.asList(new Capacity(Capacity.MEMORY_NAME, 1),
                 new Capacity(Capacity.PROCESSOR_NAME, 0.5)));
+
         return resLight;
     }
 
@@ -243,12 +248,12 @@ public class SchedulerUtils extends GenericUtils {
         expectedMediumInelasticResource.setElasticityModel(expectedElasticityModelMedium);
         expectedMediumInelasticResource.setMinimalCapacities(Arrays.asList(new Capacity(Capacity.MEMORY_NAME, 2),
                 new Capacity(Capacity.PROCESSOR_NAME, 1)));
+
         return expectedMediumInelasticResource;
     }
 
 
     public List<TGroup> getNoRepeatedExpectedTGroups() {
-
         List<TestCase> listTestCases = schedulerTestCases();
 
         TGroup tGroupOne = new TGroup(new ArrayList<>(listTestCases.subList(0, 6)),
@@ -317,6 +322,7 @@ public class SchedulerUtils extends GenericUtils {
         Activity activityTwo = new Activity(tJobTwo);
         activityTwo.addPredecessor(activityFive);
         currentActivities.add(activityTwo);
+
         return currentActivities;
     }
 
@@ -356,6 +362,7 @@ public class SchedulerUtils extends GenericUtils {
         currentActivities.add(activityOne);
         currentActivities.add(activityThree);
         currentActivities.add(activityFour);
+
         return currentActivities.stream().sorted(Comparator.comparing(Activity::toString)).collect(Collectors.toList());
     }
 }

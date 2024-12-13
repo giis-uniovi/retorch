@@ -23,8 +23,8 @@ public class TJob {
     private double endExec;
     private double startTearDown;
     private double endTearDown;
-    private  List<TestCase> listTestCases;
-    private  List<Resource> listResourceEntities;
+    private final List<TestCase> listTestCases;
+    private final List<Resource> listResourceEntities;
     private String idTJob = "Default";
     private String intraTJobSchedule = "SequentialScheduling";
     private Integer tJobConcurrency=50;
@@ -52,6 +52,7 @@ public class TJob {
         this.listResourceEntities = new LinkedList<>();
         this.listTestCases = new LinkedList<>();
     }
+
     public TJob(String idTJob, int stage, List<Resource> resourceInstances) {
         //Attributes required by the tool
         this.listTestCases=new LinkedList<>();
