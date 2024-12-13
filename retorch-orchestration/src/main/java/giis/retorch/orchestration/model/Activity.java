@@ -4,7 +4,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * RETORCH Activities that represents the execution of TJobs Sequence
+ * The {@code Activity} class represents a {@code TJob} with a sequence of {@code Activity} that preceeds them.
+ * The {@code Activity} are used to represent the execution order of the different  {@code TJob}.
  */
 public class Activity {
 
@@ -54,10 +55,12 @@ public class Activity {
     public boolean isUsingTheSameResource(Resource resource) {
         return this.tJob.getListResourceClasses().contains(resource);
     }
+
     @Override
     public int hashCode() {
         return super.hashCode();
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
@@ -71,6 +74,7 @@ public class Activity {
     public TJob getTJob() {
         return tJob;
     }
+
     @Override
     public String toString() {
         return "ActivityClass {\n" + "tJob=" + tJob + ", \nlistPredecessors=" + listPredecessors + "}\n";

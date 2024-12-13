@@ -231,15 +231,16 @@ parameters:
 - `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created (usually the root of the project: `./`).
 
 The following code snippet shows an example of the method invocation:
+
  ```java
-import giis.retorch.orchestration.main.OrchestrationGenericToolBox;
+import giis.retorch.orchestration.generator.OrchestrationGenericToolBox;
 
 public class SutExampleRetorchMain {
 
-    public static void main(String[] args)  {
-        OrchestrationGenericToolBox toolBox = new OrchestrationGenericToolBox();
-        toolBox.generateJenkinsfile("giis.sutexample.e2e.functional.tests", "sutexample", "./");
-    }
+  public static void main(String[] args) {
+    OrchestrationGenericToolBox toolBox = new OrchestrationGenericToolBox();
+    toolBox.generateJenkinsfile("giis.sutexample.e2e.functional.tests", "sutexample", "./");
+  }
 }
 ```
 

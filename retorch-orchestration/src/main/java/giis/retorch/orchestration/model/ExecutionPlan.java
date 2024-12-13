@@ -9,9 +9,8 @@ import java.util.stream.Collectors;
 
 /**
  * The {@code ExecutionPlan} class represents a series of TJobs ordered.
- * It contains a name for the execution plan and a list of {@code TJobClass} objects with their
- * respective resources and stages.
- * @since 1.0
+ * It contains a name for the {@code ExecutionPlan} and a list of {@code TJobClass} objects with their
+ * respective {@code Resource}s and their sequentiation through a list of  {@code Activity}.
  */
 public class ExecutionPlan {
 
@@ -19,6 +18,11 @@ public class ExecutionPlan {
     private List<TJob> tJobEntityList;
     private Map<Integer, LinkedList<Activity>> sortedActivities;
     private List<Activity> listActivities;
+
+    private enum tJobIdentifier {
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AA, AB, AC, AD, AE, AF, AG, AH,
+        AI, AJ, AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,AZ,BA,BB,BC,BD,BE
+    }
 
     public ExecutionPlan(String name, List<?> listActivities) throws NoFinalActivitiesException, EmptyInputException {
         if (listActivities == null || listActivities.isEmpty()){
@@ -40,18 +44,23 @@ public class ExecutionPlan {
     public String getName() {
         return name;
     }
-    public void setName(String name) {
-        this.name = name;
-    }
     public List<TJob> gettJobClassList() {
         return tJobEntityList;
+    }
+    public Map<Integer, LinkedList<Activity>> getSortedActivities() {
+        return this.sortedActivities;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
     public void settJobClassList(List<TJob> tJobEntityList) {
         this.tJobEntityList = tJobEntityList;
     }
+
     /**
-     * Method that validates the list of activities. Checks that there are final and initial activities
-     * @param listActivities List with the activities to check
+     * Method that validates the list of {@code Activity}. Checks that there are final and initial {@code Activity}
+     * @param listActivities List with the {@code Activity} to check
      */
     private void validateListActivities(List<Activity> listActivities) throws EmptyInputException,
             NoFinalActivitiesException {
@@ -71,9 +80,9 @@ public class ExecutionPlan {
         }
     }
 
-    public Map<Integer, LinkedList<Activity>> getSortedActivities() {
-        return this.sortedActivities;
-    }
+    /**
+     * Method that generates the sorted {@code Activity} graph.
+     */
     public Map<Integer, LinkedList<Activity>> generateSortedActivityGraph() {
         HashMap<Integer, LinkedList<Activity>> setOfOrderedActivities = new HashMap<>();
         List<Activity> listOfNonSortedActivities = new LinkedList<>(this.listActivities);
@@ -112,8 +121,5 @@ public class ExecutionPlan {
         }
         return setOfOrderedActivities;
     }
-    private enum tJobIdentifier {
-        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AA, AB, AC, AD, AE, AF, AG, AH,
-        AI, AJ, AK
-    }
+
 }

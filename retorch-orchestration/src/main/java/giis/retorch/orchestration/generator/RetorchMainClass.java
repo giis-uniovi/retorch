@@ -1,4 +1,4 @@
-package giis.retorch.orchestration.main;
+package giis.retorch.orchestration.generator;
 
 public class RetorchMainClass {
 
