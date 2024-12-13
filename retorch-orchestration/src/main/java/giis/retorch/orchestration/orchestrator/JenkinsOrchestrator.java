@@ -8,35 +8,35 @@ import org.slf4j.LoggerFactory;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-
+/**
+ * The {@code JenkinsOrchestrator} class provides several method that enable the derivation from a {@code ExecutionPlan}
+ * into the Jenkinsfile and the different scripting code to make the  {@code Resources} set-up and tear-down as
+ * well as the {@code TestCase}s execution scripts.
+ */
 public class JenkinsOrchestrator implements RetorchOrchestrator {
 
-    //String with the tag that would be added in the docker file and into the Jenkinsfile to identify the different
-    // TJobs
     private static final String TJOB_BASE_PATH = "testsBasePath";
     private static final String ENVIRONMENT_FOLDER_NAME = "retorchfiles/envfiles/";
     private static final Logger log = LoggerFactory.getLogger(JenkinsOrchestrator.class);
     private static final String SH_COMMAND = "          sh '";
-    private final Properties ciConfiguration;    //Information of the repository
-    int tJobCounter;    //Integer used to make the TJob Identifier
+    private final Properties ciConfiguration;
+    int tJobCounter;
     int poolPorts = 5000;
     String frontendPort = "";
     HashMap<String, String> portsSUTs;
     private ExecutionPlan executionPlan;
-    private Map<String, Resource> listAllResources;
+    private final Map<String, Resource> listAllResources;
     ResourceSerializer deserializer;
     /**
-     * Default constructor, gets a list of activities and deserialize all the files, filling the structures that would
-     * be used by the Orchestrator
-     *
-     * @param activityEntityListFromScheduler List of activities that would be the input of the orchestrator
+     * Default constructor, gets a list of {@code Activity} and deserialize the ResourceJSON.json and retorchCI properties
+     * the files, filling the different structures that would be used by the JenkinsOrchestrator
+     * @param activityEntityListFromScheduler List of {@code Activity} that would be the input of the {@code JenkinsOrchestrator}
      */
     public JenkinsOrchestrator(List<Activity> activityEntityListFromScheduler, String systemName) throws EmptyInputException,
             NoFinalActivitiesException, IOException {
@@ -44,7 +44,7 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
         this.executionPlan = new ExecutionPlan("defaultName", activityEntityListFromScheduler);
         this.listAllResources = deserializer.deserializeResources(systemName);
         ciConfiguration = new Properties();
-        try (InputStream input = new FileInputStream("retorchfiles/configurations/retorchCI.properties")) {
+        try (InputStream input = Files.newInputStream(Paths.get("retorchfiles/configurations/retorchCI.properties"))) {
             ciConfiguration.load(input);
         } catch (IOException e) {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
@@ -58,25 +58,11 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
         return this.executionPlan;
     }
 
-    /**
-     * Setter of the Orchestrator activities list that are used to generate the Jenkins pipelined
-     *
-     * @param plan List with the new activites
-     */
     @Override
     public void setExecutionPlan(ExecutionPlan plan) {
         this.executionPlan = plan;
     }
 
-    /**
-     * Given a TJob, port ,Uri and the resource, creates the execution command that executes the test case over the
-     * SUT located in the specified URI and Port
-     *
-     * @param tJobWithTestCases TJob to be executed
-     * @param port              Integer with the SUT port
-     * @param uriResource       String with the SUT URI
-     * @param resource          String with the resource identifier
-     */
     @Override
     public String generateTestCaseExecutionDirective(TJob tJobWithTestCases, String uriResource, int port,
                                                      String resource, String tJobId, int stage) {
@@ -85,8 +71,8 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
         strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh");
         String url = ciConfiguration.getProperty("external-binded-port").isEmpty() ? ciConfiguration.getProperty("docker-frontend-name") :
                 ciConfiguration.getProperty("external-frontend-url");
-        strBuilder.append(" ").append(tJobId.toLowerCase(Locale.ROOT)).append(" ").append(stage).append(" ").append(url).append(" ").append(frontendPort);
-        strBuilder.append(" \"");
+        strBuilder.append(" ").append(tJobId.toLowerCase(Locale.ROOT)).append(" ").append(stage).append(" ")
+                .append(url).append(" ").append(frontendPort).append(" \"");
         boolean firstElement = true;
         String testClassName;
         for (TestCase testcase : testCases) {
@@ -96,41 +82,26 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
                 strBuilder.append(",");
             }
             testClassName = testcase.getTestClass().getSimpleName();
-            strBuilder.append(testClassName);
-            strBuilder.append("#");
-            strBuilder.append(testcase.getName());
+            strBuilder.append(testClassName).append("#").append(testcase.getName());
         }
         strBuilder.append("\"'\n");
         return strBuilder.toString();
     }
 
-    /**
-     * Given a TJob and a list of configurations create the set-up and dispose commands depending on a boolean value
-     *
-     * @param tJobWithTestCases TJob that contains the resources to be deployed
-     * @param configurations    Map with the different parameters  as i.e. the base path or the TJob name
-     * @param disposal          boolean if its true create the disposal command and the set-up in the opposite case
-     */
     @Override
     public String generateResourceDeploymentDirective(TJob tJobWithTestCases, boolean disposal, Map<String,
             String> configurations, int stage) {
         StringBuilder strBuilder = new StringBuilder();
         if (disposal) {
-            strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh").append(" ").append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)).append(" ").append(stage).append("'\n");
+            strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh").append(" ")
+                    .append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)).append(" ").append(stage).append("'\n");
         } else {
-            strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh").append(" ").append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)).append(" ").append(stage).append("'\n");
+            strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh").append(" ")
+                    .append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)).append(" ").append(stage).append("'\n");
         }
         return strBuilder.toString();
     }
 
-    /**
-     * Given a TJob, this method create the whole directive required to deploy and wait for the resource, execute the
-     * test cases and dispose the resource when the execution its finished
-     *
-     * @param tJobWithTestCases TJob with the resources and the test cases to execute
-     * @param isParallel        Boolean that creates a Parallel step or a sequential execution depending on the
-     *                          intra-Schedule
-     */
     @Override
     public String generatePipelineTJobDirective(TJob tJobWithTestCases, boolean isParallel, int stage) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
@@ -140,8 +111,7 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
             Map<String, String> mapWithPlaceHoldersAndImages = new HashMap<>();
             StringBuilder resourceIDBuilder = new StringBuilder();
             for (Resource res : tJobWithTestCases.getListResourceClasses()) {
-                resourceIDBuilder.append(res.getResourceID());
-                resourceIDBuilder.append(" ");
+                resourceIDBuilder.append(res.getResourceID()).append(" ");
                 String [] placeHolderWithImage=res.getDockerImage().split("[IMG:]");
                 mapWithPlaceHoldersAndImages.put(placeHolderWithImage[0], placeHolderWithImage[1]);
             }
@@ -174,12 +144,6 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
         return stringBuilder.toString();
     }
 
-    /**
-     * Method that generate the whole Pipeline code given a sequence of activities ordered. This method creates the
-     * execution commands for : (1) Clone the repository (2) Execute the test suite (3) Clean the workspace and check
-     * that all
-     * the resources were released.
-     */
     @Override
     public String generatePipeline(Map<Integer, LinkedList<Activity>> listActivities) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
@@ -257,7 +221,7 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
 
 
     /**
-     * Method that generates the disposing commands required to check that all the resources are released and the
+     * Method that generates the disposing commands required to check that all the {@code Resource}s are released and the
      * storage is cleaned
      */
     private String generateDisposingDirective() {
@@ -272,7 +236,7 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
     }
 
     /**
-     * Support method that checks if in the pipeline is contained the Resources required by the TJob
+     * Support method that checks if in the pipeline is contained the {@code Resource} required by the {@code TJob}
      */
     private String getContainedResourceID(TJob tJobWithTestCases) {
         String containedResource = "generic";
@@ -285,11 +249,11 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
     }
 
     /**
-     * Method that given resourceInformation object and the tjobName, creates the dictionary required by the
-     * execution directive
-     * generator methods
+     * Method that given the map with all the DockerImages and ports,creates a customized map with the necessary
+     * information for the given {@code TJob}
      *
      * @param mapWithDockerImages Map with the placeholders and the images
+     * @param tJobWithTestCases {@code TJob} to put into the
      */
     public Map<String, String> getMapWithInformation(Map<String, String> mapWithDockerImages, TJob tJobWithTestCases) {
         Map<String, String> mapData = new HashMap<>();
@@ -317,7 +281,7 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
 
     /**
      * Method that given a Map with the placeholders values, replace in the template them in order to create
-     * the different compose files (one for each TJob)
+     * the different environment (.env) docker-compose.yml files (one for each TJob)
      *
      * @param mapProperties Dictionary with the different placeholders values
      */

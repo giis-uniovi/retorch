@@ -9,8 +9,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.Lists.partition; //TO-DO Review if Commons collections4 method do the same and remove guava
-
+/**
+ * The {@code RetorchScheduler}  provides the {@code TestCase}  ordering and {@code Resource} allocation functionalities
+ * to the RETORCH orchestration framework. {@code RetorchScheduler} gets as input a list of {@code TGroup} and provides
+ * as output the list of {@code Activity} ordered and maximizing the usage of {@code Resource}s
+ */
 public class RetorchScheduler {
 
     private static final Logger logRetorchScheduler = LoggerFactory.getLogger(RetorchScheduler.class);
@@ -26,9 +29,9 @@ public class RetorchScheduler {
     }
 
     /**
-     * Method that validates the list of TGroups provided to the scheduler, checking : (1) if its empty and (2) if there
-     * are repeated resources in the provided resources
-     * @param inputTGroups List with the TGroups to validate
+     * Method that validates the list of {@code TGroup}s provided to the {@code Scheduler}, checking : (1) if its empty and (2) if there
+     * are repeated {@code Resource}s in the list
+     * @param inputTGroups List with the {@code TGroup}s to validate
      */
     private void validateTGroups(List<TGroup> inputTGroups) throws NoTGroupsInTheSchedulerException {
         if (inputTGroups.isEmpty()) throw new NoTGroupsInTheSchedulerException("The TGroups List provided is empty");
@@ -39,61 +42,9 @@ public class RetorchScheduler {
         }
     }
 
-    public List<TJob> maximizeUtilizationOfGeneratedTJobs() throws InsufficientNumberOfResourcesException,
-            NoTJobsInTheSchedulerException {
-        if (listTJobs.isEmpty())
-            throw new NoTJobsInTheSchedulerException("You must invoke first the function generateTJobs(), the " +
-                    "current" + " list is empty");
-        LinkedList<TJob> listNewTJobs = new LinkedList<>();
-
-        for (TJob currentTJob : this.listTJobs) {
-            int numberOfResources = currentTJob.getMinimalElasticity();
-            if (numberOfResources > 1) {
-                int numberOfPartitions;
-                numberOfPartitions = getNumberOfPartitions(currentTJob, numberOfResources);
-                //Split the TJob in numberOfResources TJobs
-                final List<List<TestCase>> splitTestCases = partition(currentTJob.getListTestCases(),
-                        numberOfPartitions);
-                for (List<TestCase> currentTestCases : splitTestCases) {
-                    TJob newTJob = new TJob();
-                    newTJob.addListTestCases(currentTestCases);
-                    //  In order to avoid unnecessary splits we change the elasticity of the resource
-                    for (Resource res : currentTJob.getListResourceClasses()) {
-                        ElasticityModel currentElasticityModel = res.getElasticityModel();
-                        currentElasticityModel.setElasticity(1);
-                        res.setElasticityModel(currentElasticityModel);
-                        newTJob.addResource(res);
-                    }
-                    listNewTJobs.add(newTJob);
-                }
-            } else {
-                listNewTJobs.add(currentTJob);
-            }
-        }
-        this.listTJobs = listNewTJobs;
-
-        return listNewTJobs;
-    }
-
-    private int getNumberOfPartitions(TJob currentTJob, int numberOfResources) throws InsufficientNumberOfResourcesException {
-        int numberOfPartitions;
-        int maxConcurrencyTJob = currentTJob.getMinimalConcurrency();
-        if (currentTJob.getIntraTJobSchedule().equals("SequentialScheduling")) {
-            numberOfPartitions = (currentTJob.getListTestCases().size() / (numberOfResources));
-        } else {
-            numberOfPartitions = 1;
-            while ((currentTJob.getListTestCases().size() / (numberOfPartitions)) > maxConcurrencyTJob)
-                numberOfPartitions++;
-            if (numberOfPartitions > numberOfResources)
-                throw new InsufficientNumberOfResourcesException("The number of resources available is not enough");
-        }
-
-        return numberOfPartitions;
-    }
-
     /**
-     * Father method that calls the generation of TJobs for after that generate a proper scheduling taking into account
-     * the restrictions in terms of elasticity and concurrency of the TJobs
+     * Father method that calls the generation of {@code TJob}s for after that generate a proper scheduling taking into account
+     * the restrictions in terms of elasticity and concurrency of the {@code TJob}s
      */
     public List<Activity> generateActivities() {
         generateTJobs();
@@ -107,8 +58,8 @@ public class RetorchScheduler {
     }
 
     /**
-     * This method generate a first TJobs Group not optimized in order to achieve it, calls Intelligent Scheduling
-     * algorithm that retrieves the best tJob distribution of the test cases
+     * This method generate a first {@code TJob} Group not optimized in order to achieve it, calls Intelligent Scheduling
+     * algorithm that retrieves the best {@code TJob}s distribution of {@code TestCase}s
      */
     private void generateTJobs() {
         this.listTJobs = new LinkedList<>();
@@ -126,7 +77,7 @@ public class RetorchScheduler {
     }
 
     /**
-     * Support method that get all resources from the list of TJobs
+     * Support method that get all {@code Resource}s from the list of {@code TJob}s
      */
     public List<Resource> getAllResources() {
         LinkedList<Resource> listResourcesAvailable = new LinkedList<>();
@@ -139,8 +90,8 @@ public class RetorchScheduler {
     }
 
     /**
-     * Method that given a schedule, creates the activity graph with its predecessors relationships.
-     * @param schedule Schedule object that contains the TJobs
+     * Method that given a schedule, creates the {@code Activity} graph with its predecessors relationships.
+     * @param schedule Schedule object that contains the {@code TJob}s
      */
     private List<Activity> generateListActivities(Scheduling schedule) {
         Map<Integer, List<Activity>> mapActivities = new HashMap<>();
@@ -170,10 +121,10 @@ public class RetorchScheduler {
     }
 
     /**
-     * In this First approach  the "Intelligent" remains only in an optimization of the cost (deploy the test cases
-     * in the cheapest resources available)
-     * @param currentTJob TJob to check if its test cases could be deployed in the cheapest way
-     * @param tGroup      TGroup to check the test cases
+     * In this First approach  the "Intelligent" remains only in an optimization of the cost (deploy the {@code TestCase}s
+     * in the cheapest {@code Resource}s available)
+     * @param currentTJob {@code TJob} to check if its {@code TestCase}s could be deployed in the cheapest way
+     * @param tGroup      TGroup to check the {@code TestCase}s
      */
     private void intelligentScheduling(TJob currentTJob, TGroup tGroup) {
         for (TestCase testCaseTGroup : tGroup.getTGroupTestCases()) {
@@ -188,13 +139,12 @@ public class RetorchScheduler {
     }
 
     /**
-     * Support method that adds an activity to the Map that represents the schedule.This method check for all time
-     * moments
-     * on which is more suitable deploy the TJob and creates the activity on it
-     * @param mapActivities    Map with all the activities
-     * @param mapMoments       Map with the activities ordered by moment (Integer that indexes it)
+     * Support method that adds an {@code Activity}s to the Map that represents the schedule.This method check for all time
+     * moments on which is more suitable deploy the {@code TJob} and creates the {@code Activity} on it
+     * @param mapActivities    Map with all the {@code Activity}s
+     * @param mapMoments       Map with the {@code Activity}s ordered by moment (Integer that indexes it)
      * @param currentTime      Integer with the current moment on which we are iterating
-     * @param listTJobsFromMap List of TJobs of the current moment
+     * @param listTJobsFromMap List of {@code TJob}s of the current moment
      */
     private void addActivityToMap(Map<Integer, List<Activity>> mapActivities,
                                   Map<Integer, ScheduleStruct> mapMoments, int currentTime,
@@ -221,11 +171,10 @@ public class RetorchScheduler {
     }
 
     /**
-     * Support method that check if the testCase testCaseToAdd is contained into an expensive TJob.If  it, is removed
-     * from the
-     * expensive and added to the cheaper(provided as parameter), ignoring this test case otherwise
-     * @param testCaseToAdd Test case to check
-     * @param newTJob       TJob against the test case is checked
+     * Support method that check if the {@code TestCase}s testCaseToAdd is contained into an expensive {@code TJob}s.If  it, is removed
+     * from the expensive and added to the cheaper(provided as parameter), ignoring this {@code TestCase}s otherwise
+     * @param testCaseToAdd {@code TestCase} to check
+     * @param newTJob       {@code TJob} against the {@code TestCase} is checked
      */
     private void removeTestCasesInCheaperTJobs(TestCase testCaseToAdd, TJob newTJob) {
         boolean isContainedSomeWhere = false;
@@ -246,11 +195,11 @@ public class RetorchScheduler {
     }
 
     /**
-     * Support method makes a set's operation, in order to get the Activities that are not preceded for anyone ( gets
-     * a list of candidate activities to be the predecessor)
-     * @param feasibleActivitiesPredecessors List with all the activities of the previous iteration
-     * @param resourcesAvailablePredecessor  List with all the resources available in the predecessor iteration
-     * @param tJob                           Current TJob
+     * Support method makes a set's operation, in order to get the {@code Activity}s that are not preceded for anyone ( gets
+     * a list of candidate {@code Activity}s to be the predecessor)
+     * @param feasibleActivitiesPredecessors List with all the {@code Activity}s of the previous iteration
+     * @param resourcesAvailablePredecessor  List with all the {@code Resource}s available in the predecessor iteration
+     * @param tJob                           Current {@code TJob}
      */
     private Activity getActivityClassWithPredecessors(List<Activity> feasibleActivitiesPredecessors,
                                                             List<Resource> resourcesAvailablePredecessor,

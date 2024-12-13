@@ -7,17 +7,16 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
+/**
+ * The {@code Scheduling}  provides a structure to store the {@code Resource}s and the {@code ScheduleStruct}s  ordered.
+ * The scheduling is a succession Schedule Struct that represents chronological order of the TJobs. i.e.
+ *      * (0,[Tjob1,Tjob2]) (1,[Tjob3,Tjob4,Tjob5...]
+ */
 public class Scheduling {
 
     private final Map<Integer, ScheduleStruct> listMoments;//List with all the moments of the schedule
     private final List<Resource> baseResources;  //List with all the resources available in the system
 
-    /**
-     * This structure is a succession Schedule Struct that represents chronological order of the TJobs. i.e.
-     * (0,[Tjob1,Tjob2]) (1,[Tjob3,Tjob4]
-     * The constructor initialize both struct empty
-     */
     public Scheduling(List<Resource> listResources) {
         this.baseResources = listResources;
         this.listMoments = new HashMap<>();
@@ -28,9 +27,9 @@ public class Scheduling {
     }
 
     /**
-     * Main method of the struct, given a TJob, iterates over a list of moments <0, listTJobs>, <1,listTGJobs>,
-     * <2,listTJobs> in order to allocate the TJob in some struct that has enough resources to deploy it.
-     * @param tJob TJob that would be entered into the struct
+     * Main method of the struct, given a {@code TJob}, iterates over a list of moments <0, listTJobs>, <1,listTGJobs>,
+     * <2,listTJobs> in order to allocate the TJob in some struct that has enough {@code Resource} to deploy it.
+     * @param tJob {@code TJob} that would be entered into the struct
      */
     public void addTJob(TJob tJob) {
         int i = 1;

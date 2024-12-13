@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * The {@code ScriptGenerator}  provides the methods that generate the different scripts for set-up, execute and
+ * tear-down the COI and TJobs in the RETORCH orchestration generator
+ */
 public class ScriptGenerator {
 
     private static final String DIRECTORY_TJOBS_NAME = "retorchfiles/scripts/tjoblifecycles/";
@@ -45,7 +49,7 @@ public class ScriptGenerator {
 
     public ScriptGenerator() {
         ciConfiguration = new Properties();
-        try (InputStream input = new FileInputStream("retorchfiles/configurations/retorchCI.properties")) {
+        try (InputStream input = Files.newInputStream(Paths.get("retorchfiles/configurations/retorchCI.properties"))) {
             ciConfiguration.load(input);
         } catch (IOException e) {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
@@ -53,7 +57,8 @@ public class ScriptGenerator {
     }
 
     /**
-     * Generates scripts for TJob.
+     * This method generates all the set-up, execution and disposing scripts required to execute the {@code ExecutionPlan}
+     * in the continuous integration system.
      */
     public void generateScriptsTJob() {
         try {
@@ -90,8 +95,9 @@ public class ScriptGenerator {
     }
 
     /**
-     * Returns the custom content from a file based on the given phase.
-     * @param phase the phase
+     * Returns the custom content from a file  located in retorchfiles/customscriptscode/ based on the given phase.
+     *
+     * @param phase contains the phase to provide the custom file
      * @return the custom content, or an empty string if the file does not exist
      * @throws IOException if an I/O error occurs
      */
@@ -118,10 +124,11 @@ public class ScriptGenerator {
     }
 
     /**
-     * Replaces placeholders in the template with values from the given map and writes the result to an output file.
-     * @param inputTemplate the template file
-     * @param values        the map of placeholder values
-     * @param outputFile    the output file
+     * Replaces placeholders in the template with values from the configurations map and writes the result to an output file.
+     *
+     * @param inputTemplate String with the path of the input file
+     * @param values        the map with the different configuration values
+     * @param outputFile    String with the location of the output file
      */
     public void replacePlaceholderTemplate(Map<String, String> values, String inputTemplate, String outputFile) {
         try (BufferedReader br = getFileFromResource(inputTemplate); BufferedWriter bw =
@@ -161,9 +168,6 @@ public class ScriptGenerator {
         return new BufferedReader(new InputStreamReader(in));
     }
 
-    /**
-     * Generates scripts for COI.
-     */
     public void generateScriptsCOI() {
         try {
             checkFolderExists(DIRECTORY_COI_NAME);

@@ -21,12 +21,6 @@ public class RetorchAggregator {
     private final System aggregatorSystem;
     private Map<String, Resource> mapAvailableResources;
 
-    /**
-     * This constructor validates the system provided to the Aggregator and deserializes the resources
-     * required by the test cases.In order to make this deserialization we require a file with the resources
-     * serialized in JSON, located in the folder resourceFiles and named as SystemName+"SystemResources.json"
-     * @param system System provided as input that would be the basis for convert the system into  TGroups
-     */
     public RetorchAggregator(System system) throws NotValidSystemException, IOException {
         this.aggregatorSystem = validateSystem(system) ? system : new System("EmptySystem ERROR");
         this.mapTGroups = new HashMap<>();
