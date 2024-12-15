@@ -1,4 +1,7 @@
 #!/bin/bash
+# The coi-setup.sh script provides all the necessary commands to set up the infrastructure before executing
+# the TJobs. It performs debugging actions, such as outputting the kernel, library, and Docker versions.
+# Additionally, it prunes and removes old videos and execution data.
 
 SEL_VIDEO_DIR="/opt/selenoid/video/"
 SEL_LOG_DIR="/opt/selenoid/logs/"

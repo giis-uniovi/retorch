@@ -20,21 +20,21 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
-public class OrchestrationGenericToolBox {
+public class OrchestrationGenerator {
 
     /**
-     * Main method of RETORCH  prototype. This method given a package route with the test cases and the system name,
+     * Main method of RETORCH  prototype. This method given root package name where tests are located and the system name,
      * Creates a {@code JenkinsOrchestrator}. The {@code JenkinsOrchestrator}. The {@code JenkinsOrchestrator}
      * generates the JenkinsFile and Scripting code in the  directory of the project specified
      *
-     * @param systemName      String with the system name (must coincide with the SystemResources.json file )
-     * @param packageRoute    String with the package route of the test cases
+     * @param systemName      String with the system name (must coincide with the SystemResources.json file)
+     * @param rootPackageNameTests    String with root package name where tests are located
      * @param jenkinsFilePath String with the route where the Jenkinsfile will be placed
      */
-    public String generateJenkinsfile(String packageRoute, String systemName, String jenkinsFilePath) throws NotValidSystemException,
+    public String generateJenkinsfile(String rootPackageNameTests, String systemName, String jenkinsFilePath) throws NotValidSystemException,
             IOException, NoTGroupsInTheSchedulerException, EmptyInputException, NoFinalActivitiesException,
             ClassNotFoundException, URISyntaxException {
-        JenkinsOrchestrator orchestrator = getJenkinsOrchestrator(packageRoute, systemName);
+        JenkinsOrchestrator orchestrator = getJenkinsOrchestrator(rootPackageNameTests, systemName);
         String executionPipeline = orchestrator.generatePipeline(orchestrator.getExecutionPlan().getSortedActivities());
         if (!new File(jenkinsFilePath).exists()) {
             jenkinsFilePath = "./Jenkinsfile";
@@ -53,13 +53,13 @@ public class OrchestrationGenericToolBox {
      * can be used for debugging purposes or generate the usage profiles/estimate the different costs.
      *
      * @param systemName   String with the system name (must coincide with the SystemResources.json file )
-     * @param packageRoute String with the package route of the test cases
+     * @param rootPackageNameTests String with the package route of the test cases
      * @return The RETORCH Execution plan
      */
-    public ExecutionPlan getExecutionPlan(String packageRoute, String systemName) throws NotValidSystemException,
+    public ExecutionPlan getExecutionPlan(String rootPackageNameTests, String systemName) throws NotValidSystemException,
             IOException, NoTGroupsInTheSchedulerException, EmptyInputException, NoFinalActivitiesException,
             ClassNotFoundException, URISyntaxException {
-        JenkinsOrchestrator orchestrator = getJenkinsOrchestrator(packageRoute, systemName);
+        JenkinsOrchestrator orchestrator = getJenkinsOrchestrator(rootPackageNameTests, systemName);
         return orchestrator.getExecutionPlan();
     }
 
@@ -70,13 +70,13 @@ public class OrchestrationGenericToolBox {
      * Finally, creates a {@code JenkinsOrchestrator} with the {@code Activity} Graph and the system name
      *
      * @param systemName   String with the system name (must coincide with the SystemResources.json file).
-     * @param packageRoute String with the package route where the test cases are placed.
+     * @param rootPackageNameTests String with the package route where the test cases are placed.
      */
-    private static JenkinsOrchestrator getJenkinsOrchestrator(String packageRoute, String systemName) throws
+    private static JenkinsOrchestrator getJenkinsOrchestrator(String rootPackageNameTests, String systemName) throws
             EmptyInputException, IOException, ClassNotFoundException, URISyntaxException, NotValidSystemException,
             NoTGroupsInTheSchedulerException, NoFinalActivitiesException {
         RetorchClassifier classifier = new RetorchClassifier();
-        System currentSystem = classifier.getSystemFromPackage(systemName, packageRoute);
+        System currentSystem = classifier.getSystemFromPackage(systemName, rootPackageNameTests);
         RetorchAggregator aggregator = new RetorchAggregator(currentSystem);
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
         RetorchScheduler scheduler = new RetorchScheduler(tGroupsOutputAggregator);

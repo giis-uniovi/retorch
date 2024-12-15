@@ -1,4 +1,9 @@
 #!/bin/bash
+# The tjob-setup.sh script provides all the necessary commands to set up each TJob's resources before executing
+# the TJobs. It includes a placeholder {CUSTOM_SETUP_COMMANDS} where the commands from the custom-tjob-setup file
+# are inserted. The script deploys the required test Resources using Docker Compose and waits for the SUT to be ready
+# by invoking the waitforSUT.sh script.
+
 # Execute the script to write timestamp
 "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
 # Export Docker Host IP

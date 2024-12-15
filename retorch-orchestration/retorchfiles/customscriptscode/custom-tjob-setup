@@ -1,3 +1,6 @@
+# The custom-tjob-setup file specifies the custom commands-scripting code that need to be executed into the TJob setup, personalize
+# it in the /retorchfiles/customsscriptscode/custom-tjob-setup.
+# START CUSTOM TJOB SETUP CODE, THE CONTENT IS THE FOLLOWING:
 copy_and_replace_envoy_configs() {
     local tjobname="$1"
     cp -p "$SUT_LOCATION/src/ApiGateways/Envoy/config/mobileshopping/envoy.yaml" "$SUT_LOCATION/src/tmp/$tjobname/mobileshopping/"
@@ -11,3 +14,4 @@ mkdir -p "$SUT_LOCATION/src/tmp/$1/mobileshopping"
 mkdir -p "$SUT_LOCATION/src/tmp/$1/webshopping"
 
 copy_and_replace_envoy_configs "$1"
+#END CUSTOM TJOB SETUP CODE

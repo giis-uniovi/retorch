@@ -289,6 +289,8 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
         String resourcePath = ENVIRONMENT_FOLDER_NAME + File.separator;
         Files.createDirectories(Paths.get(resourcePath));
         StringBuilder contentEnvFile = new StringBuilder();
+        contentEnvFile.append("# Environment file for the TJob: ").append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT));
+        contentEnvFile.append("like ports, docker images or the tjobname itself.\n");
         try {
             for (Map.Entry<String, String> entry : mapProperties.entrySet()) {
                 contentEnvFile.append(entry.getKey())
@@ -306,7 +308,6 @@ public class JenkinsOrchestrator implements RetorchOrchestrator {
             if (contentEnvFile.length() == 0) {
                 log.error("The Stream may not be opened");
             }
-
 
         }
     }

@@ -226,20 +226,20 @@ Once created the different properties and configuration files, the single module
 Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to create a 
 main class and instantiate an `OrchestratinGenericToolbox` object. Calling the `generateJenkinsFile()` method with the following 
 parameters:
-- `packageRoute`: String that specifies the complete package name to the E2E annotated tests folder.
+- `rootPackageNameTests`: String that specifies the root package name where tests are located.
 - `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
 - `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created (usually the root of the project: `./`).
 
 The following code snippet shows an example of the method invocation:
 
  ```java
-import giis.retorch.orchestration.generator.OrchestrationGenericToolBox;
+import giis.retorch.orchestration.generator.OrchestrationGenerator;
 
 public class SutExampleRetorchMain {
 
   public static void main(String[] args) {
-    OrchestrationGenericToolBox toolBox = new OrchestrationGenericToolBox();
-    toolBox.generateJenkinsfile("giis.sutexample.e2e.functional.tests", "sutexample", "./");
+    OrchestrationGenerator orchGenerator = new OrchestrationGenerator();
+    orchGenerator.generateJenkinsfile("giis.sutexample.e2e.functional.tests", "sutexample", "./");
   }
 }
 ```

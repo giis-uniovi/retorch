@@ -54,9 +54,7 @@ public class TJob {
     }
 
     public TJob(String idTJob, int stage, List<Resource> resourceInstances) {
-        //Attributes required by the tool
         this.listTestCases=new LinkedList<>();
-        //Attributes required for the cost model
         this.idTJob = idTJob;
         this.listResourceEntities = resourceInstances;
         this.stage = stage;

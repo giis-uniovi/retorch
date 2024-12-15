@@ -1,6 +1,9 @@
 #!/bin/bash
-set -e
+# The tjob-teardown.sh script provides all the necessary commands to tear-down each TJob's Resources after the
+# test execution has ended. It stores the container logs of the current TJob, tear down the containers
+# and execute the custom commands provided in the custom-tjob-teardown file.
 
+set -e
 # Execute the script to write timestamp
 "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-tear-down" "Starting the TJob tear-down"

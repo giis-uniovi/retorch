@@ -1,5 +1,9 @@
-COITEARDOWNSTART="$(date +%s%3N)"
+#!/bin/bash
+# The coi-teardown.sh script provides all the necessary commands to tear-down the infrastructure after executing
+# the TJobs. It performs cleaning actions, like remove all the containers and docker volumes, but also ends, collects
+# and creates file with the different TJob and COI lifecycles using the savetjoblifecycledata.sh script.
 
+COITEARDOWNSTART="$(date +%s%3N)"
 # Log the start of the container teardown process
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "Switching off all containers that start with *tjob*..."
 # Get the list of container IDs to stop and remove

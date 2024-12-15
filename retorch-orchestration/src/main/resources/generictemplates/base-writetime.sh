@@ -1,4 +1,6 @@
 #!/bin/bash
+# The writetime.sh script appends different timestamps for each TJob to a separate file. These files are then
+# processed and combined into a single file containing all COI and TJob lifecycle durations.
 
 # Check if the correct number of parameters is provided
 if [ "$#" -ne 2 ]; then

@@ -1,4 +1,7 @@
 #!/bin/bash
+# The storeContainerLogs.sh script executes a docker log command for each container that belongs to the current
+# execution plan. The logs are stored into a separate files for then being archived as an artifact.
+
 "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "SaveContainerLogs" "Starting to store container logs!"
  # Store docker logs
     DIRECTORY_PATH="$WORKSPACE/target/containerlogs/$1"

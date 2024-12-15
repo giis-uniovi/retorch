@@ -73,7 +73,7 @@
                 <version>${logback-classic.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency><!-- This package allows to serialize the resources -->
+            <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jacksonjson.version}</version>
@@ -84,7 +84,7 @@
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency><!-- This package allows make intersections and complementary operations between lists https://mvnrepository.com/artifact/org.apache.commons/commons-collections4 -->
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>${commons.collections.version}</version>
@@ -97,7 +97,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>${commons-io.version}</version> <!-- Changed version that complies with Java 8, used to delete and create dirs -->
+                <version>${commons-io.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

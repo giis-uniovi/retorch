@@ -1,4 +1,7 @@
 #!/bin/bash
+# The waitforSUT.sh script waits for the readiness of the SUT frontend. It performs a wait of up to 200 seconds,
+# checking the frontend every 5 seconds. If the SUT is not ready after this period, all containers are teared down.
+
 if [ "$#" -ne 1 ]; then
   "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "TJob-$1-set-up"  "Usage: $0 <TJobName>"
   exit 1
