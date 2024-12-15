@@ -9,12 +9,11 @@ import java.util.LinkedList;
 import java.util.Map;
 
 /**
- * The {@code RetorchOrchestrator}  is the interface which implement the different Orchestrators used to generate
- * the Pipelining code necessary to deploy the {@code ExecutionPlan} in a certain Continuous Integration System:
+ * The {@code RetorchOrchestrator}  interface provides the blueprint with the methods that other Orchestrators must implement
+ * to generate the Pipelining code necessary to deploy the {@code ExecutionPlan} in a certain Continuous Integration System.
  * e.g. Jenkins, GitHub Actions, Gitlab CI/CD.
  */
-public interface RetorchOrchestrator {
-
+public interface IRetorchOrchestrator {
 
     ExecutionPlan getExecutionPlan();
     void setExecutionPlan(ExecutionPlan plan);

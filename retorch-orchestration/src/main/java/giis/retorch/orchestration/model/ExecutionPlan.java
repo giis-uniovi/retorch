@@ -19,11 +19,6 @@ public class ExecutionPlan {
     private Map<Integer, LinkedList<Activity>> sortedActivities;
     private List<Activity> listActivities;
 
-    private enum tJobIdentifier {
-        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AA, AB, AC, AD, AE, AF, AG, AH,
-        AI, AJ, AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,AZ,BA,BB,BC,BD,BE
-    }
-
     public ExecutionPlan(String name, List<?> listActivities) throws NoFinalActivitiesException, EmptyInputException {
         if (listActivities == null || listActivities.isEmpty()){
             throw  new EmptyInputException("The provided list of activities is empty");
@@ -99,7 +94,7 @@ public class ExecutionPlan {
                 if ((timeMoment == 0) && (currentActivityEntity.getListPredecessors().isEmpty())) {
                     numberOfAddedActivities--;
                     currentTjob.setStage(timeMoment);
-                    currentTjob.setIdTJob("TJob" +tJobIdentifier.values()[tJobEntityList.size()]);
+                    currentTjob.setIdTJob("TJob" +getIdentifier(tJobEntityList.size()));
                     tJobEntityList.add(currentTjob);
                     currentListActivities.add(currentActivityEntity);
 
@@ -107,7 +102,7 @@ public class ExecutionPlan {
                     if (new HashSet<>(allPassedActivities).containsAll(currentActivityEntity.getListPredecessors())) {
                         currentListActivities.add(currentActivityEntity);
                         currentTjob.setStage(timeMoment);
-                        currentTjob.setIdTJob("TJob" +tJobIdentifier.values()[tJobEntityList.size()]);
+                        currentTjob.setIdTJob("TJob" +getIdentifier(tJobEntityList.size()));
                         tJobEntityList.add(currentTjob);
                         numberOfAddedActivities--;
                     }
@@ -121,5 +116,18 @@ public class ExecutionPlan {
         }
         return setOfOrderedActivities;
     }
-
+    /**
+     * Generates an alphabetical identifier for a {@code TJob} according to the number of TJob:
+     * e.g. A,B,C..., AA,AB,AC... BA,BB,BC...
+     */
+    public static String getIdentifier(int index) {
+        StringBuilder result = new StringBuilder();
+        while (index >= 0) {
+            // Calculate the character to append
+            result.insert(0, (char) ('A' + (index % 26)));
+            // Decrease the index and move to the next "digit"
+            index = index / 26 - 1;
+        }
+        return result.toString();
+    }
 }

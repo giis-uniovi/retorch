@@ -19,7 +19,7 @@ import java.util.*;
  * into the Jenkinsfile and the different scripting code to make the  {@code Resources} set-up and tear-down as
  * well as the {@code TestCase}s execution scripts.
  */
-public class JenkinsOrchestrator implements RetorchOrchestrator {
+public class JenkinsOrchestrator implements IRetorchOrchestrator {
 
     private static final String TJOB_BASE_PATH = "testsBasePath";
     private static final String ENVIRONMENT_FOLDER_NAME = "retorchfiles/envfiles/";
