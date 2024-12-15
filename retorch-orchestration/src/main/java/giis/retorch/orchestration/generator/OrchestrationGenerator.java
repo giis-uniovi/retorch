@@ -19,7 +19,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
-
+/**
+ * The {@code OrchestrationGenerator} class provides several method that allow to generate and obtain the Execution
+ * Plan and the Jenkinsfiles and scripting code, orchestrating.
+ */
 public class OrchestrationGenerator {
 
     /**
@@ -53,7 +56,7 @@ public class OrchestrationGenerator {
      * can be used for debugging purposes or generate the usage profiles/estimate the different costs.
      *
      * @param systemName   String with the system name (must coincide with the SystemResources.json file )
-     * @param rootPackageNameTests String with the package route of the test cases
+     * @param rootPackageNameTests String with root package name where tests are located
      * @return The RETORCH Execution plan
      */
     public ExecutionPlan getExecutionPlan(String rootPackageNameTests, String systemName) throws NotValidSystemException,
@@ -64,13 +67,13 @@ public class OrchestrationGenerator {
     }
 
     /**
-     * This  method  with the  system name and packageroute provided as input, creates a {@code Classifier} and gets the {@code System}
+     * This  method  with the  system name and root package name where tests are located provided as input, creates a {@code Classifier} and gets the {@code System}
      * from its package. With the {@code System} creates an {@code Aggregator}  who generate the {@code tGroup}s.
      * This {@code tGroup}s are given as input to the {@code Scheduler} who generates the {@code Activity} Graph.
      * Finally, creates a {@code JenkinsOrchestrator} with the {@code Activity} Graph and the system name
      *
      * @param systemName   String with the system name (must coincide with the SystemResources.json file).
-     * @param rootPackageNameTests String with the package route where the test cases are placed.
+     * @param rootPackageNameTests String with root package name where tests are located.
      */
     private static JenkinsOrchestrator getJenkinsOrchestrator(String rootPackageNameTests, String systemName) throws
             EmptyInputException, IOException, ClassNotFoundException, URISyntaxException, NotValidSystemException,

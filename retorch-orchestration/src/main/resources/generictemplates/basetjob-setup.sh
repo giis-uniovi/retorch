@@ -10,10 +10,13 @@
 DOCKER_HOST_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
 export DOCKER_HOST_IP
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Exporting the HOST_IP: $DOCKER_HOST_IP"
-# Custom Set-up commands
+
+# START Custom Set-up commands
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
 ${CUSTOM_SETUP_COMMANDS}
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
+# END Custom Set-up commands
+
 # Deploy containers
 cd "$SUT_LOCATION"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Deploying containers for TJOB $1"
