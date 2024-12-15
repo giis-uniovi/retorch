@@ -223,25 +223,11 @@ Once created the different properties and configuration files, the single module
 ```
 
 ### Executing the Orchestration generator
-Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to create a 
-main class and instantiate an `OrchestratinGenericToolbox` object. Calling the `generateJenkinsFile()` method with the following 
-parameters:
-- `packageRoute`: String that specifies the complete package name to the E2E annotated tests folder.
+Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to call the
+main class `OrchestationGeneratorMainClass` with the following 3 parameters as arguments:
+- `rootPackageNameTests`: String that specifies the root package name where tests are located.
 - `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
-- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created (usually the root of the project: `./`).
-
-The following code snippet shows an example of the method invocation:
- ```java
-import giis.retorch.orchestration.main.OrchestrationGenericToolBox;
-
-public class SutExampleRetorchMain {
-
-    public static void main(String[] args)  {
-        OrchestrationGenericToolBox toolBox = new OrchestrationGenericToolBox();
-        toolBox.generateJenkinsfile("giis.sutexample.e2e.functional.tests", "sutexample", "./");
-    }
-}
-```
+- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root.
 
 ### RETORCH Orchestration generator outputs
 The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
