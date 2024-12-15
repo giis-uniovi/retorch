@@ -227,7 +227,7 @@ Once all the files created and the `docker-compose.yml` is prepared, to execute 
 main class `OrchestationGeneratorMainClass` with the following 3 parameters as arguments:
 - `rootPackageNameTests`: String that specifies the root package name where tests are located.
 - `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
-- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created (usually the root of the project: `./`).
+- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root.
 
 ### RETORCH Orchestration generator outputs
 The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
