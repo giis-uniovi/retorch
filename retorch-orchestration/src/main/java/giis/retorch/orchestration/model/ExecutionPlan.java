@@ -90,22 +90,10 @@ public class ExecutionPlan {
             LinkedList<Activity> currentListActivities = new LinkedList<>();
             while (iterator.hasNext()) {
                 Activity currentActivityEntity = iterator.next();
-                TJob currentTjob= currentActivityEntity.getTJob();
-                if ((timeMoment == 0) && (currentActivityEntity.getListPredecessors().isEmpty())) {
-                    numberOfAddedActivities--;
-                    currentTjob.setStage(timeMoment);
-                    currentTjob.setIdTJob("TJob" +getIdentifier(tJobEntityList.size()));
-                    tJobEntityList.add(currentTjob);
+                if ((timeMoment == 0) && (currentActivityEntity.getListPredecessors().isEmpty()) || new HashSet<>(allPassedActivities).containsAll(currentActivityEntity.getListPredecessors())) {
+                    addTJob(currentActivityEntity, timeMoment);
                     currentListActivities.add(currentActivityEntity);
-
-                } else {
-                    if (new HashSet<>(allPassedActivities).containsAll(currentActivityEntity.getListPredecessors())) {
-                        currentListActivities.add(currentActivityEntity);
-                        currentTjob.setStage(timeMoment);
-                        currentTjob.setIdTJob("TJob" +getIdentifier(tJobEntityList.size()));
-                        tJobEntityList.add(currentTjob);
-                        numberOfAddedActivities--;
-                    }
+                    numberOfAddedActivities--;
                 }
             }
 
@@ -115,6 +103,11 @@ public class ExecutionPlan {
             timeMoment++;
         }
         return setOfOrderedActivities;
+    }
+    public void addTJob(Activity activity, int timeMoment) {
+        activity.getTJob().setStage(timeMoment);
+        activity.getTJob().setIdTJob(!activity.getTJob().getListTestCases().isEmpty()?"TJob" + getIdentifier(tJobEntityList.size()):"GatewayActivity");
+        if (!activity.getTJob().getListTestCases().isEmpty()) {tJobEntityList.add(activity.getTJob());}
     }
     /**
      * Generates an alphabetical identifier for a {@code TJob} according to the number of TJob:
