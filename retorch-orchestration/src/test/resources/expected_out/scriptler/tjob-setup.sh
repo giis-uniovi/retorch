@@ -15,19 +15,19 @@ export DOCKER_HOST_IP
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
 # The custom-tjob-setup file specifies the custom commands-scripting code that need to be executed into the TJob setup, personalize
 # it in the /retorchfiles/customsscriptscode/custom-tjob-setup.
-copy_and_replace_envoy_configs() {
+copy_and_replace_somefiles() {
     local tjobname="$1"
-    cp -p "$SUT_LOCATION/src/ApiGateways/Envoy/config/mobileshopping/envoy.yaml" "$SUT_LOCATION/src/tmp/$tjobname/mobileshopping/"
-    cp -p "$SUT_LOCATION/src/ApiGateways/Envoy/config/webshopping/envoy.yaml" "$SUT_LOCATION/src/tmp/$tjobname/webshopping/"
+    cp -p "$SUT_LOCATION/src/somefolder/file.yaml" "$SUT_LOCATION/src/somefolder/"
+    cp -p "$SUT_LOCATION/src/somefolder2/file.yaml" "$SUT_LOCATION/src/somefolder2/"
 
-    sed -i "s/\${tjobname}/$tjobname/g" "$SUT_LOCATION/src/tmp/$tjobname/mobileshopping/envoy.yaml"
-    sed -i "s/\${tjobname}/$tjobname/g" "$SUT_LOCATION/src/tmp/$tjobname/webshopping/envoy.yaml"
+    sed -i "s/\${tjobname}/$tjobname/g" "$SUT_LOCATION/src/somefolder/"
+    sed -i "s/\${tjobname}/$tjobname/g" "$SUT_LOCATION/src/somefolder2/"
 }
 # COI setup
-mkdir -p "$SUT_LOCATION/src/tmp/$1/mobileshopping"
-mkdir -p "$SUT_LOCATION/src/tmp/$1/webshopping"
+mkdir -p "$SUT_LOCATION/src/tmp/$1/somefolder"
+mkdir -p "$SUT_LOCATION/src/tmp/$1/somefolder2"
 
-copy_and_replace_envoy_configs "$1"
+copy_and_replace_somefiles "$1"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
 # END Custom Set-up commands
 

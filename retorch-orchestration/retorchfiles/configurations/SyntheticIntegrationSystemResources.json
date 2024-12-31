@@ -21,7 +21,7 @@
         "quantity": 0.6
       }
     ],
-    "dockerImage": "database-docker.someImage"
+    "dockerImage": "someplaceholder2;heavyInElasticResource.someImage"
   },
   "lightInElasticResource": {
     "hierarchyParent": [
@@ -47,7 +47,7 @@
         "quantity": 0.5
       }
     ],
-    "dockerImage": "docker.someImage"
+    "dockerImage": "someplaceholder1;lightInElasticResource.someImage"
   },
   "mockElasticResource": {
     "hierarchyParent": [
@@ -76,7 +76,7 @@
         "quantity": 0.5
       }
     ],
-    "dockerImage": "someplaceholder1[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder1;elasModelmockElasticResource.someImage"
   },
   "lightElasticResource": {
     "hierarchyParent": [
@@ -100,7 +100,7 @@
         "quantity": 0.5
       }
     ],
-    "dockerImage": "someplaceholder2[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder2;lightElasticResource.someImage"
   },
   "mediumElasticResource": {
     "hierarchyParent": [
@@ -124,6 +124,6 @@
         "quantity": 2.0
       }
     ],
-    "dockerImage": "someplaceholder3[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder3;mediumElasticResource.someImage"
   }
 }

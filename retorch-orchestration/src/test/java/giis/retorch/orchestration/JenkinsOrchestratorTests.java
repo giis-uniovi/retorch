@@ -17,8 +17,6 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +26,9 @@ import java.util.Map;
  * the different scripts of the {@code JenkinsOrchestrator} component.
  */
 public class JenkinsOrchestratorTests {
+
+    protected static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/";
+    protected static final String OUTPUT_PATH_ENVFILES = "retorchfiles/envfiles/";
 
     private final Logger logger = LoggerFactory.getLogger(JenkinsOrchestratorTests.class);
     private JenkinsOrchestrator jenkinsOrchestrator;
@@ -52,6 +53,17 @@ public class JenkinsOrchestratorTests {
         String actualOutput = jenkinsOrchestrator.generatePipeline(listActivities);
 
         Assert.assertEquals(expectedOutput, actualOutput);
+
+        checkTJobEnvFiles(9);
+    }
+
+    public void checkTJobEnvFiles(int numberTJobs) throws IOException {
+        String expectedOutput = EXPECTED_OUTPUT_PATH + "/orchestrationgenerator/";
+
+        for (int i = 0; i < numberTJobs; i++) {
+            String tjobEnvFile = "tjob" + (char) ('a' + (i % 26)) + ".env";
+            utils.compareFiles(expectedOutput + tjobEnvFile, OUTPUT_PATH_ENVFILES + tjobEnvFile);
+        }
     }
 
     @Test
@@ -73,32 +85,25 @@ public class JenkinsOrchestratorTests {
         String expectedOutput = new String(Files.readAllBytes(file.toPath())).replace("\r\n", "\n");
         Assert.assertEquals(expectedOutput, executionPipeline);
         //Checking that the scripts were created correctly:
+        checkTJobEnvFiles(5);
+        checkScriptsGenerated();
+    }
+    public void checkScriptsGenerated() throws IOException {
         String expOutputFolder = "src/test/resources/expected_out/scriptler/";
         String actualOutputFolder = "retorchfiles/scripts/";
-        compareFiles(expOutputFolder + "tjob-teardown.sh", actualOutputFolder + "tjoblifecycles/tjob-teardown.sh");
-        compareFiles(expOutputFolder + "tjob-setup.sh", actualOutputFolder + "tjoblifecycles/tjob-setup.sh");
-        compareFiles(expOutputFolder + "tjob-testexecution.sh", actualOutputFolder + "tjoblifecycles/tjob" +
+        utils.compareFiles(expOutputFolder + "tjob-teardown.sh", actualOutputFolder + "tjoblifecycles/tjob-teardown.sh");
+        utils.compareFiles(expOutputFolder + "tjob-setup.sh", actualOutputFolder + "tjoblifecycles/tjob-setup.sh");
+        utils.compareFiles(expOutputFolder + "tjob-testexecution.sh", actualOutputFolder + "tjoblifecycles/tjob" +
                 "-testexecution.sh");
-        compareFiles(expOutputFolder + "storeContainerLogs.sh", actualOutputFolder + "storeContainerLogs.sh");
-        compareFiles(expOutputFolder + "waitforSUT.sh", actualOutputFolder + "waitforSUT.sh");
-        compareFiles(expOutputFolder + "writetime.sh", actualOutputFolder + "writetime.sh");
-        compareFiles(expOutputFolder + "coi-setup.sh", actualOutputFolder + "coilifecycles/coi-setup.sh");
-        compareFiles(expOutputFolder + "coi-teardown.sh", actualOutputFolder + "coilifecycles/coi-teardown.sh");
-        compareFiles(expOutputFolder + "savetjoblifecycledata.sh", actualOutputFolder + "savetjoblifecycledata.sh");
-        compareFiles(expOutputFolder + "storeContainerLogs.sh", actualOutputFolder + "storeContainerLogs.sh");
-        compareFiles(expOutputFolder + "printLog.sh", actualOutputFolder + "printLog.sh");
-    }
+        utils.compareFiles(expOutputFolder + "storeContainerLogs.sh", actualOutputFolder + "storeContainerLogs.sh");
+        utils.compareFiles(expOutputFolder + "waitforSUT.sh", actualOutputFolder + "waitforSUT.sh");
+        utils.compareFiles(expOutputFolder + "writetime.sh", actualOutputFolder + "writetime.sh");
+        utils.compareFiles(expOutputFolder + "coi-setup.sh", actualOutputFolder + "coilifecycles/coi-setup.sh");
+        utils.compareFiles(expOutputFolder + "coi-teardown.sh", actualOutputFolder + "coilifecycles/coi-teardown.sh");
+        utils.compareFiles(expOutputFolder + "savetjoblifecycledata.sh", actualOutputFolder + "savetjoblifecycledata.sh");
+        utils.compareFiles(expOutputFolder + "storeContainerLogs.sh", actualOutputFolder + "storeContainerLogs.sh");
+        utils.compareFiles(expOutputFolder + "printLog.sh", actualOutputFolder + "printLog.sh");
 
-    public void compareFiles(String pathExpected, String pathobtained) throws IOException {
-        String expectedContent = readFileContent(pathExpected);//Read two file content
-        String obtainedContent = readFileContent(pathobtained);
-        Assert.assertEquals(expectedContent, obtainedContent);//Compare two file content
-    }
-
-    private String readFileContent(String filePath) throws IOException {
-        Path path = Paths.get(filePath);
-        byte[] bytes = Files.readAllBytes(path);
-        return new String(bytes);
     }
 
     @Test(expected = EmptyInputException.class)

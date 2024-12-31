@@ -1,7 +1,12 @@
 package giis.retorch.orchestration;
 
 import giis.retorch.orchestration.model.*;
+import org.junit.Assert;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -23,11 +28,21 @@ public class GenericUtils {
     protected static final String HEAVY_INELASTIC_ID = "heavyInElasticResource";
     protected static final String LIGHT_INELASTIC_ID = "lightInElasticResource";
     protected static final String MEDIUM_INELASTIC_ID = "MedInElasRest";
-    protected static final String DOCKER_IMAGE = "someplaceholder2[IMG:]someimage";
+    protected static final String DOCKER_IMAGE = "someplaceholder2;someimage";
     protected static final String PARENT_ELASTIC = "elasticParent";
     protected static final String PARENT_INELASTIC = "parentAllInelastic";
     protected static final String ENCODING = "utf-8";
 
+    public void compareFiles(String pathExpected, String pathobtained) throws IOException {
+        String expectedContent = readFileContent(pathExpected);//Read two file content
+        String obtainedContent = readFileContent(pathobtained);
+        Assert.assertEquals("The file: "+pathobtained+" don't match.",expectedContent, obtainedContent);//Compare two file content
+    }
+    private String readFileContent(String filePath) throws IOException {
+        Path path = Paths.get(filePath);
+        byte[] bytes = Files.readAllBytes(path);
+        return new String(bytes);
+    }
 
     public AccessMode getAccessModeHeavyInElasticResource() {
         return new AccessMode(new AccessModeTypes(READWRITE), false, 1, this.getHeavyInelasticResource());

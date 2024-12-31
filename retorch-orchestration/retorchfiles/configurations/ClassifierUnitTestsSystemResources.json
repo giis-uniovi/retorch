@@ -19,7 +19,7 @@
         "quantity": 0.5
       }
     ],
-    "dockerImage": "someplaceholder1[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder1;docker.someImage"
   },
   "heavyInElasticResource": {
     "hierarchyParent": [
@@ -43,7 +43,7 @@
         "quantity": 0.6
       }
     ],
-    "dockerImage": "someplaceholder2[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder2;docker.someImage"
   },
   "lightElasticResource": {
     "hierarchyParent": ["elasticParent"],
@@ -65,6 +65,6 @@
         "quantity": 0.5
       }
     ],
-    "dockerImage": "someplaceholder3[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder3;docker.someImage"
   }
 }

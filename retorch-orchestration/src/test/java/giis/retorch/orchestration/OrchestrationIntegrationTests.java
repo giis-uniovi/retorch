@@ -35,13 +35,14 @@ import static org.junit.Assert.assertTrue;
  */
 public class OrchestrationIntegrationTests {
 
-    protected static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/outputTestIntegration";
+    protected static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/";
+    protected static final String OUTPUT_PATH_ENVFILES = "retorchfiles/envfiles/";
     private RetorchClassifier classifier;
     private IntegrationUtils utils;
+    Logger loggerTesIntegration = LoggerFactory.getLogger(OrchestrationIntegrationTests.class);
 
     @Before
     public void setUp() {
-        Logger loggerTesIntegration = LoggerFactory.getLogger(OrchestrationIntegrationTests.class);
         try {
             utils = new IntegrationUtils();
         } catch (IOException e) {
@@ -71,7 +72,17 @@ public class OrchestrationIntegrationTests {
         Map<Integer, LinkedList<Activity>> listActivitiesScheduledOrchestrator =
                 orchestrator.getExecutionPlan().getSortedActivities();
         String executionPipeline = orchestrator.generatePipeline(listActivitiesScheduledOrchestrator);
-        testStringAgainstPath(EXPECTED_OUTPUT_PATH, executionPipeline);
-
+        testStringAgainstPath(EXPECTED_OUTPUT_PATH+"outputTestIntegration", executionPipeline);
+        checkTJobEnvFiles(7);
     }
+
+    public void checkTJobEnvFiles(int numberTJobs) throws IOException {
+        String expectedOutput = EXPECTED_OUTPUT_PATH + "/orchestrationgenerator/";
+        for (int i = 0; i < numberTJobs; i++) {
+            String tjobEnvFile = "tjob" + (char) ('a' + (i % 26)) + ".env";
+            loggerTesIntegration.debug("Checking TJob env file: {} ", tjobEnvFile);
+            utils.compareFiles(expectedOutput + "int-" + tjobEnvFile, OUTPUT_PATH_ENVFILES + tjobEnvFile);
+        }
+    }
+
 }

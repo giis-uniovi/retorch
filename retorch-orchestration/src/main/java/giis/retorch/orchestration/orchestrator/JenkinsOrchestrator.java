@@ -112,7 +112,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
             StringBuilder resourceIDBuilder = new StringBuilder();
             for (Resource res : tJobWithTestCases.getListResourceClasses()) {
                 resourceIDBuilder.append(res.getResourceID()).append(" ");
-                String [] placeHolderWithImage=res.getDockerImage().split("[IMG:]");
+                String [] placeHolderWithImage=res.getDockerImage().split(";");
                 mapWithPlaceHoldersAndImages.put(placeHolderWithImage[0], placeHolderWithImage[1]);
             }
             this.tJobCounter++;

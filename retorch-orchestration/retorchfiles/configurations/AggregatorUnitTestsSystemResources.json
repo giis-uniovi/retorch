@@ -19,7 +19,7 @@
         "quantity": 0.5
       }
     ],
-    "dockerImage": "someplaceholder1[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder1;docker.someImage"
   },
   "lightElasticResource": {
     "hierarchyParent": ["elasticParent"],
@@ -41,7 +41,7 @@
         "quantity": 2
       }
     ],
-    "dockerImage": "someplaceholder2[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder2;docker.someImage"
   },
   "heavyInElasticResource": {
     "hierarchyParent": [
@@ -65,7 +65,7 @@
         "quantity": 1
       }
     ],
-    "dockerImage": "someplaceholder3[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder3;docker.someImage"
   },
   "mediumElasticResource": {
     "hierarchyParent": ["elasticParent"],
@@ -87,7 +87,7 @@
         "quantity": 2
       }
     ],
-    "dockerImage": "someplaceholder4[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder4;docker.someImage"
   },
   "MedInElasRest": {
     "hierarchyParent": [],
@@ -109,6 +109,6 @@
         "quantity": 1
       }
     ],
-    "dockerImage": "someplaceholder5[IMG:]docker.someImage"
+    "dockerImage": "someplaceholder5;docker.someImage"
   }
 }
