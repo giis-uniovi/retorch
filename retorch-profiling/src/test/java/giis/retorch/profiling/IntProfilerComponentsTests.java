@@ -12,10 +12,7 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -44,31 +41,12 @@ public class IntProfilerComponentsTests {
     @Before
     public void setUp() {
         log.info("****** Running test: {} ******", testName.getMethodName());
-        log.debug("Creating the tmp directory to store methods output");
-        this.utils=new ProfilerTestUtils();
+        this.utils = new ProfilerTestUtils();
         this.dataGenerationUtils = new ProfilerDataGenerationUtils();
         this.generator = new ProfileGenerator();
-        List<File> listFiles = new LinkedList<>();
-        listFiles.add(new File(outBasePath));
-        listFiles.add(new File(outBasePath + "/profiles"));
-        listFiles.add(new File(debugOutBasePath));
-        for (File dir : listFiles) {
-            if (dir.exists()) {
-                log.debug("The directory already exists: {}", dir.getAbsolutePath());
-            } else {
-                try {
-                    boolean isCreated = dir.mkdirs();
-                    if (isCreated) {
-                        log.debug("Directory successfully created: {}", dir.getAbsolutePath());
-                    } else {
-                        log.warn("Not able to create the directory: {}", dir.getAbsolutePath());
-                    }
-                } catch (Exception e) {
-                    log.error("Something wrong happened creating the directory {} the exception stacktrace is:\n {}", dir.getAbsolutePath(), e.getStackTrace());
-                    fail("The directory" + dir.getAbsolutePath() + "cannot be created");
-                }
-            }
-        }
+        ProfilerTestUtils.ensureDirectoryExists(outBasePath, log);
+        ProfilerTestUtils.ensureDirectoryExists(outBasePath + "/profiles", log);
+        ProfilerTestUtils.ensureDirectoryExists(debugOutBasePath, log);
         log.info("****** Set-up for test: {} ended ******", testName.getMethodName());
     }
 

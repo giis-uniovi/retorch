@@ -346,6 +346,42 @@ the infrastructure(`.retorch/scripts/coilifecycles`) and the different environme
   tear down scripts for the TJobs and infrastructure
 - `📁 .retorch/envfiles`: contains the generated custom environment of each TJob.
 
+## RETORCH Usage Profiler
+
+The RETORCH framework provides a tool that generates the usage profiles for a given infrastructure. To generate the
+different usage
+profiles, the tool requires the execution data (generated in each execution of the previously generated Jenkinsfile),
+the Execution Plan
+generated with the orchestration toolbox and the Cloud Configuration file allocated in the`retorch/configurations`
+folder.
+
+### Generate the average lifecycle duration file from the CI execution data.
+
+The generation of the average lifecycle file is performed in three steps (1) Collect the different executions data and (2)
+configure and execute the tool to generate the average file:
+
+1. **Collect the execution data**: through different scripts, each execution of the RETORCH Execution Plans create a
+   .csv file that is stored in the `artifacts` folder
+   The tester should collect from one to several execution data files in order to provide as input in the next step.
+2. **Configure and execute the UsageProfilerToolBox component:**  into the above created main class, instantiate
+   an `UsageProfilerToolBox` object and call the `generateAverageDurationCSVFile()` method specifying where are the
+   execution data placed (inputPath) and the route and name of the csv file provided as output
+
+ ```java
+import retorch.profiling.main.UsageProfilerToolBox;
+
+public class RetorchMain {
+
+  public static void main(String[] args) {
+    UsageProfilerToolBox usageProfiler = new UsageProfilerToolBox();
+    usageProfiler.generateAverageDurationCSVFile("./executiondata","./averagedurationfile.csv");
+    
+  }
+}
+```
+
+
+
 ## Contributing
 
 See the general contribution policies and guidelines for *giis-uniovi* at

@@ -6,9 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import giis.retorch.profiling.model.CloudObjectInstance;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 /**
  * {@code COISerializer} class provides utils to deserialize the configuration files, and create them from scratch with the
@@ -35,8 +34,7 @@ public class COISerializer {
      *                     read
      */
     public <T> T deserialize(String filePath, TypeReference<T> typeRef) throws IOException {
-        String json = new String(Files.readAllBytes(Paths.get(filePath)));
-        return mapper.readValue(json, typeRef);
+        return mapper.readValue(new File(filePath), typeRef);
     }
 
     public List<CloudObjectInstance> deserializeCloudObjectInstances(String systemName) throws IOException {
