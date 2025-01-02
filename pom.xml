@@ -41,11 +41,18 @@
 
         <mockito.version>4.11.0</mockito.version>
 
+        <javatuples.version>1.2</javatuples.version>
+
+        <commons-csv.version>1.12.0</commons-csv.version>
+
+        <batik.version>1.18</batik.version>
+
     </properties>
 
     <modules>
         <module>retorch-annotations</module>
         <module>retorch-orchestration</module>
+        <module>retorch-profiling</module>
     </modules>
 
     <dependencyManagement>
@@ -77,6 +84,47 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.javatuples</groupId>
+                <artifactId>javatuples</artifactId>
+                <version>${javatuples.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>${commons-csv.version}</version>
+            </dependency>
+            <!-- Dependencies for the ProfileGraphs -->
+            <dependency>
+                <groupId>org.jfree</groupId>
+                <artifactId>jfreechart</artifactId>
+                <version>1.5.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jfree</groupId>
+                <artifactId>jcommon</artifactId>
+                <version>1.0.24</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xmlgraphics</groupId>
+                <artifactId>batik-svggen</artifactId>
+                <version>${batik.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xmlgraphics</groupId>
+                <artifactId>batik-dom</artifactId>
+                <version>${batik.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xmlgraphics</groupId>
+                <artifactId>batik-transcoder</artifactId>
+                <version>${batik.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xmlgraphics</groupId>
+                <artifactId>batik-xml</artifactId>
+                <version>${batik.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
