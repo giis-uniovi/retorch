@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console Appender -->
+    <appender name="ConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%throwable</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender -->
+    <appender name="FileAppender" class="ch.qos.logback.core.FileAppender">
+        <file>target/log-test.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d [%thread] %-5level %logger{36} - %msg%n%throwable</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root Logger -->
+    <root level="info">
+        <appender-ref ref="ConsoleAppender" />
+        <appender-ref ref="FileAppender" />
+    </root>
+
+    <!-- Logger for "giis" -->
+    <logger name="giis" level="debug" additivity="false">
+        <appender-ref ref="ConsoleAppender" />
+        <appender-ref ref="FileAppender" />
+    </logger>
+</configuration>
