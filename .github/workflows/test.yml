@@ -49,6 +49,7 @@ jobs:
             target/site
             **/target/site/jacoco/jacoco.xml
             **/target/surefire-reports
+            **/target/debug
 
   sonarqube:
     needs: [ test-retorch ]
