@@ -14,6 +14,7 @@ import giis.retorch.profiling.model.BillingOption;
 import giis.retorch.profiling.model.CloudObjectInstance;
 import giis.retorch.profiling.model.ContractedCapacity;
 import giis.retorch.profiling.model.ResourceInstance;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@code ProfileGeneratorUtils} class several utilities that generates {@code ExecutionPlan}s and different
@@ -102,14 +103,18 @@ public class ProfilerDataGenerationUtils {
         listVMCapacities.put(Capacity.STORAGE_NAME, new ContractedCapacity(Capacity.STORAGE_NAME, 32, 32));
         listVMCapacities.put(Capacity.SLOTS_NAME, new ContractedCapacity(Capacity.SLOTS_NAME, 8, 1));
 
+        return getCloudObjectInstance(1.20, 3600, "AzureVM", listVMCapacities);
+    }
+
+    private static @NonNull CloudObjectInstance getCloudObjectInstance(double value, int timePeriod, String azureVM, Map<String, ContractedCapacity> listVMCapacities) {
         HashMap<String, Double> capacityprices = new HashMap<>();
         capacityprices.put(Capacity.MEMORY_NAME, 0.5);
         capacityprices.put(Capacity.PROCESSOR_NAME, 0.5);
         capacityprices.put(Capacity.STORAGE_NAME, 0.5);
-        capacityprices.put(Capacity.SLOTS_NAME, 1.20);
-        BillingOption option = new BillingOption("As-you-go", "Azure", capacityprices, 3600);
+        capacityprices.put(Capacity.SLOTS_NAME, value);
+        BillingOption option = new BillingOption("As-you-go", "Azure", capacityprices, timePeriod);
 
-        CloudObjectInstance objectInstance = new CloudObjectInstance("AzureVM", option, listVMCapacities);
+        CloudObjectInstance objectInstance = new CloudObjectInstance(azureVM, option, listVMCapacities);
         objectInstance.setLifecycleTimes(0, 3, 4, 661, 3580, 3600);
         return objectInstance;
     }
@@ -122,16 +127,7 @@ public class ProfilerDataGenerationUtils {
         listVMCapacities.put(Capacity.STORAGE_NAME, new ContractedCapacity(Capacity.STORAGE_NAME, 32, 0.1));
         listVMCapacities.put(Capacity.SLOTS_NAME, new ContractedCapacity(Capacity.SLOTS_NAME, 0, 0));
 
-        HashMap<String, Double> capacityPrices = new HashMap<>();
-        capacityPrices.put(Capacity.MEMORY_NAME, 0.5);
-        capacityPrices.put(Capacity.PROCESSOR_NAME, 0.5);
-        capacityPrices.put(Capacity.STORAGE_NAME, 0.5);
-        capacityPrices.put(Capacity.SLOTS_NAME, 0.0);
-        BillingOption option = new BillingOption("As-you-go", "Azure", capacityPrices, 1);
-
-        CloudObjectInstance objectInstance = new CloudObjectInstance("Azure Containers", option, listVMCapacities);
-        objectInstance.setLifecycleTimes(0, 3, 4, 661, 3580, 3600);
-        return objectInstance;
+        return getCloudObjectInstance(0.0, 1, "Azure Containers", listVMCapacities);
     }
     public CloudObjectInstance generateBrowserServiceCloudObjectInstances() {
         Map<String, ContractedCapacity> listVMCapacities = new HashMap<>();

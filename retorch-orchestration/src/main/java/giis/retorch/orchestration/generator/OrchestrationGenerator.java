@@ -15,8 +15,10 @@ import giis.retorch.orchestration.scheduler.RetorchAggregator;
 import giis.retorch.orchestration.scheduler.RetorchScheduler;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.net.URISyntaxException;
 import java.util.List;
 /**
@@ -44,10 +46,7 @@ public class OrchestrationGenerator {
         } else {
             jenkinsFilePath += "Jenkinsfile";
         }
-        try (FileOutputStream outputStream = new FileOutputStream(jenkinsFilePath)) {
-            byte[] strToBytes = executionPipeline.getBytes();
-            outputStream.write(strToBytes);
-        }
+        Files.write(Paths.get(jenkinsFilePath), executionPipeline.getBytes(StandardCharsets.UTF_8));
         return executionPipeline;
     }
 

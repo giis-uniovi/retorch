@@ -6,9 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import giis.retorch.profiling.model.CloudObjectInstance;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 /**
  * {@code COISerializer} class provides utils to deserialize the configuration files, and create them from scratch with the
@@ -17,7 +16,7 @@ import java.util.*;
 public class COISerializer {
 
     private static final Logger logSerializer = LoggerFactory.getLogger(COISerializer.class);
-    private static final String FOLDER_RESOURCES = "retorchfiles/resources/";//Base path of the resource files
+    private static final String FOLDER_RESOURCES = ".retorch/infra/";//Base path of the resource files
     final ObjectMapper mapper;
 
 
@@ -35,11 +34,13 @@ public class COISerializer {
      *                     read
      */
     public <T> T deserialize(String filePath, TypeReference<T> typeRef) throws IOException {
-        String json = new String(Files.readAllBytes(Paths.get(filePath)));
-        return mapper.readValue(json, typeRef);
+        return mapper.readValue(new File(filePath), typeRef);
     }
 
     public List<CloudObjectInstance> deserializeCloudObjectInstances(String systemName) throws IOException {
+        if (systemName == null || systemName.contains("..") || systemName.contains("/") || systemName.contains("\\") || systemName.contains(File.separator)) {
+            throw new IllegalArgumentException("Invalid systemName: path traversal detected (" + systemName + ")");
+        }
         logSerializer.debug("Deserializing the Cloud Object Instances placed in the file:{}{}{}",FOLDER_RESOURCES ,systemName , "CloudObjectInstances.json");
         return deserialize(FOLDER_RESOURCES + systemName + "CloudObjectInstances.json", new  TypeReference<List<CloudObjectInstance>>() {
         });

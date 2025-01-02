@@ -4,37 +4,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.List;
 
 /**
- * The {@code CloudObjectInstance} class represents a Cloud Object Instance with a name,and a set of {@code CapacityContracted}
- * a concise Billing Option and the data corresponding of its LifeCycle.
+ * The {@code CloudObjectInstance} class represents a Cloud Object Instance with a name,and a set of {@code  Capacities}.
  */
 public class CloudObjectInstance {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(CloudObjectInstance.class);
 
     private String name;
     private final Map<String, ContractedCapacity> contractedCapacities;
     private BillingOption billingOption;
-    private double startSetUp;
-    private double endSetUp;
-    private double startTJobExec;
-    private double endTJobExec;
-    private double startTearDown;
-    private double endTearDown;
-
-    public static final String SETUP_NAME = "setup";
-    public static final String TESTEXECUTION_NAME = "testexec";
-    public static final String TEARDOWN_NAME = "teardown";
-
-    protected static final Set<String> LIST_TJOB_LIFECYCLE;
-    static {
-        LIST_TJOB_LIFECYCLE = new HashSet<>();
-        LIST_TJOB_LIFECYCLE.add(SETUP_NAME);
-        LIST_TJOB_LIFECYCLE.add(TESTEXECUTION_NAME);
-        LIST_TJOB_LIFECYCLE.add(TEARDOWN_NAME);
-    }
+    private double startSetUp = Double.NaN;
+    private double endSetUp = Double.NaN;
+    private double startTJobExec = Double.NaN;
+    private double endTJobExec = Double.NaN;
+    private double startTearDown = Double.NaN;
+    private double endTearDown = Double.NaN;
 
     public CloudObjectInstance(@JsonProperty("objectName")String name, @JsonProperty("billingOption")BillingOption option,
                                @JsonProperty("capacitiesContracted")Map<String, ContractedCapacity> contractedCapacities) {
@@ -54,8 +43,6 @@ public class CloudObjectInstance {
     public double getEndTearDown() {return endTearDown;}
     public List<String> getCapacityNames() {return new ArrayList<>(this.getContractedCapacities().keySet());}
     public BillingOption getBillingOption() {return billingOption;}
-    public static Set<String> getTJobLifecycles(){ return LIST_TJOB_LIFECYCLE;}
-
     public void setName(String name) {this.name = name;}
     public void setEndSetUp(double endSetUp) {this.endSetUp = endSetUp;}
     public void setStartSetUp(double startSetUp) {this.startSetUp = startSetUp;}
@@ -72,7 +59,7 @@ public class CloudObjectInstance {
             this.setStartTJobExec(stExec);
             this.setStartTearDown(stTearDown);
             this.setEndSetUp(endSetUp);
-            this.setStartTJobExec(endExec);
+            this.setEndTJobExec(endExec);
             this.setEndTearDown(endTearDown);
         } else {
             throw new IllegalArgumentException("One or more times provided are not correct, please review that each phase starts before the end, and are continuous");

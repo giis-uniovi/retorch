@@ -127,7 +127,8 @@ public class ScriptGenerator {
         }
         Path filePath = Paths.get(urlFile);
         if (Files.exists(filePath)) {
-            return new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
+            return new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8)
+                    .replace("\r\n", "\n").replace("\r", "\n");
         }
 
         return "";

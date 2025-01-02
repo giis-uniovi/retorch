@@ -17,5 +17,4 @@ public class ResourceInstance extends Resource {
         this.setMinimalCapacities(capacities);
         this.setResourceID(name);
     }
-
 }

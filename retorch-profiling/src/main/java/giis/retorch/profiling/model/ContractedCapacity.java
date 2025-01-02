@@ -8,7 +8,7 @@ import giis.retorch.orchestration.model.Capacity;
 
 /**
  * The {@code CapacityContracted} class extends the {@code Capacity} class adding the granularity required to
- * create the UsageProfile representations.
+ * create the {@code UsageProfile}  representations.
  */
 public class ContractedCapacity extends Capacity {
 
@@ -24,16 +24,15 @@ public class ContractedCapacity extends Capacity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.getName(),this.getQuantity(),this.getQuantity());
+        return Objects.hash(this.getName(),this.getQuantity(),this.granularity);
     }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContractedCapacity that = (ContractedCapacity) o;
-        return Objects.equals(this.getName(), that.getName()) && Objects.equals(this.getQuantity(),
-                that.getQuantity()) && Objects.equals(this.granularity, that.getGranularity());
+        return Objects.equals(this.getName(), that.getName()) && Double.compare(this.getQuantity(),
+                that.getQuantity()) == 0 && Double.compare(this.granularity, that.getGranularity()) == 0;
     }
-
 
 }
