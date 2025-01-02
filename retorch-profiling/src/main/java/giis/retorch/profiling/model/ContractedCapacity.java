@@ -24,7 +24,7 @@ public class ContractedCapacity extends Capacity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.getName(),this.getQuantity(),this.getQuantity());
+        return Objects.hash(this.getName(),this.getQuantity(),this.granularity);
     }
     @Override
     public boolean equals(Object o) {

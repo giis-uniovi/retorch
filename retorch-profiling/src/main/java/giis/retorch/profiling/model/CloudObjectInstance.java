@@ -5,10 +5,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * The {@code CloudObjectInstance} class represents a Cloud Object Instance with a name,and a set of {@code CapacityContracted}
- * a concise Billing Option and the data corresponding of its LifeCycle.
+ * The {@code CloudObjectInstance} class represents a Cloud Object Instance with a name,and a set of {@code  Capacities}.
  */
 public class CloudObjectInstance {
 
@@ -52,7 +52,10 @@ public class CloudObjectInstance {
     public double getEndTJobExec() {return endTJobExec;}
     public double getStartTearDown() {return startTearDown;}
     public double getEndTearDown() {return endTearDown;}
-    public List<String> getCapacityNames() {return new ArrayList<>(this.getContractedCapacities().keySet());}
+    public List<String> getCapacityNames() {
+        return this.getContractedCapacities().keySet().stream()
+                .collect(Collectors.toList());
+    }
     public BillingOption getBillingOption() {return billingOption;}
     public static Set<String> getTJobLifecycles(){ return LIST_TJOB_LIFECYCLE;}
 
@@ -72,7 +75,7 @@ public class CloudObjectInstance {
             this.setStartTJobExec(stExec);
             this.setStartTearDown(stTearDown);
             this.setEndSetUp(endSetUp);
-            this.setStartTJobExec(endExec);
+            this.setEndTJobExec(endExec);
             this.setEndTearDown(endTearDown);
         } else {
             throw new IllegalArgumentException("One or more times provided are not correct, please review that each phase starts before the end, and are continuous");

@@ -5,14 +5,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The {@code DataTuple} class represents a data structure that holds an ID for a {@code TJob}, its stage,
- * and a map {@code TJob} with the lifecycle durations. This class it's a necessary DTO enabler to calculate the average
+ * The {@code DataTuple} class represents a data structure that holds an ID for a job, its stage,
+ * and a map with the lifecycle durations. This class it's a necessary enabler to calculate the average
  * datasets, allowing to store the duration of the different executions and its corresponding stage
  */
 public class DataTuple implements Serializable {
 
-    String idTJob;
-    int stage;
+    private String idTJob;
+    private int stage;
     private Map<String, Double> lifecycleDuration;
 
     public DataTuple(String idTJob, int stage) {
