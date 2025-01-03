@@ -10,8 +10,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
@@ -19,11 +17,11 @@ import static org.junit.Assert.fail;
 
 public class ProfilePlotterTests {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     private final String outBasePath = "target/test-outputs/profiler/profiles";
     private final String inBasePath = "src/test/java/giis/retorch/profiling/testdata/profilegen";
 
     private ProfileGeneratorUtils utils;
-    private ProfilePlotter plotter;
     @Rule
     public TestName testName = new TestName();
 
@@ -56,11 +54,9 @@ public class ProfilePlotterTests {
     @Test
     public void testProfilePlotter() throws NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = utils.generateExecutionPlan();
-        plotter=new ProfilePlotter(inBasePath+"/imp_usageprofileplotter.csv");
+        ProfilePlotter plotter = new ProfilePlotter(inBasePath + "/imp_usageprofileplotter.csv");
         utils.generateVMCloudObjectInstances();
         plotter.generateTotalTJobUsageProfileCharts(outBasePath,plan.getName());
         assertEquals(12, plan.gettJobClassList().size());
     }
-
-    
 }

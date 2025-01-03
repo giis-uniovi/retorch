@@ -8,6 +8,9 @@ import giis.retorch.profiling.datasetgeneration.DatasetGenerator;
 
 import java.util.List;
 
+/**
+ {@code UsageProfilerToolBox gets the main methods to generate the different UsageProfiles.}
+ */
 public class UsageProfilerToolBox {
     DatasetGenerator generator;
     private static final Logger log = LoggerFactory.getLogger(UsageProfilerToolBox.class);

@@ -10,18 +10,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+/**
+ * {@code COISerializer} class provides utils to deserialize the configuration files, and create them from scratch with the
+ * RETORCH entities that they want to serialize in these files.
+ */
+public class COISerializer {
 
-public class RETORCHProfilerUtils {
-
-    private static final Logger logSerializer = LoggerFactory.getLogger(RETORCHProfilerUtils.class);
+    private static final Logger logSerializer = LoggerFactory.getLogger(COISerializer.class);
     private static final String FOLDER_RESOURCES = "retorchfiles/resources/";//Base path of the resource files
     final ObjectMapper mapper;
 
-    /**
-     * RETORCH Serializer provides utils to deserialize the configuration files, and create them from scratch with the
-     * RETORCH entities that they want to serialize in these files.
-     */
-    public RETORCHProfilerUtils() {
+
+    public COISerializer() {
         mapper = new ObjectMapper();
     }
 
