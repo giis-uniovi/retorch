@@ -15,8 +15,11 @@ import giis.retorch.profiling.model.CloudObjectInstance;
 import giis.retorch.profiling.model.ContractedCapacity;
 import giis.retorch.profiling.model.ResourceInstance;
 
-public class ProfileGeneratorUtils {
-
+/**
+ * The {@code ProfileGeneratorUtils} class several utilities that generates {@code ExecutionPlan}s and different
+ * {@code CloudObjectInstances} for testing purposes.
+ */
+public class ProfilerDataGenerationUtils {
 
     public ExecutionPlan generateExecutionPlan() throws NoFinalActivitiesException, EmptyInputException {
         //Webserver Resource
