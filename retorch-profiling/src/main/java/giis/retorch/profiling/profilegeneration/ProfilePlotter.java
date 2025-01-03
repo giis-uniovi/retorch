@@ -30,12 +30,18 @@ import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.List;
 
+/**
+ * The {@code ProfilePlotter} class provides the necessary methods to generate graphical representations of the
+ * Usage Profiles of the {@code CloudObjectInstances} for a certain {@code} ExecutionPlan
+ */
 public class ProfilePlotter {
 
     private static final Logger log = LoggerFactory.getLogger(ProfilePlotter.class);
+
     List<CSVRecord> csvProfileRecords;
     private static final String CAPACITY_HEADER = "capacity";
     private static final String LIFECYCLE_HEADER = "lifecyclephase";
+
     public ProfilePlotter(String path) {
         try (FileReader fileReader = new FileReader(path)) {
             CSVFormat csvFormat = CSVFormat.DEFAULT.builder().setDelimiter(";").setHeader()
@@ -46,7 +52,16 @@ public class ProfilePlotter {
             log.error("Error opening the file: {}", e.getMessage());
         }
     }
-
+    /**
+     * The {@code generateTotalTJobUsageProfileCharts} method  creates two maps of XYDatasets, one with the  {@code ContractedCapacity}
+     * contracted in the {@code CloudObjectInstances} and other with the {@code Capacity} used by the {@code ResourceInstances}
+     * of the {@code ExecutionPlan}. The Maps are populated with the loadCapacitiesData() for then create the superposed
+     * Graphs and store it into the 'target/profiles' folder.
+     *
+     * @param outputFolder String with the folder where the Profiles will be stored
+     * @param planName String with the name of the {@code ExecutionPlan}
+     *
+     */
     public void generateTotalTJobUsageProfileCharts(String outputFolder, String planName) {
         Map<String, DefaultTableXYDataset> capacitiesData = new HashMap<>();
         Map<String, DefaultTableXYDataset> contractedCapacitiesData = new HashMap<>();
@@ -55,7 +70,13 @@ public class ProfilePlotter {
         Map<String, XYPlot> mapPlotsUsage = generateXYCloudObjectPlots(contractedCapacitiesData);
         createAndSaveGraphs(outputFolder, planName, capacitiesData, mapPlotsUsage);
     }
-
+    /**
+     * The {@code loadCapacitiesData} load the imported raw Usage Profile into the  two Maps with XYDataset created.
+     *
+     * @param capacitiesData Map of XYDataset with the used Capacities.
+     * @param contractedCapacitiesData Map of XYDataset with the contracted capacities (empty)
+     *
+     */
     private void loadCapacitiesData(Map<String, DefaultTableXYDataset> capacitiesData, Map<String, DefaultTableXYDataset> contractedCapacitiesData) {
         for (CSVRecord lifecycleRecord : csvProfileRecords) {
             if (lifecycleRecord.get("tjobname").equals("TOTAL")) {
@@ -75,6 +96,16 @@ public class ProfilePlotter {
         }
     }
 
+    /**
+     * The {@code createAndSaveGraphs} method given the Maps with XYDatasets of Capacities used and contracted, generates
+     * the Usage Profile graphical representations corresponding to the {@code ExecutionPlan} {@code Capacity} usage.
+     *
+     * @param outputFolder String with the output path where the profiles will be stored
+     * @param capacitiesData  Map of XYDataset with the used {@code Capacity} required.
+     * @param mapPlotsUsage Map where the usage will be stored
+     * @param planName String with the {@code ExecutionPlan} name
+     *
+     */
     private void createAndSaveGraphs(String outputFolder, String planName, Map<String, DefaultTableXYDataset> capacitiesData, Map<String, XYPlot> mapPlotsUsage) {
         for (Map.Entry<String, DefaultTableXYDataset> capacity : capacitiesData.entrySet()) {
             DefaultTableXYDataset orderedDataset = reorderSeries(capacity.getValue(), TJob.getListTJobLifecyclesWithDesiredOrder());
@@ -123,8 +154,16 @@ public class ProfilePlotter {
         }
     }
 
+
+    /**
+     * The {@code createAndSaveGraphs} support method generates the Map of Plots of the {@code CloudObjectInstance}
+     * {@code ContractedCapacity}s.
+     *
+     * @param mapCapacitiesCloudObject Map of XYDataset with the data of the different {@code ContractedCapacity} contracted
+     *
+     */
     public Map<String, XYPlot> generateXYCloudObjectPlots(Map<String, DefaultTableXYDataset> mapCapacitiesCloudObject) {
-        HashMap<String, XYPlot> mapcapacities = new HashMap<>();
+        HashMap<String, XYPlot> mapCapacities = new HashMap<>();
         for (Map.Entry<String, DefaultTableXYDataset> capacity : mapCapacitiesCloudObject.entrySet()) {
 
             JFreeChart chart = ChartFactory.createStackedXYAreaChart(
@@ -142,11 +181,19 @@ public class ProfilePlotter {
             // Remove chart background
             chart.setBackgroundPaint(null);
             chart.getXYPlot().setRenderer(renderer);
-            mapcapacities.put(capacity.getKey(), chart.getXYPlot());
+            mapCapacities.put(capacity.getKey(), chart.getXYPlot());
         }
 
-        return mapcapacities;
+        return mapCapacities;
     }
+
+    /**
+     * The {@code StackedXYAreaRenderer2} support method generates a render that enables the superposition of
+     * the {@code CloudObjectInstance} {@code ContractedCapacity}s plot and the {@code ExecutionPlan} {@code Capacity}s.
+     * plot.
+     *
+     * @return   The rendered object to be applied to the plot.
+     */
     private static StackedXYAreaRenderer2 getTJobUsageProfileRenderer() {
         StackedXYAreaRenderer2 renderer = new StackedXYAreaRenderer2();
         renderer.setOutline(true); // Display outline
@@ -162,7 +209,10 @@ public class ProfilePlotter {
 
         return renderer;
     }
-    // Helper method to reorder series in dataset
+    /**
+     * The {@code reorderSeries} support method reorder the series (by lifecycle phase) to have always the same overlapping
+     * between the plots.
+     */
     private DefaultTableXYDataset reorderSeries(DefaultTableXYDataset dataset, List<String> desiredOrder) {
         DefaultTableXYDataset reorderedDataset = new DefaultTableXYDataset();
         for (String phase : desiredOrder) {
@@ -176,6 +226,16 @@ public class ProfilePlotter {
         }
         return reorderedDataset;
     }
+
+    /**
+     * The {@code saveChartAsFormat} support method enables the storing of the superposed JFreeChart with {@code ContractedCapacity}
+     * against the used {@code Capacity}.
+     * @param chart JChart to be stored
+     * @param format String with the format, supports png and svg formats
+     * @param filePath  String with the path where the images will be stored
+     * @param height Int with the height of the chart
+     * @param width Int with the width of the chart
+     */
     private static void saveChartAsFormat(JFreeChart chart, String filePath,String format, int width, int height) {
         if ("png".equalsIgnoreCase(format)) {
             BufferedImage bufferedImage = chart.createBufferedImage(width, height);
@@ -205,6 +265,12 @@ public class ProfilePlotter {
             log.error("Unsupported format: {}", format);
         }
     }
+    /**
+     * The {@code serializeChart} support method enables the serialized storing of the chart for testing purposes.
+     *
+     * @param chart JChart to be stored and serialized
+     * @param filePath  String with the path where the serialized image will be stored
+     */
     public static void serializeChart(JFreeChart chart, String filePath) {
         try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(Paths.get(filePath)))) {
             // Write the chart object to the file
@@ -214,8 +280,6 @@ public class ProfilePlotter {
             log.error("Error saving chart:  {}" , e.getMessage());
 
     }
-
-
 }
 
 }

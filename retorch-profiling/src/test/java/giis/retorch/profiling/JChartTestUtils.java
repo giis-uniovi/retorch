@@ -58,11 +58,7 @@ public class JChartTestUtils {
         }
 
         // Compare datasets (if any)
-        if (!plot1.getDataset().equals(plot2.getDataset())) {
-            return false;
-        }
-
-        return true;
+        return plot1.getDataset().equals(plot2.getDataset());
     }
 
     private boolean areRenderersEqual(org.jfree.chart.renderer.xy.XYItemRenderer renderer1, org.jfree.chart.renderer.xy.XYItemRenderer renderer2) {
@@ -89,11 +85,11 @@ public class JChartTestUtils {
 
     // Deserialize the JFreeChart object from a file
     public JFreeChart deserializeChart(String filePath) {
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(filePath))) {
+        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(Paths.get(filePath)))) {
             // Read the chart object from the file
             return (JFreeChart) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            log.error("The object was not able to read: {}", e.getMessage());
             return null;
         }
     }

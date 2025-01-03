@@ -7,16 +7,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import giis.retorch.orchestration.model.Capacity;
 
 /**
- * The {@code Capacity} class represents a capacity of with a name and a quantity.
- * It provides methods to add to the quantity and to get and set the name and quantity. The capacity names that
- * are supported are specified in {@code CapacityTypes}: memory, processor,slots and storage.
- * If the provided name is not in the list of valid capacities, it defaults to "Wrong Capacity".
+ * The {@code CapacityContracted} class extends the {@code Capacity} class adding the granularity required to
+ * create the UsageProfile representations.
  */
-public class CapacityContracted extends Capacity {
+public class ContractedCapacity extends Capacity {
 
     private double granularity;
 
-    public CapacityContracted(@JsonProperty("capacityName")String name, @JsonProperty("quantity")double quantity, @JsonProperty("granularity")double granularity) {
+    public ContractedCapacity(@JsonProperty("capacityName")String name, @JsonProperty("quantity")double quantity, @JsonProperty("granularity")double granularity) {
     super(name,quantity);
         this.granularity=granularity;
     }
@@ -32,7 +30,7 @@ public class CapacityContracted extends Capacity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CapacityContracted that = (CapacityContracted) o;
+        ContractedCapacity that = (ContractedCapacity) o;
         return Objects.equals(this.getName(), that.getName()) && Objects.equals(this.getQuantity(),
                 that.getQuantity()) && Objects.equals(this.granularity, that.getGranularity());
     }

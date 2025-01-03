@@ -36,7 +36,9 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public class IntProfilerComponentsTests {
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     private final String outBasePath = "target/test-outputs/profiler";
     private final String inBasePath = "src/test/java/giis/retorch/profiling/testdata/profilegen";
     private final String expOutBasePath = "src/test/resources/expected_out/profiles";
@@ -46,6 +48,7 @@ public class IntProfilerComponentsTests {
     private ProfilePlotter plotter;
     private JChartTestUtils chartUtil;
     private final String outputProfilePath = outBasePath + "/profiles";
+
     @Rule
     public TestName testName = new TestName();
 
@@ -84,7 +87,7 @@ public class IntProfilerComponentsTests {
     public void testIntegrationProfilePlotterVM() throws IOException, NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = utils.generateExecutionPlan();
 
-        generator.generateResourceProfile(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_vm.csv", 3600, 4);
+        generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_vm.csv", 3600, 4);
         generator.generateCOIContractedCapacities(outBasePath + "/output_profile_vm.csv", outBasePath + "/profileIntegrationCOI_VM.csv", utils.generateVMCloudObjectInstances());
         plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_VM.csv");
 
@@ -97,7 +100,7 @@ public class IntProfilerComponentsTests {
     @Test
     public void testIntegrationProfilePlotterContainer() throws IOException, NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = utils.generateExecutionPlan();
-        generator.generateResourceProfile(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_container.csv", 3600, 4);
+        generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_container.csv", 3600, 4);
         generator.generateCOIContractedCapacities(outBasePath + "/output_profile_int_container.csv", outBasePath + "/profileIntegrationCOI_container.csv", utils.generateContainersCloudObjectInstances());
         plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_container.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", plan.getName() + "-containers");
@@ -111,7 +114,7 @@ public class IntProfilerComponentsTests {
     @Test
     public void testIntegrationProfilePlotterServices() throws IOException, NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = utils.generateExecutionPlan();
-        generator.generateResourceProfile(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_services.csv", 3600, 4);
+        generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_services.csv", 3600, 4);
         generator.generateCOIContractedCapacities(outBasePath + "/output_profile_int_services.csv", outBasePath + "/profileIntegrationCOI_services.csv", utils.generateBrowserServiceCloudObjectInstances());
         plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_services.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", plan.getName() + "-services");
@@ -119,7 +122,7 @@ public class IntProfilerComponentsTests {
     }
 
     public boolean profileComparator(String expectedProfilePath, String actualProfilePath, String debugPath) throws IOException {
-        if (!testImagesareEqual(expectedProfilePath, actualProfilePath)) {
+        if (!testImagesAreEqual(expectedProfilePath, actualProfilePath)) {
             String filename = debugPath + "/" + (expectedProfilePath + actualProfilePath).hashCode() + "_debug.pdf";
             log.error("The svg files expected: {} actual {} dont match, see more details in the merged file: {} ", expectedProfilePath, actualProfilePath, filename);
             createTestFailPNGReport(expectedProfilePath, actualProfilePath, filename);
@@ -129,12 +132,11 @@ public class IntProfilerComponentsTests {
 
     }
 
-    public boolean testImagesareEqual(String actual, String expected) {
+    public boolean testImagesAreEqual(String actual, String expected) {
+        JFreeChart chartActual=chartUtil.deserializeChart(actual+".serialize");
+        JFreeChart chartExpected=chartUtil.deserializeChart(expected+".serialize");
 
-        JFreeChart chartactual=chartUtil.deserializeChart(actual+".serialize");
-        JFreeChart chartexpected=chartUtil.deserializeChart(expected+".serialize");
-        return chartUtil.areChartsEqual(chartactual,chartexpected);
-
+        return chartUtil.areChartsEqual(chartActual,chartExpected);
     }
 
     public void createTestFailSVGReport(String pathExpected, String pathActual, String pathReport) throws IOException {
@@ -178,13 +180,11 @@ public class IntProfilerComponentsTests {
             Image imageActual = new Image(imageDataActual);
             imageActual.setFixedPosition(20, 600);
             imageActual.scaleToFit(550, 300);
-
             // Load expected image
             ImageData imageDataExpected = ImageDataFactory.create(pathExpected);
             Image imageExpected = new Image(imageDataExpected);
             imageExpected.setFixedPosition(20, 400);
             imageExpected.scaleToFit(550, 300);
-
             //Difference between images
             BufferedImage difference = getDifferenceImage(
                     ImageIO.read(new File(pathActual)),
@@ -193,48 +193,37 @@ public class IntProfilerComponentsTests {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(difference, "png", baos);
             byte[] imageBytes = baos.toByteArray();
-
             ImageData imageData = ImageDataFactory.create(imageBytes);
             Image imageDifference = new Image(imageData);
-
             imageDifference.setFixedPosition(20, 200);
             imageDifference.scaleToFit(550, 300);
-
             // Create layout document
             Document layoutdoc = new Document(doc);
-
             // Add ACTUAL label
             Paragraph actualLabel = new Paragraph("ACTUAL");
             actualLabel.setFixedPosition(20, 780, 100);
             layoutdoc.add(actualLabel);
-
             // Add actual image
             layoutdoc.add(imageActual);
-
             // Add EXPECTED label
             Paragraph expectedLabel = new Paragraph("EXPECTED");
             expectedLabel.setFixedPosition(20, 580, 100);
             layoutdoc.add(expectedLabel);
-
             // Add expected image
             layoutdoc.add(imageExpected);
-
             // Add EXPECTED label
             Paragraph differenceLabel = new Paragraph("DIFFERENCE");
             differenceLabel.setFixedPosition(20, 380, 100);
             layoutdoc.add(differenceLabel);
             // Add the difference image
             layoutdoc.add(imageDifference);
-
             // Add paths of the images
             Paragraph expectedPath = new Paragraph("EXPECTED, stored in: " + pathExpected);
             expectedPath.setFixedPosition(20, 50, 550);
             layoutdoc.add(expectedPath);
-
             Paragraph actualPath = new Paragraph("ACTUAL, stored in: " + pathActual);
             actualPath.setFixedPosition(20, 100, 550);
             layoutdoc.add(actualPath);
-
             // Close the document
             layoutdoc.close();
         }
@@ -242,9 +231,7 @@ public class IntProfilerComponentsTests {
 
     public static BufferedImage getDifferenceImage(BufferedImage img1, BufferedImage img2) {
         // convert images to pixel arrays...
-        final int w = img1.getWidth(),
-                h = img1.getHeight(),
-                highlight = Color.MAGENTA.getRGB();
+        final int w = img1.getWidth(), h = img1.getHeight(), highlight = Color.MAGENTA.getRGB();
         final int[] p1 = img1.getRGB(0, 0, w, h, null, 0, w);
         final int[] p2 = img2.getRGB(0, 0, w, h, null, 0, w);
         // compare img1 to img2, pixel by pixel. If different, highlight img1's pixel...
@@ -253,12 +240,8 @@ public class IntProfilerComponentsTests {
                 p1[i] = highlight;
             }
         }
-        // save img1's pixels to a new BufferedImage, and return it...
-        // (May require TYPE_INT_ARGB)
         final BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         out.setRGB(0, 0, w, h, p1, 0, w);
         return out;
     }
-
-
 }

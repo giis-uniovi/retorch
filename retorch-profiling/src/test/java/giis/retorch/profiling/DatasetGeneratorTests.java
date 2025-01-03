@@ -22,10 +22,11 @@ public class DatasetGeneratorTests  {
     private final String outBasePath = "target/test-outputs/profiler";
     private final String inBasePath = "src/test/java/giis/retorch/profiling/testdata" + "/datasetgenerator";
     private final String expOutBasePath = "src/test/resources/expected_out";
+    UsageProfilerToolBox helper ;
 
     @Rule
     public TestName testName = new TestName();
-    UsageProfilerToolBox helper ;
+
     @Before
     public void setUp() {
         log.info("****** Running test: {} ******", testName.getMethodName());
@@ -50,7 +51,6 @@ public class DatasetGeneratorTests  {
         log.info("****** Set-up for test: {} ended ******", testName.getMethodName());
     }
 
-
     @Test
     public void testFilesGeneratorForSample() throws IOException {
         helper.generateAverageDurationCSVFile(inBasePath + "/sample",outBasePath + "/testFileGeneratorOutput.csv");
@@ -67,6 +67,5 @@ public class DatasetGeneratorTests  {
         String expectedOutput = FileUtils.readFileToString(new File(expectedOutputPath), "utf-8").replace("\r\n", "\n");
         String actualOutput = FileUtils.readFileToString(new File(outputPath), "utf-8").replace("\r\n", "\n");
         assertEquals("The avg file generated differs from expected", expectedOutput, actualOutput);
-
     }
 }
