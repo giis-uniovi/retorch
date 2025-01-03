@@ -154,7 +154,6 @@ public class ProfilePlotter {
         }
     }
 
-
     /**
      * The {@code createAndSaveGraphs} support method generates the Map of Plots of the {@code CloudObjectInstance}
      * {@code ContractedCapacity}s.

@@ -18,6 +18,9 @@ import java.io.IOException;
 
 import static org.junit.Assert.*;
 
+/**
+ * The {@code ProfileGeneratorTests} class contains the unitary tests of the generation of raw UsageProfile datasets
+ */
 public class ProfileGeneratorTests  {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -26,7 +29,7 @@ public class ProfileGeneratorTests  {
     private final String inBasePath =  "src/test/java/giis/retorch/profiling/testdata/profilegen";
     private final String expOutBasePath = "src/test/resources/expected_out";
 
-    private ProfileGeneratorUtils utils;
+    private ProfilerDataGenerationUtils utils;
     private ProfileGenerator generator;
 
     @Rule
@@ -37,7 +40,7 @@ public class ProfileGeneratorTests  {
         log.info("****** Running test: {} ******", testName.getMethodName());
         log.debug("Creating the tmp directory to store methods output");
         File dir = new File(outBasePath);
-        utils = new ProfileGeneratorUtils();
+        utils = new ProfilerDataGenerationUtils();
         generator = new ProfileGenerator();
         if (dir.exists()) {
             log.debug("The directory already exists: {}", dir.getAbsolutePath());
