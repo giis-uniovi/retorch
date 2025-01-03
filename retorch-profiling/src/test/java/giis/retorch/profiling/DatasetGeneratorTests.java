@@ -15,6 +15,9 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+/**
+ * The {@code DatasetGeneratorTests} class contains the unitary tests of the generation of average datasets methods
+ */
 public class DatasetGeneratorTests  {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
