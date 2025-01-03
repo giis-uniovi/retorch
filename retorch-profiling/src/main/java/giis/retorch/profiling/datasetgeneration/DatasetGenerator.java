@@ -13,6 +13,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The {@code DatasetGenerator} class contains the necessary methods that enable the processing of the execution data
+ * files in order to create the  average dataset with duration of each {@code TJob} and {@code CloudObject} lifecycle
+ * phase
+ */
 public class DatasetGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetGenerator.class);
@@ -84,6 +89,7 @@ public class DatasetGenerator {
 
     /**
      * Finds all CSV files within the specified directory.
+     *
      * @param directoryPath The path to the directory where CSV files are to be found.
      * @return A list of File objects representing the CSV found.
      */
@@ -109,6 +115,7 @@ public class DatasetGenerator {
     /**
      * Given a csv csvRecord from a file generated in the CI system with the TJob and COI data, generates its
      * corresponding {@code DataTuple}
+     *
      * @param csvRecord CSV record belonging to a TJob.
      * @return {@code DataTuple} with the csvRecord data.
      */
@@ -125,7 +132,8 @@ public class DatasetGenerator {
 
     /**
      * Aggregates a list of {@code DataTuple} objects by merging their lifecycle durations
-     * using {@link #mergeTuples(DataTuple, DataTuple)} method .
+     * using {@link #mergeTuples(DataTuple, DataTuple)} method.
+     *
      * @param allDataTuples the list of {@code DataTuple} objects to be aggregated
      * @return a map where the keys are {@code idTJob} values and the values are the aggregated {@code DataTuple}
      * objects
@@ -143,6 +151,7 @@ public class DatasetGenerator {
      * <p>This method takes a map of aggregated {@code DataTuple} objects and a number of files, then
      * calculates the average duration for each lifecycle event by dividing the aggregated duration by
      * the file count.
+     *
      * @param aggregatedTuples a map where the keys are {@code idTJob} values and the values are the aggregated
      *                         {@code DataTuple} objects
      * @param fileCount        the number of files used in the aggregation process
@@ -161,10 +170,11 @@ public class DatasetGenerator {
 
     /**
      * Merges the lifecycle durations of two {@code DataTuple} objects.
-     * <p>For each key in the first tuple's lifecycle duration map, it adds the correponding key value in the tuple's
+     * <p>For each key in the first tuple's lifecycle duration map, it adds the corresponding key value in the tuple's
      * map.
      * If a key from aggregatedTuple's map does not exist in the tuple's map, it will be added .
      * The result is stored in back into aggregatedTuple {@code DataTuple} and returned.
+     *
      * @param aggregatedTuple the first {@code DataTuple} whose lifecycle durations will be merged and updated
      * @param tuple           the second {@code DataTuple} whose lifecycle durations will be used to update
      *                        aggregatedTuple
@@ -185,7 +195,8 @@ public class DatasetGenerator {
      * certain plan.
      * <p>Gets as input an ordered list of {@code DataTuple} which have the average duration of each {@code TJob} and
      * calculates the start of each Execution Plan stage. With the different starting points, intercalate 1 second
-     * between the {@code TJob} and COI lifecycles in order to ease representation and visualization
+     * between the {@code TJob} and COI lifecycles in order to ease representation and visualization.
+     *
      * @param listTuples The list of {@code DataTuple} containing time data.
      * @param outputPath The path where the generated CSV file will be saved.
      */
@@ -236,6 +247,7 @@ public class DatasetGenerator {
      * Calculates the starting relative time for each stage based on the provided list of {@code DataTuple} ordered.
      * This method considers the duration of the longer {@code TJob} of each stage and the extra seconds between the
      * different stages. Creates a list of starting times for each stage.
+     *
      * @param listTuples The list of DataTuples containing lifecycle duration data.
      * @return A map containing starting stages for each stage.
      */

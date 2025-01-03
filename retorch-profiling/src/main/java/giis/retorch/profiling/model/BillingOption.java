@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 /**
- * The {@code TJob} class represents a TJob with a name, stage, and a set of {@code  ResourceInstance}.
- * When the TJob is created, it calculates the total amount of {@code Capacity} that is used by the list of
- * {@code ResourceInstance} required
+ * The {@code BillingOption} class represents how the Cloud Provider bills the  different {@code ContractedCapacity}s
+ * into a {@code CloudObject}. Contains the getters and setters of its attributes: name, invoicedPrices, cloudProvider
+ * and the time period.
  */
 public class BillingOption {
 

@@ -61,7 +61,7 @@ public class ProfileGeneratorTests  {
     @Test
     public void testProfileTJobGenerator() throws IOException, NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = utils.generateExecutionPlan();
-        generator.generateResourceProfile(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile.csv", 3600, 5);
+        generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile.csv", 3600, 5);
         testFilesForPath(expOutBasePath + "/exp_out_profile.csv", outBasePath + "/output_profile.csv");
         assertEquals(12, plan.gettJobClassList().size());
     }

@@ -5,44 +5,44 @@ package giis.retorch.profiling;
 import java.util.*;
 
 import giis.retorch.orchestration.classifier.EmptyInputException;
+import giis.retorch.orchestration.model.Resource;
 import giis.retorch.orchestration.model.Capacity;
 import giis.retorch.orchestration.model.ExecutionPlan;
-import giis.retorch.orchestration.model.Resource;
-import giis.retorch.orchestration.model.ResourceInstance;
 import giis.retorch.orchestration.model.TJob;
 import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
 import giis.retorch.profiling.model.BillingOption;
 import giis.retorch.profiling.model.CloudObjectInstance;
-import giis.retorch.profiling.model.CapacityContracted;
+import giis.retorch.profiling.model.ContractedCapacity;
+import giis.retorch.profiling.model.ResourceInstance;
 
 public class ProfileGeneratorUtils {
 
 
     public ExecutionPlan generateExecutionPlan() throws NoFinalActivitiesException, EmptyInputException {
         //Webserver Resource
-        LinkedList<Capacity> listwebservCapacities = new LinkedList<>();
-        listwebservCapacities.add(new Capacity(Capacity.MEMORY_NAME, 1.465));
-        listwebservCapacities.add(new Capacity(Capacity.PROCESSOR_NAME, 0.5));
-        listwebservCapacities.add(new Capacity(Capacity.STORAGE_NAME, 0.92));
-        ResourceInstance webserver = new ResourceInstance("webserver", listwebservCapacities);
+        LinkedList<Capacity> listWebSeverCapacities = new LinkedList<>();
+        listWebSeverCapacities.add(new Capacity(Capacity.MEMORY_NAME, 1.465));
+        listWebSeverCapacities.add(new Capacity(Capacity.PROCESSOR_NAME, 0.5));
+        listWebSeverCapacities.add(new Capacity(Capacity.STORAGE_NAME, 0.92));
+        ResourceInstance webserver = new ResourceInstance("webserver", listWebSeverCapacities);
         //Database Resource
         LinkedList<Capacity> listDbCapacities = new LinkedList<>();
         listDbCapacities.add(new Capacity(Capacity.MEMORY_NAME, 0.2929));
         listDbCapacities.add(new Capacity(Capacity.PROCESSOR_NAME, 0.2));
         listDbCapacities.add(new Capacity(Capacity.STORAGE_NAME, 0.5));
         ResourceInstance database = new ResourceInstance("database", listDbCapacities);
-        //Openvidu Resource
-        LinkedList<Capacity> listOpenviduCapacities = new LinkedList<>();
-        listOpenviduCapacities.add(new Capacity(Capacity.MEMORY_NAME, 8));
-        listOpenviduCapacities.add(new Capacity(Capacity.PROCESSOR_NAME, 2));
-        listOpenviduCapacities.add(new Capacity(Capacity.STORAGE_NAME, 0.88));
-        ResourceInstance openvidu = new ResourceInstance("openvidu", listOpenviduCapacities);
+        //OpenVidu Resource
+        LinkedList<Capacity> listOpenViduCapacities = new LinkedList<>();
+        listOpenViduCapacities.add(new Capacity(Capacity.MEMORY_NAME, 8));
+        listOpenViduCapacities.add(new Capacity(Capacity.PROCESSOR_NAME, 2));
+        listOpenViduCapacities.add(new Capacity(Capacity.STORAGE_NAME, 0.88));
+        ResourceInstance openvidu = new ResourceInstance("openvidu", listOpenViduCapacities);
         //MockOpenvidu Resource
         LinkedList<Capacity> listMockOpenviduCapacities = new LinkedList<>();
         listMockOpenviduCapacities.add(new Capacity(Capacity.MEMORY_NAME, 0.048));
         listMockOpenviduCapacities.add(new Capacity(Capacity.PROCESSOR_NAME, 0.25));
         listMockOpenviduCapacities.add(new Capacity(Capacity.STORAGE_NAME, 0.31));
-        ResourceInstance mockOpenvidu = new ResourceInstance("mockopenvidu", listMockOpenviduCapacities);
+        ResourceInstance mockOpenVidu = new ResourceInstance("mockopenvidu", listMockOpenviduCapacities);
         //Executor resource
         LinkedList<Capacity> listExecutorCapacities = new LinkedList<>();
         listExecutorCapacities.add(new Capacity(Capacity.MEMORY_NAME, 0.14));
@@ -61,7 +61,7 @@ public class ProfileGeneratorUtils {
         List<Resource> listResourcesTJobC = new LinkedList<>();
         listResourcesTJobC.add(webserver);
         listResourcesTJobC.add(database);
-        listResourcesTJobC.add(mockOpenvidu);
+        listResourcesTJobC.add(mockOpenVidu);
         listResourcesTJobC.add(executor);
         listResourcesTJobC.add(browser);
 
@@ -92,12 +92,12 @@ public class ProfileGeneratorUtils {
         return new ExecutionPlan("RETORCH Schedulling", listTJobs);
     }
     public CloudObjectInstance generateVMCloudObjectInstances() {
-        Map<String, CapacityContracted> listVMCapacities = new HashMap<>();
-        listVMCapacities.put(Capacity.MEMORY_NAME, new CapacityContracted(Capacity.MEMORY_NAME, 32, 32));
-        listVMCapacities.put(Capacity.PROCESSOR_NAME, new CapacityContracted(Capacity.PROCESSOR_NAME, 12,
+        Map<String, ContractedCapacity> listVMCapacities = new HashMap<>();
+        listVMCapacities.put(Capacity.MEMORY_NAME, new ContractedCapacity(Capacity.MEMORY_NAME, 32, 32));
+        listVMCapacities.put(Capacity.PROCESSOR_NAME, new ContractedCapacity(Capacity.PROCESSOR_NAME, 12,
                 12));
-        listVMCapacities.put(Capacity.STORAGE_NAME, new CapacityContracted(Capacity.STORAGE_NAME, 32, 32));
-        listVMCapacities.put(Capacity.SLOTS_NAME, new CapacityContracted(Capacity.SLOTS_NAME, 8, 1));
+        listVMCapacities.put(Capacity.STORAGE_NAME, new ContractedCapacity(Capacity.STORAGE_NAME, 32, 32));
+        listVMCapacities.put(Capacity.SLOTS_NAME, new ContractedCapacity(Capacity.SLOTS_NAME, 8, 1));
 
         HashMap<String, Double> capacityprices = new HashMap<>();
         capacityprices.put(Capacity.MEMORY_NAME, 0.5);
@@ -112,40 +112,39 @@ public class ProfileGeneratorUtils {
     }
 
     public CloudObjectInstance generateContainersCloudObjectInstances() {
-        Map<String, CapacityContracted> listVMCapacities = new HashMap<>();
-        listVMCapacities.put(Capacity.MEMORY_NAME, new CapacityContracted(Capacity.MEMORY_NAME, 32, 0.1));
-        listVMCapacities.put(Capacity.PROCESSOR_NAME, new CapacityContracted(Capacity.PROCESSOR_NAME, 12,
+        Map<String, ContractedCapacity> listVMCapacities = new HashMap<>();
+        listVMCapacities.put(Capacity.MEMORY_NAME, new ContractedCapacity(Capacity.MEMORY_NAME, 32, 0.1));
+        listVMCapacities.put(Capacity.PROCESSOR_NAME, new ContractedCapacity(Capacity.PROCESSOR_NAME, 12,
                 0.1));
-        listVMCapacities.put(Capacity.STORAGE_NAME, new CapacityContracted(Capacity.STORAGE_NAME, 32, 0.1));
-        listVMCapacities.put(Capacity.SLOTS_NAME, new CapacityContracted(Capacity.SLOTS_NAME, 0, 0));
+        listVMCapacities.put(Capacity.STORAGE_NAME, new ContractedCapacity(Capacity.STORAGE_NAME, 32, 0.1));
+        listVMCapacities.put(Capacity.SLOTS_NAME, new ContractedCapacity(Capacity.SLOTS_NAME, 0, 0));
 
-        HashMap<String, Double> capacityprices = new HashMap<>();
-        capacityprices.put(Capacity.MEMORY_NAME, 0.5);
-        capacityprices.put(Capacity.PROCESSOR_NAME, 0.5);
-        capacityprices.put(Capacity.STORAGE_NAME, 0.5);
-        capacityprices.put(Capacity.SLOTS_NAME, 0.0);
-        BillingOption option = new BillingOption("As-you-go", "Azure", capacityprices, 1);
+        HashMap<String, Double> capacityPrices = new HashMap<>();
+        capacityPrices.put(Capacity.MEMORY_NAME, 0.5);
+        capacityPrices.put(Capacity.PROCESSOR_NAME, 0.5);
+        capacityPrices.put(Capacity.STORAGE_NAME, 0.5);
+        capacityPrices.put(Capacity.SLOTS_NAME, 0.0);
+        BillingOption option = new BillingOption("As-you-go", "Azure", capacityPrices, 1);
 
         CloudObjectInstance objectInstance = new CloudObjectInstance("Azure Containers", option, listVMCapacities);
         objectInstance.setLifecycleTimes(0, 3, 4, 661, 3580, 3600);
         return objectInstance;
     }
     public CloudObjectInstance generateBrowserServiceCloudObjectInstances() {
-        Map<String, CapacityContracted> listVMCapacities = new HashMap<>();
-        listVMCapacities.put(Capacity.SLOTS_NAME, new CapacityContracted(Capacity.SLOTS_NAME, 8, 1));
-        listVMCapacities.put(Capacity.MEMORY_NAME, new CapacityContracted(Capacity.MEMORY_NAME, 0, 0));
-        listVMCapacities.put(Capacity.PROCESSOR_NAME, new CapacityContracted(Capacity.PROCESSOR_NAME, 0,
+        Map<String, ContractedCapacity> listVMCapacities = new HashMap<>();
+        listVMCapacities.put(Capacity.SLOTS_NAME, new ContractedCapacity(Capacity.SLOTS_NAME, 8, 1));
+        listVMCapacities.put(Capacity.MEMORY_NAME, new ContractedCapacity(Capacity.MEMORY_NAME, 0, 0));
+        listVMCapacities.put(Capacity.PROCESSOR_NAME, new ContractedCapacity(Capacity.PROCESSOR_NAME, 0,
                 0));
-        listVMCapacities.put(Capacity.STORAGE_NAME, new CapacityContracted(Capacity.STORAGE_NAME, 0, 0));
+        listVMCapacities.put(Capacity.STORAGE_NAME, new ContractedCapacity(Capacity.STORAGE_NAME, 0, 0));
 
-        HashMap<String, Double> capacityprices = new HashMap<>();
-        capacityprices.put(Capacity.SLOTS_NAME, 1.20);
-        BillingOption option = new BillingOption("As-you-go", "Azure", capacityprices, 60);
+        HashMap<String, Double> capacityPrices = new HashMap<>();
+        capacityPrices.put(Capacity.SLOTS_NAME, 1.20);
+        BillingOption option = new BillingOption("As-you-go", "Azure", capacityPrices, 60);
 
         CloudObjectInstance objectInstance = new CloudObjectInstance("Selenoid", option, listVMCapacities);
         objectInstance.setLifecycleTimes(0, 3, 4, 661, 3580, 3600);
         return objectInstance;
     }
-
 
 }

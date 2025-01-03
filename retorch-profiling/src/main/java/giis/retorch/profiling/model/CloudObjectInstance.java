@@ -5,17 +5,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * The {@code CloudObjectInstance} class represents a Cloud Object Instance with a name,and a set of {@code  Capacities}.
+ * The {@code CloudObjectInstance} class represents a Cloud Object Instance with a name,and a set of {@code CapacityContracted}
+ * a concise Billing Option and the data corresponding of its LifeCycle.
  */
 public class CloudObjectInstance {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private String name;
-    private final Map<String, CapacityContracted> contractedCapacities;
+    private final Map<String, ContractedCapacity> contractedCapacities;
     private BillingOption billingOption;
     private double startSetUp;
     private double endSetUp;
@@ -37,7 +37,7 @@ public class CloudObjectInstance {
     }
 
     public CloudObjectInstance(@JsonProperty("objectName")String name, @JsonProperty("billingOption")BillingOption option,
-                               @JsonProperty("capacitiesContracted")Map<String, CapacityContracted> contractedCapacities) {
+                               @JsonProperty("capacitiesContracted")Map<String, ContractedCapacity> contractedCapacities) {
         this.name = name;
         this.contractedCapacities = contractedCapacities;
         this.billingOption=option;
@@ -45,17 +45,14 @@ public class CloudObjectInstance {
 
     public String getName() {return name;}
     public double getEndSetUp() {return endSetUp;}
-    public  Map<String, CapacityContracted> getContractedCapacities() {return contractedCapacities;}
-    public CapacityContracted getContractedCapacity(String name){return contractedCapacities.get(name);}
+    public  Map<String, ContractedCapacity> getContractedCapacities() {return contractedCapacities;}
+    public ContractedCapacity getContractedCapacity(String name){return contractedCapacities.get(name);}
     public double getStartSetUp() {return startSetUp;}
     public double getStartTJobExec() {return startTJobExec;}
     public double getEndTJobExec() {return endTJobExec;}
     public double getStartTearDown() {return startTearDown;}
     public double getEndTearDown() {return endTearDown;}
-    public List<String> getCapacityNames() {
-        return this.getContractedCapacities().keySet().stream()
-                .collect(Collectors.toList());
-    }
+    public List<String> getCapacityNames() {return new ArrayList<>(this.getContractedCapacities().keySet());}
     public BillingOption getBillingOption() {return billingOption;}
     public static Set<String> getTJobLifecycles(){ return LIST_TJOB_LIFECYCLE;}
 
