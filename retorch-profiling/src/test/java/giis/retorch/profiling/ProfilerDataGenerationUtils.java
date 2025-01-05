@@ -92,7 +92,7 @@ public class ProfilerDataGenerationUtils {
         listTJobs.add(new TJob("tjobm", 0, listResourcesTJobE));
         listTJobs.add(new TJob("tjobn", 0, listResourcesTJobC));
         //Create the plan with the list of TJobs and return it
-        return new ExecutionPlan("RETORCH Schedulling", listTJobs);
+        return new ExecutionPlan("RETORCH_Scheduling", listTJobs);
     }
     public CloudObjectInstance generateVMCloudObjectInstances() {
         Map<String, ContractedCapacity> listVMCapacities = new HashMap<>();
