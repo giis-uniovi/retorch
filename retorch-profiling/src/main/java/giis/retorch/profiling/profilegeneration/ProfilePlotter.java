@@ -1,6 +1,7 @@
 package giis.retorch.profiling.profilegeneration;
 
 import giis.retorch.orchestration.model.TJob;
+import giis.retorch.profiling.model.UsageProfile;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -41,6 +42,7 @@ public class ProfilePlotter {
     List<CSVRecord> csvProfileRecords;
     private static final String CAPACITY_HEADER = "capacity";
     private static final String LIFECYCLE_HEADER = "lifecyclephase";
+    private UsageProfile usageProfile;
 
     public ProfilePlotter(String path) {
         try (FileReader fileReader = new FileReader(path)) {
@@ -52,6 +54,11 @@ public class ProfilePlotter {
             log.error("Error opening the file: {}", e.getMessage());
         }
     }
+
+    public UsageProfile getUsageProfile() {return usageProfile;}
+
+    public void setUsageProfile(UsageProfile usageProfile) {this.usageProfile = usageProfile;}
+
     /**
      * The {@code generateTotalTJobUsageProfileCharts} method  creates two maps of XYDatasets, one with the  {@code ContractedCapacity}
      * contracted in the {@code CloudObjectInstances} and other with the {@code Capacity} used by the {@code ResourceInstances}
@@ -62,13 +69,14 @@ public class ProfilePlotter {
      * @param planName String with the name of the {@code ExecutionPlan}
      *
      */
-    public void generateTotalTJobUsageProfileCharts(String outputFolder, String planName) {
+    public void generateTotalTJobUsageProfileCharts(String outputFolder, String planName,String coiName) {
         Map<String, DefaultTableXYDataset> capacitiesData = new HashMap<>();
         Map<String, DefaultTableXYDataset> contractedCapacitiesData = new HashMap<>();
 
         loadCapacitiesData(capacitiesData,contractedCapacitiesData);
         Map<String, XYPlot> mapPlotsUsage = generateXYCloudObjectPlots(contractedCapacitiesData);
-        createAndSaveGraphs(outputFolder, planName, capacitiesData, mapPlotsUsage);
+        generateUsageProfiles(planName,coiName, capacitiesData, mapPlotsUsage);
+        saveChartsAsFormat(coiName,outputFolder,"png", 1200, 400);
     }
     /**
      * The {@code loadCapacitiesData} load the imported raw Usage Profile into the  two Maps with XYDataset created.
@@ -97,16 +105,18 @@ public class ProfilePlotter {
     }
 
     /**
-     * The {@code createAndSaveGraphs} method given the Maps with XYDatasets of Capacities used and contracted, generates
+     * The {@code generateUsageProfiles} method given the Maps with XYDatasets of Capacities used and contracted, generates
      * the Usage Profile graphical representations corresponding to the {@code ExecutionPlan} {@code Capacity} usage.
      *
-     * @param outputFolder String with the output path where the profiles will be stored
      * @param capacitiesData  Map of XYDataset with the used {@code Capacity} required.
      * @param mapPlotsUsage Map where the usage will be stored
      * @param planName String with the {@code ExecutionPlan} name
      *
      */
-    private void createAndSaveGraphs(String outputFolder, String planName, Map<String, DefaultTableXYDataset> capacitiesData, Map<String, XYPlot> mapPlotsUsage) {
+    private void generateUsageProfiles( String planName,String coiName, Map<String, DefaultTableXYDataset> capacitiesData, Map<String, XYPlot> mapPlotsUsage) {
+
+        this.usageProfile = new UsageProfile(coiName,planName);
+
         for (Map.Entry<String, DefaultTableXYDataset> capacity : capacitiesData.entrySet()) {
             DefaultTableXYDataset orderedDataset = reorderSeries(capacity.getValue(), TJob.getListTJobLifecyclesWithDesiredOrder());
 
@@ -148,8 +158,7 @@ public class ProfilePlotter {
                 plot2.setBackgroundPaint(null);
                 plot.setDataset(1, plot2.getDataset());
                 plot.setRenderer(1, plot2.getRenderer());
-                String format="png";
-                saveChartAsFormat(chart, outputFolder + "/" + planName + "-" + capacity.getKey() + "."+format,format, 1200, 400);
+                usageProfile.addPlot(capacity.getKey(),chart);
             }
         }
     }
@@ -229,51 +238,54 @@ public class ProfilePlotter {
     /**
      * The {@code saveChartAsFormat} support method enables the storing of the superposed JFreeChart with {@code ContractedCapacity}
      * against the used {@code Capacity}.
-     * @param chart JChart to be stored
      * @param format String with the format, supports png and svg formats
      * @param filePath  String with the path where the images will be stored
      * @param height Int with the height of the chart
      * @param width Int with the width of the chart
      */
-    private static void saveChartAsFormat(JFreeChart chart, String filePath,String format, int width, int height) {
-        if ("png".equalsIgnoreCase(format)) {
-            BufferedImage bufferedImage = chart.createBufferedImage(width, height);
-            File file = new File(filePath);
-            try {
-                serializeChart(chart,filePath+".serialized");
-                ImageIO.write(bufferedImage, "png", file);
-            } catch (IOException e) {
-                log.error("Error saving chart as PNG: {}" , e.getMessage());
+    private void saveChartsAsFormat(String coiName,String filePath,String format, int width, int height) {
+        UsageProfile profileToSave=usageProfile;
 
-            }
+        String filePathBase =filePath + profileToSave.getPlanName() +"-"+coiName+ "-";
+        serialize( filePathBase+ "UsageProfile.serialized");
+        for (Map.Entry<String, JFreeChart> entry:profileToSave.getPlots().entrySet()) {
+            String pathGraph=filePathBase+entry.getKey();
+            JFreeChart chart = entry.getValue();
+                if ("png".equalsIgnoreCase(format)) {
+                    BufferedImage bufferedImage = chart.createBufferedImage(width, height);
+                    File file = new File(pathGraph+".png");
+                    try {
 
-        } else if ("svg".equalsIgnoreCase(format)) {
-            DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
-            Document document = domImpl.createDocument(null, "svg", null);
-            SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-            svgGenerator.setSVGCanvasSize(new Dimension(width, height));
-            chart.draw(svgGenerator, new Rectangle(width, height));
-            try (FileWriter out = new FileWriter(filePath)) {
-                svgGenerator.stream(out, true);
-            } catch (IOException e) {
-                log.error("Error saving chart as SVG:{} " , e.getMessage());
-            }
+                        ImageIO.write(bufferedImage, "png", file);
+                    } catch (IOException e) {
+                        log.error("Error saving chart as PNG: {}", e.getMessage());
+                    }
+                } else if ("svg".equalsIgnoreCase(format)) {
+                    DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
+                    Document document = domImpl.createDocument(null, "svg", null);
+                    SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
+                    svgGenerator.setSVGCanvasSize(new Dimension(width, height));
+                    chart.draw(svgGenerator, new Rectangle(width, height));
+                    try (FileWriter out = new FileWriter(filePath)) {
+                        svgGenerator.stream(out, true);
+                    } catch (IOException e) {
+                        log.error("Error saving chart as SVG:{} ", e.getMessage());
+                    }
 
-
-        } else {
-            log.error("Unsupported format: {}", format);
+                } else {
+                    log.error("Unsupported format: {}", format);
+                }
         }
     }
     /**
-     * The {@code serializeChart} support method enables the serialized storing of the chart for testing purposes.
+     * The {@code serialize} support method enables the serialized storing of the UsageProfile for testing purposes.
      *
-     * @param chart JChart to be stored and serialized
      * @param filePath  String with the path where the serialized image will be stored
      */
-    public static void serializeChart(JFreeChart chart, String filePath) {
+    public void serialize(String filePath) {
         try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(Paths.get(filePath)))) {
             // Write the chart object to the file
-            out.writeObject(chart);
+            out.writeObject(this.usageProfile);
             log.info("Chart serialized and saved to: {}" , filePath);
         } catch (IOException e) {
             log.error("Error saving chart:  {}" , e.getMessage());
