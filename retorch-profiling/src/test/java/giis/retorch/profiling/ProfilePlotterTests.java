@@ -25,7 +25,6 @@ public class ProfilePlotterTests {
     private final String outBasePath = "target/test-outputs/profiler/profiles";
     private final String inBasePath = "src/test/java/giis/retorch/profiling/testdata/profilegen";
     private final String expOutBasePath = "src/test/resources/expected_out/profiles";
-    private final String debugOutBasePath = "target/debug";
 
     private ProfilerDataGenerationUtils dataGenerationUtils;
     private ProfilerTestUtils utils;
@@ -61,13 +60,12 @@ public class ProfilePlotterTests {
     @Test
     public void testProfilePlotter() throws NoFinalActivitiesException, EmptyInputException, IOException {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
+        plan.setName("unit-"+plan.getName());
         ProfilePlotter plotter = new ProfilePlotter(inBasePath + "/imp_usageprofileplotter.csv");
         dataGenerationUtils.generateVMCloudObjectInstances();
-        plotter.generateTotalTJobUsageProfileCharts(outBasePath,plan.getName());
+        plotter.generateTotalTJobUsageProfileCharts(outBasePath,plan.getName(),"exampleCOI");
         assertEquals(12, plan.gettJobClassList().size());
+        assertTrue("The exampleCOI UsageProfile are not equal, check the debugging file located in: /target/debug folder", utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-exampleCOI-UsageProfile.serialized", plotter.getUsageProfile(),"exampleCOI"));
 
-        assertTrue("The  memory profiles are not equal", utils.profileComparator(outBasePath + "/"+"unit_" + plan.getName() + "-memory.png", expOutBasePath + "/" + plan.getName() + "-memory.png", debugOutBasePath));
-        assertTrue("The  processor profiles are not equal", utils.profileComparator(outBasePath + "/"+"unit_"  + plan.getName() + "-processor.png", expOutBasePath + "/" + plan.getName() + "-processor.png", debugOutBasePath));
-        assertTrue("The  storage profiles are not equal", utils.profileComparator(outBasePath + "/" +"unit_" + plan.getName() + "-storage.png", expOutBasePath + "/" + plan.getName() + "-storage.png", debugOutBasePath));
     }
 }

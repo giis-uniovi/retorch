@@ -36,7 +36,7 @@ public class IntProfilerComponentsTests {
     private ProfileGenerator generator;
     private ProfilePlotter plotter;
     private ProfilerTestUtils utils;
-    private final String outputProfilePath = outBasePath + "/profiles";
+    private final String outputProfilePath = outBasePath + "/profiles/";
 
     @Rule
     public TestName testName = new TestName();
@@ -75,40 +75,39 @@ public class IntProfilerComponentsTests {
     @Test
     public void testIntegrationProfilePlotterVM() throws IOException, NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
-
+        plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_vm.csv", 3600, 4);
         generator.generateCOIContractedCapacities(outBasePath + "/output_profile_vm.csv", outBasePath + "/profileIntegrationCOI_VM.csv", dataGenerationUtils.generateVMCloudObjectInstances());
         plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_VM.csv");
 
-        plotter.generateTotalTJobUsageProfileCharts(outputProfilePath, plan.getName() + "-vm");
-        assertTrue("The VM memory profiles are not equal", utils.profileComparator(outputProfilePath + "/" + plan.getName() + "-vm-memory.png", expOutBasePath + "/" + plan.getName() + "-vm-memory.png", debugOutBasePath));
-        assertTrue("The VM processor profiles are not equal", utils.profileComparator(outputProfilePath + "/" + plan.getName() + "-vm-processor.png", expOutBasePath + "/" + plan.getName() + "-vm-processor.png", debugOutBasePath));
-        assertTrue("The VM storage profiles are not equal", utils.profileComparator(outputProfilePath + "/" + plan.getName() + "-vm-storage.png", expOutBasePath + "/" + plan.getName() + "-vm-storage.png", debugOutBasePath));
+        plotter.generateTotalTJobUsageProfileCharts(outputProfilePath, plan.getName() ,"vm");
+
+        assertTrue("The VM UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-vm-UsageProfile.serialized", plotter.getUsageProfile(), "vm"));
+
     }
 
     @Test
     public void testIntegrationProfilePlotterContainer() throws IOException, NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
+        plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_container.csv", 3600, 4);
         generator.generateCOIContractedCapacities(outBasePath + "/output_profile_int_container.csv", outBasePath + "/profileIntegrationCOI_container.csv", dataGenerationUtils.generateContainersCloudObjectInstances());
         plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_container.csv");
-        plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", plan.getName() + "-containers");
+        plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", plan.getName() , "containers");
 
-        assertTrue("The Containers memory profiles are not equal", utils.profileComparator(outputProfilePath + "/" + plan.getName() + "-containers-memory.png", expOutBasePath + "/" + plan.getName() + "-containers-memory.png", debugOutBasePath));
-        assertTrue("The Containers processor profiles are not equal", utils.profileComparator(outputProfilePath + "/" + plan.getName() + "-containers-processor.png", expOutBasePath + "/" + plan.getName() + "-containers-processor.png", debugOutBasePath));
-        assertTrue("The Containers storage profiles are not equal", utils.profileComparator(outputProfilePath + "/" + plan.getName() + "-containers-storage.png", expOutBasePath + "/" + plan.getName() + "-containers-storage.png", debugOutBasePath));
+        assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-containers-UsageProfile.serialized", plotter.getUsageProfile(), "containers"));
 
     }
 
     @Test
     public void testIntegrationProfilePlotterServices() throws IOException, NoFinalActivitiesException, EmptyInputException {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
+        plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_services.csv", 3600, 4);
         generator.generateCOIContractedCapacities(outBasePath + "/output_profile_int_services.csv", outBasePath + "/profileIntegrationCOI_services.csv", dataGenerationUtils.generateBrowserServiceCloudObjectInstances());
         plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_services.csv");
-        plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", plan.getName() + "-services");
-        assertTrue("The Services slots profiles are not equal", utils.profileComparator(outputProfilePath + "/" + plan.getName() + "-services-slots.png", expOutBasePath + "/" + plan.getName() + "-services-slots.png", debugOutBasePath));
+        plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", plan.getName() ,"services");
+        assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-services-UsageProfile.serialized", plotter.getUsageProfile(),"services"));
+
     }
-
-
 }
