@@ -1,0 +1,114 @@
+{
+  "mockElasticResource": {
+    "hierarchyParent": ["elasticParent"],
+    "replaceable": [],
+    "elasticityModel": {
+      "elasticityID": "elasModelmockElasticResource",
+      "elasticity": 50,
+      "elasticityCost": 0.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "mockElasticResource",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 0.2
+      },
+      {
+        "name": "processor",
+        "quantity": 0.5
+      }
+    ],
+    "dockerImage": "someplaceholder1;docker.someImage"
+  },
+  "lightElasticResource": {
+    "hierarchyParent": ["elasticParent"],
+    "replaceable": [],
+    "elasticityModel": {
+      "elasticityID": "elasModelLightElasticResource",
+      "elasticity": 35,
+      "elasticityCost": 15.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "lightElasticResource",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 3.2
+      },
+      {
+        "name": "processor",
+        "quantity": 2
+      }
+    ],
+    "dockerImage": "someplaceholder2;docker.someImage"
+  },
+  "heavyInElasticResource": {
+    "hierarchyParent": [
+      "parentAllInelastic"
+    ],
+    "replaceable": [],
+    "elasticityModel": {
+      "elasticityID": "elasModelHeavyInElasRest",
+      "elasticity": 1,
+      "elasticityCost": 50.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "heavyInElasticResource",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 8
+      },
+      {
+        "name": "processor",
+        "quantity": 1
+      }
+    ],
+    "dockerImage": "someplaceholder3;docker.someImage"
+  },
+  "mediumElasticResource": {
+    "hierarchyParent": ["elasticParent"],
+    "replaceable": [],
+    "elasticityModel": {
+      "elasticityID": "elasModelMediumElasticResource",
+      "elasticity": 15,
+      "elasticityCost": 55.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "mediumElasticResource",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 3
+      },
+      {
+        "name": "processor",
+        "quantity": 2
+      }
+    ],
+    "dockerImage": "someplaceholder4;docker.someImage"
+  },
+  "MedInElasRest": {
+    "hierarchyParent": [],
+    "replaceable": [],
+    "elasticityModel": {
+      "elasticityID": "elasModelMedInElasRest",
+      "elasticity": 2,
+      "elasticityCost": 15.0
+    },
+    "resourceType": "LOGICAL",
+    "resourceID": "MedInElasRest",
+    "minimalCapacities": [
+      {
+        "name": "memory",
+        "quantity": 8
+      },
+      {
+        "name": "processor",
+        "quantity": 1
+      }
+    ],
+    "dockerImage": "someplaceholder5;docker.someImage"
+  }
+}
