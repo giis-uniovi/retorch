@@ -80,7 +80,7 @@ void forumLoadEntriesTest(String usermail,String password,String role){
 ## RETORCH Orchestration
 The RETORCH framework provides a generator that creates the Execution Plan, along with the required pipelining and script 
 files for execution in a CI environment. The generation of scripts and pipelining code is based on the Access Modes 
-annotated within the test cases and the Resource information specified in `/retorchfiles/configurations/[SUT_NAME]SystemResources.json`.
+annotated within the test cases and the Resource information specified in `retorchfiles/configurations/[SUT_NAME]SystemResources.json`.
 
 The RETORCH orchestration generator requires 4 inputs:
 - The annotated E2E test cases with the [RETORCH access modes](#retorch-annotations) into a **single module** Maven project.
@@ -114,7 +114,7 @@ pipelining code and the scripts to set up, deploy, and tear down the different R
 The following subsections explain how to create each configuration file and how to prepare the `docker-compose.yml` file.
 
 #### Create the Resource.json file
-The Resource file must be placed in the `/retorchfiles/configurations/` and named with the system or test suite name, followed
+The Resource file must be placed in the `retorchfiles/configurations/` and named with the system or test suite name, followed
 by `SystemResources.json` . This file contains a map with a series of Resources, using their unique ResourceID as a key. For each
 Resource the tester needs to specify the following attributes:
 - `resourceID`: A unique identifier for the Resource.
@@ -160,7 +160,7 @@ The following snippet shows an example of two Resources declared in the JSON fil
 ```
 
 #### Create the retorchCI.properties file
-The CI file must be placed in `/retorchfiles/configurations/`, namely `retorchCI.properties` containing several parameters 
+The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` containing several parameters 
 related to the SUT and the Continuous Integration Infrastructure, these parameters are the following:
 - `agentCIName`: the specific Jenkins agent used to execute the test suite.
 - `sut-wait-html`: state in the frontend (HTML displayed) when the SUT is ready to execute the test SUITE.
@@ -230,12 +230,12 @@ main class `giis.retorch.orchestration.OrchestrationIntegrationTests.javaOrchest
 - `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root.
 
 ### RETORCH Orchestration generator outputs
-The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/scripts/tjoblifecycles`),
-the infrastructure(`/retorchfiles/scripts/coilifecycles`) and the different environment files of each TJob (`/retorchfiles/envfiles`) :
+The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`retorchfiles/scripts/tjoblifecycles`),
+the infrastructure(`retorchfiles/scripts/coilifecycles`) and the different environment files of each TJob (`retorchfiles/envfiles`) :
 - `Jenkinsfile`: located in the root of the project, contains the pipelining code with the different stages in sequential-parallel 
 that perform the different TJob lifecycle stages.
-- `/retorchfiles/scripts/tjoblifecycles` and `/retorchfiles/scripts/coilifecycles` contains the set up, execution, and tear down scripts for the TJobs and infrastructure
-- `/retorchfiles/envfiles`: contains the generated custom environment of each TJob.
+- `retorchfiles/scripts/tjoblifecycles` and `retorchfiles/scripts/coilifecycles` contains the set up, execution, and tear down scripts for the TJobs and infrastructure
+- `retorchfiles/envfiles`: contains the generated custom environment of each TJob.
 
 ## Contributing
 
