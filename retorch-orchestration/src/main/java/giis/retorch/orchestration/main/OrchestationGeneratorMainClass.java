@@ -1,6 +1,7 @@
-package giis.retorch.orchestration.generator;
+package giis.retorch.orchestration.main;
 
 import giis.retorch.orchestration.classifier.EmptyInputException;
+import giis.retorch.orchestration.generator.OrchestrationGenerator;
 import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
 import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
 import giis.retorch.orchestration.scheduler.NotValidSystemException;
