@@ -224,23 +224,18 @@ Once created the different properties and configuration files, the single module
 
 ### Executing the Orchestration generator
 Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to call the
-main class ` giis.retorch.orchestration.main.OrchestationGeneratorMainClass` into the test `/test` package with the following 3 parameters as arguments:
+main class `giis.retorch.orchestration.main.OrchestationGeneratorMainClass`. The calling of this class must be done in
+the same package of the annotated E2E test cases, in order to be capable to access to the generated java classes through
+the Java class loader and extract the RETORCH `@AccessMode` annotations.
+The call of the main method must be done with the following 3 parameters as arguments:
 - `rootPackageNameTests`: String that specifies the root package name where tests are located.
 - `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
 - `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root.
 
-The following snippet provides a simple call of the `OrchestrationGeneratorMainClass` for the project fullteaching:
+For example, in the [FullTeaching test suite](https://github.com/giis-uniovi/retorch-st-fullteaching) the `rootPackageNameTests` is `com.fullteaching.e2e.no_elastest.functional.test`,
+the `systemName` is `FullTeaching` and the `jenkinsFilePath` is `./`. The `OrchestationGeneratorMainClass` must be called under 
+the test package, e.g. `com.fullteaching.e2e.no_elastest`
 
-```java
-package com.fullteaching.e2e.no_elastest;
-
-public class RetorchMain {
-  public static void main(String[] args) throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException, EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
-    String [] argum={"com.fullteaching.e2e.no_elastest.functional.test", "FullTeaching", "./"};
-    OrchestationGeneratorMainClass.main(argum);
-  }
-}
-```
 
 ### RETORCH Orchestration generator outputs
 The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`retorchfiles/scripts/tjoblifecycles`),
