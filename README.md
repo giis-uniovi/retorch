@@ -27,12 +27,12 @@ Additional components will be added in future releases.
 
 ## Quick-start
 
-- Add the dependency 
-  [`io.github.giis-uniovi:retorch-annotations`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations) to the pom.xml of your SUT.
-- Add the annotations to the test classes as indicated below
-- Configure the E2E test suite as indicated below
-- Execute the orchestration generator and generate the pipelining-scripting code
-- [TO-DO]
+- Add the dependencies [`io.github.giis-uniovi:retorch-annotations`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations) 
+  and [`io.github.giis-uniovi.retorch-orchestration`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-orchestration) to the pom.xml of your SUT.
+- Add the annotations to the test classes as indicated below.
+- Configure the E2E test suite as indicated below.
+- Execute the orchestration generator and generate the pipelining-scripting code.
+- Commit and push the generated files to Git.
 
 ## RETORCH Annotations
 
@@ -163,9 +163,9 @@ The following snippet shows an example of two Resources declared in the JSON fil
 The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` containing several parameters 
 related to the SUT and the Continuous Integration Infrastructure, these parameters are the following:
 - `agentCIName`: the specific Jenkins agent used to execute the test suite.
-- `sut-wait-html`: state in the frontend (HTML displayed) when the SUT is ready to execute the test SUITE.
+- `sut-wait-html`: state in the frontend (HTML displayed) when the SUT is ready to execute the test suite.
 - `sut-location`: location of the `docker-compose.yml` file used to deploy the SUT.
-- `docker-frontend-name`: ID of the container used as frontend .
+- `docker-frontend-name`: ID of the container used as frontend.
 - `docker-frontend-port`: PORT on which the frontend container is available.
 - `external-binded-port`: EXTERNAL PORT where the frontend is made available (if its available).
 - `external-frontend-url`: EXTERNAL URI where the frontend is made available.
@@ -226,7 +226,7 @@ Once created the different properties and configuration files, the single module
 Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to call the
 main class `giis.retorch.orchestration.main.OrchestationGeneratorMainClass`. The calling of this class must be done in
 the same package of the annotated E2E test cases, in order to be capable to access to the generated java classes through
-the Java class loader and extract the RETORCH `@AccessMode` annotations.
+the Java ClassLoader and extract the RETORCH `@AccessMode` annotations.
 The call of the main method must be done with the following 3 parameters as arguments:
 - `rootPackageNameTests`: String that specifies the root package name where tests are located.
 - `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
