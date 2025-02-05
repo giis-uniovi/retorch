@@ -223,19 +223,42 @@ Once created the different properties and configuration files, the single module
 ```
 
 ### Executing the Orchestration generator
-Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to call the
-main class `giis.retorch.orchestration.main.OrchestationGeneratorMainClass`. The calling of this class must be done in
-the same package of the annotated E2E test cases, in order to be capable to access to the generated java classes through
-the Java ClassLoader and extract the RETORCH `@AccessMode` annotations.
-The call of the main method must be done with the following 3 parameters as arguments:
-- `rootPackageNameTests`: String that specifies the root package name where tests are located.
-- `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
-- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root.
+Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to instantiate
+the `giis.retorch.orchestration.generator.OrchestrationGenerator` object and call its `generateJenkinsfile()` method.
+The calling of this class must be done in the same package of the annotated E2E test cases, in order to be capable to access to the generated java classes through
+the Java ClassLoader and extract the RETORCH `@AccessMode` annotations. The test class can be created using the following
+template, tuning it as required:
 
-For example, in the [FullTeaching test suite](https://github.com/giis-uniovi/retorch-st-fullteaching) the `rootPackageNameTests` is `com.fullteaching.e2e.no_elastest.functional.test`,
-the `systemName` is `FullTeaching` and the `jenkinsFilePath` is `./`. The `OrchestationGeneratorMainClass` must be called under 
-the test package, e.g. `com.fullteaching.e2e.no_elastest`
+```java
+package com.sutexample.functional; // TO-DO Adjust the package n
 
+import giis.retorch.orchestration.classifier.EmptyInputException;
+import giis.retorch.orchestration.generator.OrchestrationGenerator;
+import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
+import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
+import giis.retorch.orchestration.scheduler.NotValidSystemException;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+@Disabled("Exclude to execute this class when pushing the SUT")
+class RetorchGenerateJenkinfileTest {
+  @Test
+  void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException, EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
+    OrchestrationGenerator orch= new OrchestrationGenerator();
+    orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./"); // TO-DO adjust the rootPackageNameTests,systemName and jenkinsFilePath parameters 
+  }
+}
+```
+
+The call of the `generateJenkinsfile` method must be done with the following 3 parameters as arguments:
+- `rootPackageNameTests`: String that specifies the root package name where tests are located (`com.sutexample.functional.tests` in the snippet).
+- `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file) (`sutexample` in the snippet).
+- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root (`./` in the snippet).
+
+For example, in the [FullTeaching test suite](https://github.com/giis-uniovi/retorch-st-fullteaching) this test class, namely `RetorchGenerateJenkinfileTest.java` is available into the `com.fullteaching.e2e.no_elastest.functional.test` 
 
 ### RETORCH Orchestration generator outputs
 The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`retorchfiles/scripts/tjoblifecycles`),
