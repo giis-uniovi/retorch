@@ -222,9 +222,20 @@ Once created the different properties and configuration files, the single module
         └── custom.env
 ```
 
+
 ### Executing the Orchestration generator
 Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to instantiate
 the `giis.retorch.orchestration.generator.OrchestrationGenerator` object and call its `generateJenkinsfile()` method.
+To instantiate this class, first we need to include the appropiate dependency to the `pom.xml` file by adding:
+
+```yaml
+<dependency>
+  <groupId>io.github.giis-uniovi</groupId>
+  <artifactId>retorch-orchestration</artifactId>
+  <version><!--SET HERE THE DESIRED VERSION--></version>
+</dependency>
+```
+
 The calling of this class must be done in the same package of the annotated E2E test cases, in order to be capable to access to the generated java classes through
 the Java ClassLoader and extract the RETORCH `@AccessMode` annotations. The test class can be created using the following
 template, tuning it as required:
