@@ -23,6 +23,11 @@ public class TestCase {
         this.testClass = classTestCase;
         this.accessMode = new LinkedList<>();
     }
+    public TestCase(String nameTestCase, Class<?> classTestCase,List<AccessMode> accessMode) {
+        this.name = nameTestCase;
+        this.testClass = classTestCase;
+        this.accessMode = accessMode;
+    }
 
     public Class<?> getTestClass() {
         return testClass;

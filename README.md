@@ -27,12 +27,12 @@ Additional components will be added in future releases.
 
 ## Quick-start
 
-- Add the dependency 
-  [`io.github.giis-uniovi:retorch-annotations`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations) to the pom.xml of your SUT.
-- Add the annotations to the test classes as indicated below
-- Configure the E2E test suite as indicated below
-- Execute the orchestration generator and generate the pipelining-scripting code
-- [TO-DO]
+- Add the dependencies [`io.github.giis-uniovi:retorch-annotations`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-annotations) 
+  and [`io.github.giis-uniovi.retorch-orchestration`](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-orchestration) to the pom.xml of your SUT.
+- Add the annotations to the test classes as indicated below.
+- Configure the E2E test suite as indicated below.
+- Execute the orchestration generator and generate the pipelining-scripting code.
+- Commit and push the generated files to Git.
 
 ## RETORCH Annotations
 
@@ -80,7 +80,7 @@ void forumLoadEntriesTest(String usermail,String password,String role){
 ## RETORCH Orchestration
 The RETORCH framework provides a generator that creates the Execution Plan, along with the required pipelining and script 
 files for execution in a CI environment. The generation of scripts and pipelining code is based on the Access Modes 
-annotated within the test cases and the Resource information specified in `[SUT_NAME]SystemResources.json`.
+annotated within the test cases and the Resource information specified in `retorchfiles/configurations/[SUT_NAME]SystemResources.json`.
 
 The RETORCH orchestration generator requires 4 inputs:
 - The annotated E2E test cases with the [RETORCH access modes](#retorch-annotations) into a **single module** Maven project.
@@ -106,7 +106,7 @@ The resulting directory tree might look like as:
 ```
 - The `retorchfiles/` directory would contain all the configuration files and scripting snippets that would be used to generate the
 pipelining code and the scripts to set up, deploy, and tear down the different Resources and TJob. Contains two subdirectories:
-  - `configurations/`: stores the Resource and CI configuration files.
+  - `configurations/`: stores the Resources and CI configuration files.
   - `customscriptscode/`: stores the different script snippets for the tear down, set up and environment.
 - The `docker-compose.yml` in the root of the project.
 - The different project directories and files.
@@ -115,7 +115,7 @@ The following subsections explain how to create each configuration file and how 
 
 #### Create the Resource.json file
 The Resource file must be placed in the `retorchfiles/configurations/` and named with the system or test suite name, followed
-by `SystemResources.json`. This file contains a map with a series of Resources, using their unique ResourceID as a key. For each
+by `SystemResources.json` . This file contains a map with a series of Resources, using their unique ResourceID as a key. For each
 Resource the tester needs to specify the following attributes:
 - `resourceID`: A unique identifier for the Resource.
 - `replaceable`: A list of Resources that can replace the current one.
@@ -128,7 +128,7 @@ Resource the tester needs to specify the following attributes:
 - `minimalCapacities`: List with the Minimal Capacities required by the Resource; each Capacity is composed by:
   - `name`: String between "memory", "processor" and "storage".
   - `quantity`: float with the amount of Capacity Required.
-- `dockerImage`: String with the concatenation of the placeholder name in the docker-compose, "[IMG:]" and the image name.
+- `dockerImage`: String with the concatenation of the placeholder name in the docker-compose, using `;` as separator between  placeholder and the image name.
 
 The following snippet shows an example of two Resources declared in the JSON file:
 
@@ -143,7 +143,7 @@ The following snippet shows an example of two Resources declared in the JSON fil
     {"name": "memory", "quantity": 0.2929}, 
     {"name": "processor", "quantity": 0.2}, 
     {"name": "storage", "quantity": 0.5}],
-    "dockerImage": "userservice[IMG:]wigo4it/identityserver4:latest"
+    "dockerImage": "userservice;wigo4it/identityserver4:latest"
 },
   "frontend": {
     "hierarchyParent": [], "replaceable": [],
@@ -153,7 +153,7 @@ The following snippet shows an example of two Resources declared in the JSON fil
       {"name": "memory", "quantity": 2}, 
       {"name": "processor", "quantity": 1}, 
       {"name": "storage", "quantity": 0.88}],
-    "dockerImage": "frontend[IMG:]nginx:latest"
+    "dockerImage": "frontend;nginx:latest"
   }
   
 }
@@ -163,9 +163,9 @@ The following snippet shows an example of two Resources declared in the JSON fil
 The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` containing several parameters 
 related to the SUT and the Continuous Integration Infrastructure, these parameters are the following:
 - `agentCIName`: the specific Jenkins agent used to execute the test suite.
-- `sut-wait-html`: state in the frontend (HTML displayed) when the SUT is ready to execute the test SUITE.
+- `sut-wait-html`: state in the frontend (HTML displayed) when the SUT is ready to execute the test suite.
 - `sut-location`: location of the `docker-compose.yml` file used to deploy the SUT.
-- `docker-frontend-name`: ID of the container used as frontend .
+- `docker-frontend-name`: ID of the container used as frontend.
 - `docker-frontend-port`: PORT on which the frontend container is available.
 - `external-binded-port`: EXTERNAL PORT where the frontend is made available (if its available).
 - `external-frontend-url`: EXTERNAL URI where the frontend is made available.
@@ -198,7 +198,7 @@ Examples of the necessary changes in the `docker-compose.yml` can consulted in t
 
 #### (Optional) Specify script snippets to include in the set-up tear-down and environment
 The RETORCH orchestration generator allows to specify scripting code/commands to be included in the generated set up, tear down, and 
-the environment declaration of each TJob. To include it, the tester must create the following files in `retorch\customscriptscode`: 
+the environment declaration of each TJob. To include it, the tester must create the following files in `retorch/customscriptscode`: 
 - `custom-tjob-setup`: Contains the custom set up code (e.g. declare some environment variable specific for each TJob) or custom logging systems.
 - `custom-tjob-teardown`: Contains the custom tear down code (e.g. save some generated outputs).
 - `custom.env`: Contains  configurations and environment variables common to all TJobs.
@@ -223,33 +223,50 @@ Once created the different properties and configuration files, the single module
 ```
 
 ### Executing the Orchestration generator
-Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to create a 
-main class and instantiate an `OrchestratinGenericToolbox` object. Calling the `generateJenkinsFile()` method with the following 
-parameters:
-- `packageRoute`: String that specifies the complete package name to the E2E annotated tests folder.
-- `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file).
-- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created (usually the root of the project: `./`).
+Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to instantiate
+the `giis.retorch.orchestration.generator.OrchestrationGenerator` object and call its `generateJenkinsfile()` method.
+The calling of this class must be done in the same package of the annotated E2E test cases, in order to be capable to access to the generated java classes through
+the Java ClassLoader and extract the RETORCH `@AccessMode` annotations. The test class can be created using the following
+template, tuning it as required:
 
-The following code snippet shows an example of the method invocation:
- ```java
-import giis.retorch.orchestration.main.OrchestrationGenericToolBox;
+```java
+package com.sutexample.functional; // TO-DO Adjust the package n
 
-public class SutExampleRetorchMain {
+import giis.retorch.orchestration.classifier.EmptyInputException;
+import giis.retorch.orchestration.generator.OrchestrationGenerator;
+import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
+import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
+import giis.retorch.orchestration.scheduler.NotValidSystemException;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args)  {
-        OrchestrationGenericToolBox toolBox = new OrchestrationGenericToolBox();
-        toolBox.generateJenkinsfile("giis.sutexample.e2e.functional.tests", "sutexample", "./");
-    }
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+@Disabled("Exclude to execute this class when pushing the SUT")
+class RetorchGenerateJenkinfileTest {
+  @Test
+  void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException, EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
+    OrchestrationGenerator orch= new OrchestrationGenerator();
+    orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./"); // TO-DO adjust the rootPackageNameTests,systemName and jenkinsFilePath parameters 
+  }
 }
 ```
 
+The call of the `generateJenkinsfile` method must be done with the following 3 parameters as arguments:
+- `rootPackageNameTests`: String that specifies the root package name where tests are located (`com.sutexample.functional.tests` in the snippet).
+- `systemName`: String that specifies the system name, must correspond with the name used in the [Resources JSON file](#create-the-resourcejson-file) (`sutexample` in the snippet).
+- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root (`./` in the snippet).
+
+For example, in the [FullTeaching test suite](https://github.com/giis-uniovi/retorch-st-fullteaching) this test class, namely `RetorchGenerateJenkinfileTest.java` is available into the `com.fullteaching.e2e.no_elastest.functional.test` 
+
 ### RETORCH Orchestration generator outputs
-The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`/retorchfiles/tjoblifecycles`),
-the infrastructure(`/retorchfiles/coilifecycles`) and the different environment files of each TJob (`/retorchfiles/envfiles`) :
+The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and execute the TJobs(`retorchfiles/scripts/tjoblifecycles`),
+the infrastructure(`retorchfiles/scripts/coilifecycles`) and the different environment files of each TJob (`retorchfiles/envfiles`) :
 - `Jenkinsfile`: located in the root of the project, contains the pipelining code with the different stages in sequential-parallel 
 that perform the different TJob lifecycle stages.
-- `/retorchfiles/tjoblifecycles` and `/retorchfiles/coilifecycles` contains the set up, execution, and tear down scripts for the TJobs and infrastructure
-- `/retorchfiles/envfiles`: contains the generated custom environment of each TJob.
+- `retorchfiles/scripts/tjoblifecycles` and `retorchfiles/scripts/coilifecycles` contains the set up, execution, and tear down scripts for the TJobs and infrastructure
+- `retorchfiles/envfiles`: contains the generated custom environment of each TJob.
 
 ## Contributing
 

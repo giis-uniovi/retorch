@@ -55,8 +55,7 @@ public class SyntheticInvalidClassTests {
      * Three errors:  sharing=false with a concurrency of >1, no valid access mode and sharing true && concurrency<2
      */
     @AccessMode(resID = "heavyInvalidInElasRest", accessMode = "READWRITE", concurrency = 4)
-    @AccessMode(concurrency = 1, sharing = true, resID = "mockInvalidElasticResource", accessMode =
-            "InventedAccessMode")
+    @AccessMode(concurrency = 1, sharing = true, resID = "mockInvalidElasticResource", accessMode = "InventedAccessMode")
     @Test
     public void validationAccessModeAttributes() {
         Assert.assertTrue(true);// Only  for analysis purposes
