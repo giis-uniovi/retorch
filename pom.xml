@@ -43,7 +43,7 @@
 
         <commons.collections.version>4.4</commons.collections.version>
 
-        <guava-java.version>33.4.6-jre</guava-java.version>
+        <guava-java.version>33.4.8-jre</guava-java.version>
 
         <commons-io.version>2.19.0</commons-io.version>
 
