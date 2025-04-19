@@ -45,7 +45,7 @@
 
         <guava-java.version>33.4.6-jre</guava-java.version>
 
-        <commons-io.version>2.18.0</commons-io.version>
+        <commons-io.version>2.19.0</commons-io.version>
 
     </properties>
 
