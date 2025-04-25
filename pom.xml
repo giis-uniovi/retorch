@@ -41,7 +41,7 @@
 
         <mockito.version>4.11.0</mockito.version>
 
-        <commons.collections.version>4.4</commons.collections.version>
+        <commons.collections.version>4.5.0</commons.collections.version>
 
         <guava-java.version>33.4.8-jre</guava-java.version>
 
