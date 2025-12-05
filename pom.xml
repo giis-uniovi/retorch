@@ -27,7 +27,7 @@
 
         <jacksonjson.version>2.20.1</jacksonjson.version>
 
-        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
 
         <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
 
