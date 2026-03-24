@@ -6,7 +6,7 @@
 
 This repository contains a series of components of the RETORCH End-to-End (E2E) test orchestration framework. It's primary
 goal is to optimize E2E test execution by reducing both the execution time and the number of unnecessary Resource[^1]
-redeployment's.
+redeployment's..
 
 NOTE: The repository is a work in progress, the initial version only made available the annotations, and currently we're 
 migrating the orchestration generator module.

@@ -3,6 +3,11 @@
 # the TJobs. It performs cleaning actions, like remove all the containers and docker volumes, but also ends, collects
 # and creates file with the different TJob and COI lifecycles using the savetjoblifecycledata.sh script.
 
+if [ "$#" -ne 0 ]; then
+    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-tear-down" "Usage: $0 - This script does not take any parameters"
+    exit 1
+fi
+
 COITEARDOWNSTART="$(date +%s%3N)"
 # Log the start of the container teardown process
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "Switching off all containers that start with *tjob*..."
@@ -30,9 +35,9 @@ if [ -n "$container_ids" ]; then
        if [ -n "$volumes_to_prune" ]; then
            for volume in $volumes_to_prune; do
                if docker volume rm "$volume"; then
-                   log "DEBUG" "COI-tear-down" "Successfully removed volume: $volume"
+                   "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "Successfully removed volume: $volume"
                else
-                   log "ERROR" "COI-tear-down" "Failed to remove volume: $volume"
+                   "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-tear-down" "Failed to remove volume: $volume"
                fi
            done
     else

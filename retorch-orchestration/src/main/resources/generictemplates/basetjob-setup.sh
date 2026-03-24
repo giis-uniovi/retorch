@@ -4,16 +4,17 @@
 # are inserted. The script deploys the required test Resources using Docker Compose and waits for the SUT to be ready
 # by invoking the waitforSUT.sh script.
 
+if [ "$#" -ne 3 ]; then
+    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "TJob-set-up" "Usage: $0 <TJobName> <Stage> <SUTUrl>"
+    exit 1
+fi
+
 # Execute the script to write timestamp
 "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
-# Export Docker Host IP
-DOCKER_HOST_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
-export DOCKER_HOST_IP
-"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Exporting the HOST_IP: $DOCKER_HOST_IP"
 
 # START Custom Set-up commands
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
-${CUSTOM_SETUP_COMMANDS}
+${CUSTOM_SETUP_TJOB_COMMANDS}
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
 # END Custom Set-up commands
 
@@ -34,7 +35,7 @@ else
    "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Docker compose successful!"
 fi
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Waiting for the system to be up..."
-"$WORKSPACE/retorchfiles/scripts/waitforSUT.sh" "$1"
+"$SCRIPTS_FOLDER/waitforSUT.sh" "$3" "$1"
 cd "$WORKSPACE"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "System READY!! Test execution can start!"
 # Execute the script to write timestamp again

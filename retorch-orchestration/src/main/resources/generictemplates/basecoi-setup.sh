@@ -1,7 +1,12 @@
 #!/bin/bash
 # The coi-setup.sh script provides all the necessary commands to set up the infrastructure before executing
 # the TJobs. It performs debugging actions, such as outputting the kernel, library, and Docker versions.
-# Additionally, it prunes and removes old videos and execution data.
+# Additionally, it prunes old videos and execution data, and verifies that the required Selenium containers are running.
+
+if [ "$#" -ne 0 ]; then
+    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-set-up" "Usage: $0 - This script does not take any parameters"
+    exit 1
+fi
 
 SEL_VIDEO_DIR="/opt/selenoid/video/"
 SEL_LOG_DIR="/opt/selenoid/logs/"
@@ -43,23 +48,38 @@ mkdir -p "$WORKSPACE/retorchcostestimationdata/exec$BUILD_NUMBER"
 mkdir -p "$WORKSPACE/artifacts"
 mkdir -p "$SUT_LOCATION/tmp"
 
-# Pull Docker images
-echo "Pulling images"
-if docker pull selenoid/vnc_chrome:116.0 && docker pull selenoid/video-recorder:latest-release; then
-    "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-set-up" "Images pulled successfully."
-else
-    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-set-up" "Failed to pull Docker images."
-fi
+# START Custom COI commands
+"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
+${CUSTOM_SETUP_COI_COMMANDS}
+"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
+# END Custom COI commands
+
+
+# Check if the provided string appears in any running container's name
+check_container_running() {
+    local search_term="$1"
+
+    # We capture the ID of any running container that matches the name string
+    local container_id=$(docker ps --filter "name=$search_term" --filter "status=running" -q)
+
+    if [ -n "$container_id" ]; then
+        "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-set-up" "Found running container containing '$search_term' in the name."
+    else
+        "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-set-up" "No running container name matches '$search_term'. Aborting."
+        exit 1
+    fi
+}
+
+check_container_running "selenium-hub"
+check_container_running "chrome-video"
+check_container_running "chrome-node"
 
 echo "Building images of SUT"
 
 cd "$SUT_LOCATION"
 # Use double quotes for Docker Compose files TEMPORAL FIX
-docker compose -f "docker-compose.yml" --env-file "$WORKSPACE/retorchfiles/envfiles/tjobc.env" --ansi never build
-
-# Check the exit status of the last command
-if [ $? -eq 0 ]; then
-    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-set-up" "Images for the SUT created sucessfully"
+if docker compose -f "docker-compose.yml" --env-file "$WORKSPACE/retorchfiles/envfiles/tjoba.env" --ansi never build; then
+    "$SCRIPTS_FOLDER/printLog.sh" "INFO" "COI-set-up" "Images for the SUT created successfully"
 else
     "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-set-up" "Failed to build images of SUT"
     exit 1
