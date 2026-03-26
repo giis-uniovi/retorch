@@ -7,6 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * RETORCH annotation is used to enable support for multiple Resource.class annotations within the same test case.
  */
+@Deprecated
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Resources {
