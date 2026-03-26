@@ -98,11 +98,12 @@ in the single module project root. The resulting directory tree might look like 
 
 ```
 .
-├── 📦 src
-├── 🐳 docker-compose.yml
+
 ├── 📁 .retorch/
 │   ├── 📁 configurations/
 │   └── 📁 customscriptscode/
+├── 📦 src
+├── 🐳 docker-compose.yml
 
 ```
 
@@ -262,18 +263,18 @@ Once created the different properties and configuration files, the single module
 
 ```
 .
-├── 📦 src
-├── 🐳 docker-compose.yml
 ├── 📁 .retorch/
 │   ├── 📁 configurations/
 │   │   ├── {} <SUT_NAME>SystemResource.json
 │   │   └── ⚙️ retorchCI.properties
 │   └── 📁 customscriptscode/
-        ├── 📄 custom-tjob-setup
-        ├── 📄 custom-tjob-teardown
-        ├── 📄 custom-coi-setup
-        ├── 📄 custom-coi-teardown
-        └── 🔐 custom.env
+│       ├── 📄 custom-tjob-setup
+│       ├── 📄 custom-tjob-teardown
+│       ├── 📄 custom-coi-setup
+│       ├── 📄 custom-coi-teardown
+│       └── 🔐 custom.env
+├── 📦 src
+├── 🐳 docker-compose.yml
 ```
 
 ### Executing the Orchestration generator
