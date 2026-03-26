@@ -78,7 +78,7 @@ void forumLoadEntriesTest(String usermail, String password, String role) {
 The RETORCH framework provides a generator that creates the Execution Plan, along with the required pipelining and
 script files for execution in a CI environment. The generation of scripts and pipelining code is based on the Access
 Modes annotated within the test cases and the Resource information specified in
-`retorchfiles/configurations/<SUT_NAME>SystemResources.json`.
+`.retorch/configurations/<SUT_NAME>SystemResources.json`.
 
 The RETORCH orchestration generator requires 4 inputs:
 
@@ -100,13 +100,13 @@ in the single module project root. The resulting directory tree might look like 
 .
 ├── 📦 src
 ├── 🐳 docker-compose.yml
-├── 📁 retorchfiles/
+├── 📁 .retorch/
 │   ├── 📁 configurations/
 │   └── 📁 customscriptscode/
 
 ```
 
-- The `📁 retorchfiles/` directory would contain all the configuration files and scripting snippets that would be used to
+- The `📁 .retorch/` directory would contain all the configuration files and scripting snippets that would be used to
   generate the pipelining code and the scripts to set up, deploy, and tear down the different Resources and TJob.
   Contains two subdirectories:
     - `📁 configurations/`: stores the Resources and CI configuration files.
@@ -118,7 +118,7 @@ The following subsections explain how to create each configuration file and how 
 
 #### Create the Resource JSON file
 
-The Resource file must be placed in the `retorchfiles/configurations/` and named with the system or test suite name,
+The Resource file must be placed in the `.retorch/configurations/` and named with the system or test suite name,
 followed by `SystemResources.json` (`<SUT_NAME>SystemResources.json`). This file contains a map with a series of
 Resources, using their unique ResourceID as a key.
 For each Resource the tester needs to specify the following attributes:
@@ -200,7 +200,7 @@ The following snippet shows an example of two Resources declared in the JSON fil
 
 #### Create the retorchCI.properties file
 
-The CI file must be placed in `retorchfiles/configurations/`, namely `retorchCI.properties` containing several
+The CI file must be placed in `.retorch/configurations/`, namely `retorchCI.properties` containing several
 parameters related to the SUT and the Continuous Integration Infrastructure, these parameters are the following:
 
 - `agentCIName`: the specific Jenkins agent used to execute the test suite.
@@ -264,7 +264,7 @@ Once created the different properties and configuration files, the single module
 .
 ├── 📦 src
 ├── 🐳 docker-compose.yml
-├── 📁 retorchfiles/
+├── 📁 .retorch/
 │   ├── 📁 configurations/
 │   │   ├── {} <SUT_NAME>SystemResource.json
 │   │   └── ⚙️ retorchCI.properties
@@ -324,7 +324,7 @@ The call of the `generateJenkinsfile` method must be done with the following 3 p
 - `rootPackageNameTests`: String that specifies the root package name where tests are located (
   `com.sutexample.functional.tests` in the snippet).
 - `systemName`: String that specifies the system name, must correspond with the name used in
-  the [Resources JSON file](#create-the-resourcejson-file) (`sutexample` in the snippet).
+  the [Resources JSON file](#create-the-resource-json-file) (`sutexample` in the snippet).
 - `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root (`./`
   in the snippet).
 
@@ -334,16 +334,16 @@ namely `RetorchGenerateJenkinfileTest.java` is available into the `com.fullteach
 ### RETORCH Orchestration generator outputs
 
 The generator provides four different outputs: the pipelining code, the necessary scripts to set up, tear down and
-execute the TJobs(`retorchfiles/scripts/tjoblifecycles`),
-the infrastructure(`retorchfiles/scripts/coilifecycles`) and the different environment files of each TJob (
-`retorchfiles/envfiles`) :
+execute the TJobs(`.retorch/scripts/tjoblifecycles`),
+the infrastructure(`.retorch/scripts/coilifecycles`) and the different environment files of each TJob (
+`.retorch/envfiles`) :
 
 - `⛓️ Jenkinsfile`: located in the root of the project, contains the pipelining code with the different stages in
   sequential-parallel
   that perform the different TJob lifecycle stages.
-- `📁 retorchfiles/scripts/tjoblifecycles` and `retorchfiles/scripts/coilifecycles` contains the set up, execution, and
+- `📁 .retorch/scripts/tjoblifecycles` and `.retorch/scripts/coilifecycles` contains the set up, execution, and
   tear down scripts for the TJobs and infrastructure
-- `📁 retorchfiles/envfiles`: contains the generated custom environment of each TJob.
+- `📁 .retorch/envfiles`: contains the generated custom environment of each TJob.
 
 ## Contributing
 

@@ -6,9 +6,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
+ * @deprecated
 RETORCH custom annotation specifies a physical, logical, or computational entity required during the test execution,
  along with its attributes. This annotation can be retrieved and processed during runtime
  */
+
 @Deprecated
 @Repeatable(Resources.class)
 @Retention(RetentionPolicy.RUNTIME)

@@ -18,8 +18,8 @@ import java.util.Properties;
  */
 public class ScriptGenerator {
 
-    private static final String DIRECTORY_TJOBS_NAME = "retorchfiles/scripts/tjoblifecycles/";
-    private static final String DIRECTORY_COI_NAME = "retorchfiles/scripts/coilifecycles/";
+    private static final String DIRECTORY_TJOBS_NAME = ".retorch/scripts/tjoblifecycles/";
+    private static final String DIRECTORY_COI_NAME = ".retorch/scripts/coilifecycles/";
     private static final String DIRECTORY_TEMPLATES = "generictemplates/";
 
     private static final String INPUT_FILE_TJOB_SETUP_TEMPLATE = DIRECTORY_TEMPLATES + "basetjob-setup.sh";
@@ -36,20 +36,20 @@ public class ScriptGenerator {
     private static final String OUTPUT_FILE_TJOB_SETUP = DIRECTORY_TJOBS_NAME + "tjob-setup.sh";
     private static final String OUTPUT_FILE_TJOB_TESTEXECUTION = DIRECTORY_TJOBS_NAME + "tjob-testexecution.sh";
     private static final String OUTPUT_FILE_TJOB_TEARDOWN = DIRECTORY_TJOBS_NAME + "tjob-teardown.sh";
-    private static final String OUTPUT_FILE_WAITER = "retorchfiles/scripts/waitforSUT.sh";
-    private static final String OUTPUT_FILE_CONTAINER_LOGS = "retorchfiles/scripts/storeContainerLogs.sh";
-    private static final String OUTPUT_FILE_LOGGING = "retorchfiles/scripts/printLog.sh";
-    private static final String OUTPUT_FILE_WRITE_TIME = "retorchfiles/scripts/writetime.sh";
+    private static final String OUTPUT_FILE_WAITER = ".retorch/scripts/waitforSUT.sh";
+    private static final String OUTPUT_FILE_CONTAINER_LOGS = ".retorch/scripts/storeContainerLogs.sh";
+    private static final String OUTPUT_FILE_LOGGING = ".retorch/scripts/printLog.sh";
+    private static final String OUTPUT_FILE_WRITE_TIME = ".retorch/scripts/writetime.sh";
     private static final String OUTPUT_FILE_COI_SETUP = DIRECTORY_COI_NAME + "coi-setup.sh";
     private static final String OUTPUT_FILE_COI_TEARDOWN = DIRECTORY_COI_NAME + "coi-teardown.sh";
-    private static final String OUTPUT_FILE_SAVE_ALL_TJOBS = "retorchfiles/scripts/savetjoblifecycledata.sh";
+    private static final String OUTPUT_FILE_SAVE_ALL_TJOBS = ".retorch/scripts/savetjoblifecycledata.sh";
 
     private static final Logger log = LoggerFactory.getLogger(ScriptGenerator.class);
     private final Properties ciConfiguration;
 
     public ScriptGenerator() {
         ciConfiguration = new Properties();
-        try (InputStream input = Files.newInputStream(Paths.get("retorchfiles/configurations/retorchCI.properties"))) {
+        try (InputStream input = Files.newInputStream(Paths.get(".retorch/configurations/retorchCI.properties"))) {
             ciConfiguration.load(input);
         } catch (IOException e) {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
@@ -96,7 +96,7 @@ public class ScriptGenerator {
     }
 
     /**
-     * Returns the custom content from a file  located in retorchfiles/customscriptscode/ based on the given phase.
+     * Returns the custom content from a file  located in .retorch/customscriptscode/ based on the given phase.
      *
      * @param phase contains the phase to provide the custom file
      * @return the custom content, or an empty string if the file does not exist
@@ -107,16 +107,16 @@ public class ScriptGenerator {
         String urlFile;
         switch (phase) {
             case "tjob-setup":
-                urlFile = "retorchfiles/customscriptscode/custom-tjob-setup";
+                urlFile = ".retorch/customscriptscode/custom-tjob-setup";
                 break;
             case "tjob-teardown":
-                urlFile = "retorchfiles/customscriptscode/custom-tjob-teardown";
+                urlFile = ".retorch/customscriptscode/custom-tjob-teardown";
                 break;
             case "coi-setup":
-                urlFile = "retorchfiles/customscriptscode/custom-coi-setup";
+                urlFile = ".retorch/customscriptscode/custom-coi-setup";
                 break;
             default:
-                urlFile = "retorchfiles/customscriptscode/custom.env";  // Default provides the env
+                urlFile = ".retorch/customscriptscode/custom.env";  // Default provides the env
                 break;
         }
         Path filePath = Paths.get(urlFile);

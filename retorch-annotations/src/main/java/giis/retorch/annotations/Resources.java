@@ -5,6 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
+ * @deprecated
  * RETORCH annotation is used to enable support for multiple Resource.class annotations within the same test case.
  */
 @Deprecated

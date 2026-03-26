@@ -15,7 +15,7 @@ fi
 # START Custom Set-up commands
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
 # The custom-tjob-setup file specifies the custom commands-scripting code that need to be executed into the TJob setup, personalize
-# it in the /retorchfiles/customsscriptscode/custom-tjob-setup.
+# it in the /.retorch/customsscriptscode/custom-tjob-setup.
 echo "This TJOB dont have any kind of specific commands"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
 # END Custom Set-up commands
@@ -23,7 +23,7 @@ echo "This TJOB dont have any kind of specific commands"
 # Deploy containers
 cd "$SUT_LOCATION"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Deploying containers for TJOB $1"
-docker compose -f docker-compose.yml --env-file "$WORKSPACE/retorchfiles/envfiles/$1.env" --ansi never -p "$1" up -d
+docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$1.env" --ansi never -p "$1" up -d
 
 if [ $? -ne 0 ]; then
     "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "Docker compose failed,writing end time of the set-up"

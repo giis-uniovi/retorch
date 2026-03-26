@@ -21,7 +21,7 @@ ${CUSTOM_SETUP_TJOB_COMMANDS}
 # Deploy containers
 cd "$SUT_LOCATION"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Deploying containers for TJOB $1"
-docker compose -f docker-compose.yml --env-file "$WORKSPACE/retorchfiles/envfiles/$1.env" --ansi never -p "$1" up -d
+docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$1.env" --ansi never -p "$1" up -d
 
 if [ $? -ne 0 ]; then
     "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "Docker compose failed,writing end time of the set-up"

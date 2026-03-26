@@ -21,7 +21,7 @@ cd "$SUT_LOCATION"
 
 # Tear down Docker containers and volumes
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-tear-down" "Tearing down Docker containers and volumes for TJOB $1"
-docker compose -f docker-compose.yml --env-file "$WORKSPACE/retorchfiles/envfiles/$1.env" --ansi never -p "$1" down --volumes
+docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$1.env" --ansi never -p "$1" down --volumes
 
 # Return to the original working directory
 cd "$WORKSPACE"
@@ -29,7 +29,7 @@ cd "$WORKSPACE"
 # START Custom Set-up commands
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
 # The custom-tjob-teardown file specifies the custom commands-scripting code that need to be executed into the TJob teardown, personalize
-# it in the /retorchfiles/customsscriptscode/custom-tjob-teardown.
+# it in the /.retorch/customsscriptscode/custom-tjob-teardown.
 echo "This TJOB dont have any kind of specific commands"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
 # END Custom Set-up commands

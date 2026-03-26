@@ -3,7 +3,7 @@ pipeline {
   environment {
     SELENOID_PRESENT = "TRUE"
     SUT_LOCATION = "$WORKSPACE"
-    SCRIPTS_FOLDER = "$WORKSPACE/retorchfiles/scripts"
+    SCRIPTS_FOLDER = "$WORKSPACE/.retorch/scripts"
   } // EndEnvironment
   options {
     disableConcurrentBuilds()

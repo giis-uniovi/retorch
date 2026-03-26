@@ -78,7 +78,7 @@ echo "Building images of SUT"
 
 cd "$SUT_LOCATION"
 # Use double quotes for Docker Compose files TEMPORAL FIX
-if docker compose -f "docker-compose.yml" --env-file "$WORKSPACE/retorchfiles/envfiles/tjoba.env" --ansi never build; then
+if docker compose -f "docker-compose.yml" --env-file "$WORKSPACE/.retorch/envfiles/tjoba.env" --ansi never build; then
     "$SCRIPTS_FOLDER/printLog.sh" "INFO" "COI-set-up" "Images for the SUT created successfully"
 else
     "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-set-up" "Failed to build images of SUT"

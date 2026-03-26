@@ -21,7 +21,7 @@ cd "$SUT_LOCATION"
 
 # Tear down Docker containers and volumes
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-tear-down" "Tearing down Docker containers and volumes for TJOB $1"
-docker compose -f docker-compose.yml --env-file "$WORKSPACE/retorchfiles/envfiles/$1.env" --ansi never -p "$1" down --volumes
+docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$1.env" --ansi never -p "$1" down --volumes
 
 # Return to the original working directory
 cd "$WORKSPACE"

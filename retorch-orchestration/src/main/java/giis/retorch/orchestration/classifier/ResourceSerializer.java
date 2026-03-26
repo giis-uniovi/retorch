@@ -22,7 +22,7 @@ import java.util.*;
 public class ResourceSerializer {
 
     private final Logger logSerializer = LoggerFactory.getLogger(ResourceSerializer.class);
-    private static final String FOLDER_RESOURCES = "retorchfiles/configurations/";//Base path of the resource files
+    private static final String FOLDER_RESOURCES = ".retorch/configurations/";//Base path of the resource files
 
     final HashMap<String, Resource> resourcesToSerialize;//Map with the dictionary of resources to serialize
     final ObjectMapper mapper;

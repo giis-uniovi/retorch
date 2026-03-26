@@ -23,7 +23,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
 
     private static final String TJOB_BASE_PATH = "testsBasePath";
     private static final String APP_URL_PROPERTY = "app-url";
-    private static final String ENVIRONMENT_FOLDER_NAME = "retorchfiles/envfiles/";
+    private static final String ENVIRONMENT_FOLDER_NAME = ".retorch/envfiles/";
     private static final Logger log = LoggerFactory.getLogger(JenkinsOrchestrator.class);
     private static final String SH_COMMAND = "          sh '";
     private final Properties ciConfiguration;
@@ -41,7 +41,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         this.executionPlan = new ExecutionPlan("defaultName", activityEntityListFromScheduler);
         this.listAllResources = deserializer.deserializeResources(systemName);
         ciConfiguration = new Properties();
-        try (InputStream input = Files.newInputStream(Paths.get("retorchfiles/configurations/retorchCI.properties"))) {
+        try (InputStream input = Files.newInputStream(Paths.get(".retorch/configurations/retorchCI.properties"))) {
             ciConfiguration.load(input);
         } catch (IOException e) {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
@@ -141,8 +141,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         StringBuilder stringBuilder = new StringBuilder();
         Integer maxStagesValue = Collections.max(listActivities.keySet());
         //Remove scripts directory to avoid
-        if (Files.exists(Paths.get("retorchfiles/scripts"))) {
-            FileUtils.deleteDirectory(new File("retorchfiles/scripts"));
+        if (Files.exists(Paths.get(".retorch/scripts"))) {
+            FileUtils.deleteDirectory(new File(".retorch/scripts"));
         }
         ScriptGenerator scriptler = new ScriptGenerator();
         stringBuilder.append("pipeline {\n")
@@ -150,7 +150,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                 .append("  environment {\n")
                 .append("    SELENOID_PRESENT = \"TRUE\"\n")
                 .append("    SUT_LOCATION = \"").append(ciConfiguration.getProperty("sut-location")).append("\"\n")
-                .append("    SCRIPTS_FOLDER = \"$WORKSPACE/retorchfiles/scripts\"\n")
+                .append("    SCRIPTS_FOLDER = \"$WORKSPACE/.retorch/scripts\"\n")
                 .append("  } // EndEnvironment\n")
                 .append("  options {\n")
                 .append("    disableConcurrentBuilds()\n")
@@ -276,8 +276,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                     .append(entry.getValue())
                     .append("\n");
         }
-        if (Files.exists(Paths.get("retorchfiles/customscriptscode/custom.env"))) {
-            contentEnvFile.append(readFileContent("retorchfiles/customscriptscode/custom.env"));
+        if (Files.exists(Paths.get(".retorch/customscriptscode/custom.env"))) {
+            contentEnvFile.append(readFileContent(".retorch/customscriptscode/custom.env"));
         }
         Path envFilePath = Paths.get(resourcePath + tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT) + ".env");
         Files.write(envFilePath, Collections.singleton(contentEnvFile.toString()));

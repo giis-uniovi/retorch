@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 public class OrchestrationIntegrationTests {
 
     protected static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/";
-    protected static final String OUTPUT_PATH_ENVFILES = "retorchfiles/envfiles/";
+    protected static final String OUTPUT_PATH_ENVFILES = ".retorch/envfiles/";
     private RetorchClassifier classifier;
     private IntegrationUtils utils;
     Logger loggerTesIntegration = LoggerFactory.getLogger(OrchestrationIntegrationTests.class);

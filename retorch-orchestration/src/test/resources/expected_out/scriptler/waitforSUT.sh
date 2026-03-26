@@ -17,9 +17,9 @@ while ! curl --insecure -s "$1" | grep -q "<div class=\"esh-catalog-item col-md-
 
   if ((COUNTER > WAIT_LIMIT)); then
     "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$2 set-up" "SUT is down, making a preventive tear-down and storing the logs"
-    "$WORKSPACE/retorchfiles/scripts/storeContainerLogs.sh" "$2"
+    "$WORKSPACE/.retorch/scripts/storeContainerLogs.sh" "$2"
     # Tearing down the system.
-    docker compose -f docker-compose.yml --env-file "$WORKSPACE/retorchfiles/envfiles/$2.env" --ansi never -p "$2" down --volumes
+    docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$2.env" --ansi never -p "$2" down --volumes
     exit 1
   fi
 done

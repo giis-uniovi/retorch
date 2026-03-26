@@ -51,7 +51,7 @@ mkdir -p "$SUT_LOCATION/tmp"
 # START Custom COI commands
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
 # The custom-coi-setup file specifies the custom commands-scripting code that need to be executed into the COI setup, personalize
-# it in the /retorchfiles/customsscriptscode/custom-coi-setup.
+# it in the /.retorch/customsscriptscode/custom-coi-setup.
 echo "This COI setup dont have any kind of specific commands"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
 # END Custom COI commands
@@ -80,7 +80,7 @@ echo "Building images of SUT"
 
 cd "$SUT_LOCATION"
 # Use double quotes for Docker Compose files TEMPORAL FIX
-if docker compose -f "docker-compose.yml" --env-file "$WORKSPACE/retorchfiles/envfiles/tjoba.env" --ansi never build; then
+if docker compose -f "docker-compose.yml" --env-file "$WORKSPACE/.retorch/envfiles/tjoba.env" --ansi never build; then
     "$SCRIPTS_FOLDER/printLog.sh" "INFO" "COI-set-up" "Images for the SUT created successfully"
 else
     "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-set-up" "Failed to build images of SUT"

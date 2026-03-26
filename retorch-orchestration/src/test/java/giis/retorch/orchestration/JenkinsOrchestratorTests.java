@@ -21,7 +21,7 @@ import java.util.Map;
 public class JenkinsOrchestratorTests {
 
     protected static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/";
-    protected static final String OUTPUT_PATH_ENVFILES = "retorchfiles/envfiles/";
+    protected static final String OUTPUT_PATH_ENVFILES = ".retorch/envfiles/";
 
     private final Logger logger = LoggerFactory.getLogger(JenkinsOrchestratorTests.class);
     private JenkinsOrchestrator jenkinsOrchestrator;
@@ -74,7 +74,7 @@ public class JenkinsOrchestratorTests {
     }
     public void checkScriptsGenerated() throws IOException {
         String expOutputFolder = "src/test/resources/expected_out/scriptler/";
-        String actualOutputFolder = "retorchfiles/scripts/";
+        String actualOutputFolder = ".retorch/scripts/";
         utils.compareFiles(expOutputFolder + "tjob-teardown.sh", actualOutputFolder + "tjoblifecycles/tjob-teardown.sh");
         utils.compareFiles(expOutputFolder + "tjob-setup.sh", actualOutputFolder + "tjoblifecycles/tjob-setup.sh");
         utils.compareFiles(expOutputFolder + "tjob-testexecution.sh", actualOutputFolder + "tjoblifecycles/tjob" +
