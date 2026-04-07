@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class RetorchScheduler {
 
     private static final Logger logRetorchScheduler = LoggerFactory.getLogger(RetorchScheduler.class);
+    private static final String PRIOR_SCH_TJOB_PREFIX = "TJobPriorSch";
     private final List<TGroup> listTGroups;
     private LinkedList<TJob> listTJobs;
     private List<Activity> activityEntities;
@@ -66,12 +67,12 @@ public class RetorchScheduler {
         TJob currentTJob;
         int numberTJob=0;
         for (TGroup tGroup : this.listTGroups) {
-            currentTJob = new TJob("TJobPriorSch"+ numberTJob,0,tGroup.getTGroupResources());
+            currentTJob = new TJob(PRIOR_SCH_TJOB_PREFIX + numberTJob, 0, tGroup.getTGroupResources());
             intelligentScheduling(currentTJob, tGroup);
             if (!currentTJob.getListTestCases().isEmpty()){
                 this.listTJobs.add(currentTJob);
             }
-            numberTJob+=1;
+            numberTJob++;
         }
     }
 
@@ -79,11 +80,16 @@ public class RetorchScheduler {
      * Support method that get all {@code Resource}s from the list of {@code TJob}s
      */
     public List<Resource> getAllResources() {
-        LinkedList<Resource> listResourcesAvailable = new LinkedList<>();
+        Set<String> seenIds = new LinkedHashSet<>();
+        List<Resource> listResourcesAvailable = new LinkedList<>();
         for (TJob tJob : this.listTJobs) {
-            for (Resource res : tJob.getListResourceClasses())
-                if (!listResourcesAvailable.contains(res))
-                    for (int i = 0; i < res.getElasticityModel().getElasticity(); i++) listResourcesAvailable.add(res);
+            for (Resource res : tJob.getListResourceClasses()) {
+                if (seenIds.add(res.getResourceID())) {
+                    for (int i = 0; i < res.getElasticityModel().getElasticity(); i++) {
+                        listResourcesAvailable.add(res);
+                    }
+                }
+            }
         }
         return listResourcesAvailable;
     }
@@ -110,12 +116,10 @@ public class RetorchScheduler {
             }
             currentTime++;
         }
-        List<Activity> output;
-        output = new LinkedList<>();
+        List<Activity> output = new LinkedList<>();
         for (Map.Entry<Integer, List<Activity>> entry : mapActivities.entrySet()) {
             output.addAll(entry.getValue());
         }
-
         return output;
     }
 

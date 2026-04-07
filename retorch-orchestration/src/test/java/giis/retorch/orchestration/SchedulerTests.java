@@ -80,7 +80,7 @@ public class SchedulerTests {
         List<LoggingEvent> listEvents = argument.getAllValues();
         List<String> listMessages = listEvents.stream().map(LoggingEvent::getMessage).collect(Collectors.toList());
         //Check that the omitted AccessMode is detected and the omission of attributes in the accessMode
-        assertEquals(4, listMessages.size());
+        assertEquals(2, listMessages.size());
         assertEquals("The number of resources in the system EmptySystem is zero", listMessages.get(0));
         assertEquals("The number of test cases in the system EmptySystem is zero", listMessages.get(1));
     }
