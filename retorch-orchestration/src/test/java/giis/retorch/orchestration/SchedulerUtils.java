@@ -114,26 +114,31 @@ public class SchedulerUtils extends GenericUtils {
         ResourceSerializer serializer = new ResourceSerializer();
         Map<String, Resource> listAvailableResources = serializer.deserializeResources("AggregatorUnitTests");
         List<TestCase> listTestCases = aggregatorTestClasses();
+        TestCase tOneAgg   = listTestCases.get(0);
+        TestCase tTwoAgg   = listTestCases.get(1);
+        TestCase tThreeAgg = listTestCases.get(2);
+        TestCase tFiveAgg  = listTestCases.get(4);
+        TestCase tSevenAgg = listTestCases.get(6);
 
-        TGroup tGroupOne = new TGroup(Collections.singletonList(listTestCases.get(1)),
+        TGroup tGroupOne = new TGroup(Collections.singletonList(tTwoAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(LIGHT_ELASTIC_ID)));
-        TGroup tGroupTwo = new TGroup(Collections.singletonList(listTestCases.get(6)),
+        TGroup tGroupTwo = new TGroup(Collections.singletonList(tSevenAgg),
                 Arrays.asList(listAvailableResources.get(MEDIUM_INELASTIC_ID), listAvailableResources.get(MOCK_ELASTIC_ID)));
-        TGroup tGroupThree = new TGroup(Arrays.asList(listTestCases.get(2), listTestCases.get(4), listTestCases.get(6)),
+        TGroup tGroupThree = new TGroup(Arrays.asList(tThreeAgg, tFiveAgg, tSevenAgg),
                 Arrays.asList(listAvailableResources.get(MEDIUM_INELASTIC_ID), listAvailableResources.get(LIGHT_ELASTIC_ID)));
-        TGroup tGroupFour = new TGroup(Arrays.asList(listTestCases.get(0), listTestCases.get(6)),
+        TGroup tGroupFour = new TGroup(Arrays.asList(tOneAgg, tSevenAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MOCK_ELASTIC_ID)));
-        TGroup tGroupFive = new TGroup(Arrays.asList(listTestCases.get(2), listTestCases.get(4), listTestCases.get(6)),
+        TGroup tGroupFive = new TGroup(Arrays.asList(tThreeAgg, tFiveAgg, tSevenAgg),
                 Arrays.asList(listAvailableResources.get(MEDIUM_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
-        TGroup tGroupSix = new TGroup(Collections.singletonList(listTestCases.get(1)),
+        TGroup tGroupSix = new TGroup(Collections.singletonList(tTwoAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MOCK_ELASTIC_ID)));
-        List<TestCase> listTGroupSeven = Stream.concat(Stream.of(listTestCases.get(0)),
+        List<TestCase> listTGroupSeven = Stream.concat(Stream.of(tOneAgg),
                 listTestCases.subList(2, 7).stream()).collect(Collectors.toList());
         TGroup tGroupSeven = new TGroup(listTGroupSeven,
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
-        TGroup tGroupEight = new TGroup(Collections.singletonList(listTestCases.get(1)),
+        TGroup tGroupEight = new TGroup(Collections.singletonList(tTwoAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
-        List<TestCase> listTGroupNine = Stream.concat(Stream.of(listTestCases.get(0)), listTestCases.subList(2, 7).stream()
+        List<TestCase> listTGroupNine = Stream.concat(Stream.of(tOneAgg), listTestCases.subList(2, 7).stream()
         ).collect(Collectors.toList());
         TGroup tGroupNine = new TGroup(listTGroupNine, Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID),
                 listAvailableResources.get(LIGHT_ELASTIC_ID)));
@@ -167,10 +172,13 @@ public class SchedulerUtils extends GenericUtils {
 
     public List<TGroup> getExpectedSchedulerTGroups() {
         List<TestCase> listTestCases = schedulerTestCases();
+        TestCase tOneSch  = listTestCases.get(0);
+        TestCase tFiveSch = listTestCases.get(4);
+        TestCase tSixSch  = listTestCases.get(5);
 
         TGroup tGroupOne = new TGroup(listTestCases.stream().limit(6).collect(Collectors.toList()),
                 Arrays.asList(this.getHeavyInelasticResource(), this.getMediumSchedulerElasticResource()));
-        TGroup tGroupTwo = new TGroup(new ArrayList<>(Arrays.asList(listTestCases.get(0), listTestCases.get(4), listTestCases.get(5))),
+        TGroup tGroupTwo = new TGroup(new ArrayList<>(Arrays.asList(tOneSch, tFiveSch, tSixSch)),
                 Arrays.asList(this.getHeavyInelasticResource(), this.getNewSchedulerLightElasticResource()));
         TGroup tGroupThree = new TGroup(new ArrayList<>(listTestCases.subList(2, 6)),
                 Arrays.asList(this.getMediumSchedulerInelasticResource(), this.getMediumSchedulerElasticResource()));
@@ -180,7 +188,8 @@ public class SchedulerUtils extends GenericUtils {
                 Arrays.asList(this.getHeavyInelasticResource(), this.getNewSchedulerLightElasticResource()));
         TGroup tGroupSix = new TGroup(new ArrayList<>(listTestCases.subList(6, 8)),
                 Arrays.asList(this.getHeavyInelasticResource(), this.getMediumSchedulerElasticResource()));
-        TGroup tGroupSeven = new TGroup(Collections.singletonList(listTestCases.get(8)),
+        TestCase tNineSch = listTestCases.get(8);
+        TGroup tGroupSeven = new TGroup(Collections.singletonList(tNineSch),
                 Arrays.asList(this.getSingleSchedulerTestCaseResource(), this.getMediumSchedulerElasticResource()));
         TGroup tGroupEight = new TGroup(new ArrayList<>(listTestCases.subList(9, 12)),
                 Collections.singletonList(this.getNewSchedulerLightElasticResource()));
@@ -255,6 +264,7 @@ public class SchedulerUtils extends GenericUtils {
 
     public List<TGroup> getNoRepeatedExpectedTGroups() {
         List<TestCase> listTestCases = schedulerTestCases();
+        TestCase tNineSch = listTestCases.get(8);
 
         TGroup tGroupOne = new TGroup(new ArrayList<>(listTestCases.subList(0, 6)),
                 Arrays.asList(this.getHeavyInelasticResource(), this.getMediumSchedulerElasticResource()));
@@ -262,7 +272,7 @@ public class SchedulerUtils extends GenericUtils {
         TGroup tGroupFive = new TGroup(new ArrayList<>(listTestCases.subList(6, 8)),
                 Arrays.asList(this.getHeavyInelasticResource(), this.getNewSchedulerLightElasticResource()));
 
-        TGroup tGroupSeven = new TGroup(Collections.singletonList(listTestCases.get(8)),
+        TGroup tGroupSeven = new TGroup(Collections.singletonList(tNineSch),
                 Arrays.asList(this.getSingleSchedulerTestCaseResource(), this.getMediumSchedulerElasticResource()));
 
         TGroup tGroupEight = new TGroup(new ArrayList<>(listTestCases.subList(9, 12)),

@@ -33,14 +33,15 @@ public class GenericUtils {
     protected static final String PARENT_INELASTIC = "parentAllInelastic";
     protected static final String ENCODING = "utf-8";
 
-    public void compareFiles(String pathExpected, String pathobtained) throws IOException {
-        String expectedContent = readFileContent(pathExpected);//Read two file content
-        String obtainedContent = readFileContent(pathobtained);
-        Assert.assertEquals("The file: "+pathExpected+" don't match.",expectedContent.replaceAll("\\r\\n", "\n"), obtainedContent.replaceAll("\\r\\n", "\n"));//Compare two file content
+    public void compareFiles(String pathExpected, String pathObtained) throws IOException {
+        compareOutputToFile(pathExpected, readFileContent(pathObtained));
     }
+
     public void compareOutputToFile(String pathExpected, String obtainedContent) throws IOException {
-        String expectedContent = readFileContent(pathExpected);//Read two file content
-        Assert.assertEquals("The file: "+pathExpected+" don't match.",expectedContent.replaceAll("\\r\\n", "\n"), obtainedContent.replaceAll("\\r\\n", "\n"));//Compare two file content
+        String expectedContent = readFileContent(pathExpected);
+        Assert.assertEquals("The file: " + pathExpected + " don't match.",
+                expectedContent.replaceAll("\\r\\n", "\n"),
+                obtainedContent.replaceAll("\\r\\n", "\n"));
     }
     private String readFileContent(String filePath) throws IOException {
         Path path = Paths.get(filePath);

@@ -6,8 +6,6 @@ import giis.retorch.orchestration.model.*;
 import giis.retorch.orchestration.testdata.integration.IntegrationClassOneTests;
 import giis.retorch.orchestration.testdata.integration.IntegrationClassTwoTests;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 public class IntegrationUtils extends GenericUtils {
 
 
-    private static final Logger logIntegrationUtils = LoggerFactory.getLogger(IntegrationUtils.class);
     Map<String, Resource> mapResourcesAvailable;
 
     public IntegrationUtils() throws IOException {
@@ -159,12 +156,7 @@ public class IntegrationUtils extends GenericUtils {
                         this.getMediumElasticResource()));
                 break;
             default:
-                output = new TestCase("testCaseErroneousNotExist", IntegrationClassOneTests.class);
-                output.addAccessMode(new AccessMode(new AccessModeTypes(READONLY), true, 3,
-                        this.getHeavyInelasticResource()));
-                output.addAccessMode(new AccessMode(new AccessModeTypes(READONLY), true, 4,
-                        this.getMediumElasticResource()));
-                logIntegrationUtils.error("ERROR: the test case doesn't exist");
+                throw new IllegalArgumentException("Unknown test case type: " + type);
         }
         return output;
     }

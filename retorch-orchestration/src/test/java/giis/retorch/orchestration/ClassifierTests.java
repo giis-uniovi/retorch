@@ -66,7 +66,6 @@ public class ClassifierTests {
             , URISyntaxException {
         String packageName = "retorch.examples.architecture.aggregator.emptypackage";
         classifier.getSystemFromPackage(SYSTEM_NAME, packageName);
-        utilsClassifier.generateSystemFromClass();
     }
 
     @Test
