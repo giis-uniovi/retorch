@@ -21,9 +21,9 @@ for csvfile in $PATH_FILES; do
     {
       tail -n +2 "$csvfile"
       echo -n ";"
-      tail -n +2 "$OUTPUT_DIR_COI" | rev | cut -d ';' -f 2 | rev | tr -d '\n'
+      tail -n +2 "$OUTPUT_DIR_COI" | awk -F';' '{printf "%s", $(NF-1)}'
       echo -n ";"
-      tail -n +2 "$OUTPUT_DIR_COI" | rev | cut -d ';' -f 1 | rev
+      tail -n +2 "$OUTPUT_DIR_COI" | awk -F';' '{print $NF}'
     } >>"$OUTPUT_FILE"
   else
     "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "CreationTimeFile" "Error: One or more files do not exist."

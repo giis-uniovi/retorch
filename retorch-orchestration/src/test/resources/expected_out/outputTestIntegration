@@ -3,7 +3,7 @@ pipeline {
   environment {
     SELENOID_PRESENT = "TRUE"
     SUT_LOCATION = "$WORKSPACE"
-    SCRIPTS_FOLDER = "$WORKSPACE/retorchfiles/scripts"
+    SCRIPTS_FOLDER = "$WORKSPACE/.retorch/scripts"
   } // EndEnvironment
   options {
     disableConcurrentBuilds()
@@ -31,8 +31,8 @@ pipeline {
         stage('tjoba IdResource: heavyInElasticResource lightInElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjoba 0'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjoba 0 https://full-teaching- 5000 "IntegrationClassOneTests#testBInelasticHeavyRWElasticLightRW,IntegrationClassOneTests#testFInelasticHeavyRWElasticLightRW,IntegrationClassOneTests#testGTwoInelasticHeavyRWElasticLightRW"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjoba 0 "http://full-teaching-tjoba:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjoba 0 "http://full-teaching-tjoba:5000" "IntegrationClassOneTests#testBInelasticHeavyRWElasticLightRW,IntegrationClassOneTests#testFInelasticHeavyRWElasticLightRW,IntegrationClassOneTests#testGTwoInelasticHeavyRWElasticLightRW"'
             }// EndExecutionStageErrortjoba
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjoba 0'
           }// EndStepstjoba
@@ -40,8 +40,8 @@ pipeline {
         stage('tjobb IdResource: lightInElasticResource mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobb 0'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobb 0 https://full-teaching- 5000 "IntegrationClassOneTests#testCInelasticLightNAElasticMediumR,IntegrationClassOneTests#testDInelasticLightROElasticMediumRO"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobb 0 "http://full-teaching-tjobb:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobb 0 "http://full-teaching-tjobb:5000" "IntegrationClassOneTests#testCInelasticLightNAElasticMediumR,IntegrationClassOneTests#testDInelasticLightROElasticMediumRO"'
             }// EndExecutionStageErrortjobb
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobb 0'
           }// EndStepstjobb
@@ -49,8 +49,8 @@ pipeline {
         stage('tjobc IdResource: mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobc 0'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobc 0 https://full-teaching- 5000 "IntegrationClassTwoTests#testNOnlyMediumElasticOne,IntegrationClassTwoTests#testOOnlyLightElasticTwo,IntegrationClassTwoTests#testPOnlyLightElasticThree"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobc 0 "http://full-teaching-tjobc:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobc 0 "http://full-teaching-tjobc:5000" "IntegrationClassTwoTests#testNOnlyMediumElasticOne,IntegrationClassTwoTests#testOOnlyLightElasticTwo,IntegrationClassTwoTests#testPOnlyLightElasticThree"'
             }// EndExecutionStageErrortjobc
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobc 0'
           }// EndStepstjobc
@@ -63,8 +63,8 @@ pipeline {
         stage('tjobd IdResource: heavyInElasticResource mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobd 1'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobd 1 https://full-teaching- 5000 "IntegrationClassOneTests#testAInelasticHeavyRElasticMediumR"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobd 1 "http://full-teaching-tjobd:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobd 1 "http://full-teaching-tjobd:5000" "IntegrationClassOneTests#testAInelasticHeavyRElasticMediumR"'
             }// EndExecutionStageErrortjobd
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobd 1'
           }// EndStepstjobd
@@ -72,8 +72,8 @@ pipeline {
         stage('tjobe IdResource: lightInElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobe 1'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobe 1 https://full-teaching- 5000 "IntegrationClassOneTests#testEInelasticLightRWElasticLightRW"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobe 1 "http://full-teaching-tjobe:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobe 1 "http://full-teaching-tjobe:5000" "IntegrationClassOneTests#testEInelasticLightRWElasticLightRW"'
             }// EndExecutionStageErrortjobe
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobe 1'
           }// EndStepstjobe
@@ -86,8 +86,8 @@ pipeline {
         stage('tjobf IdResource: heavyInElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobf 2'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobf 2 https://full-teaching- 5000 "IntegrationClassOneTests#testHOneInelasticHeavyRWElasticMockR,IntegrationClassOneTests#testITwoInelasticHeavyRWElasticMockR,IntegrationClassOneTests#testJThreeInelasticHeavyRWElasticMockR,IntegrationClassOneTests#testKFourInelasticHeavyRWElasticMockR"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobf 2 "http://full-teaching-tjobf:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobf 2 "http://full-teaching-tjobf:5000" "IntegrationClassOneTests#testHOneInelasticHeavyRWElasticMockR,IntegrationClassOneTests#testITwoInelasticHeavyRWElasticMockR,IntegrationClassOneTests#testJThreeInelasticHeavyRWElasticMockR,IntegrationClassOneTests#testKFourInelasticHeavyRWElasticMockR"'
             }// EndExecutionStageErrortjobf
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobf 2'
           }// EndStepstjobf
@@ -100,8 +100,8 @@ pipeline {
         stage('tjobg IdResource: heavyInElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobg 3'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobg 3 https://full-teaching- 5000 "IntegrationClassTwoTests#testLOnlyHIOne,IntegrationClassTwoTests#testMOnlyHITwo"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobg 3 "http://full-teaching-tjobg:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobg 3 "http://full-teaching-tjobg:5000" "IntegrationClassTwoTests#testLOnlyHIOne,IntegrationClassTwoTests#testMOnlyHITwo"'
             }// EndExecutionStageErrortjobg
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobg 3'
           }// EndStepstjobg
@@ -122,4 +122,4 @@ post {
         archiveArtifacts artifacts: 'target/containerlogs/**/*.*', onlyIfSuccessful: false
     }// EndAlways
 } // EndPostActions
-} // EndPipeline 
+} // EndPipeline

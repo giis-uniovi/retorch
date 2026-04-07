@@ -36,7 +36,11 @@ public class GenericUtils {
     public void compareFiles(String pathExpected, String pathobtained) throws IOException {
         String expectedContent = readFileContent(pathExpected);//Read two file content
         String obtainedContent = readFileContent(pathobtained);
-        Assert.assertEquals("The file: "+pathobtained+" don't match.",expectedContent, obtainedContent);//Compare two file content
+        Assert.assertEquals("The file: "+pathExpected+" don't match.",expectedContent.replaceAll("\\r\\n", "\n"), obtainedContent.replaceAll("\\r\\n", "\n"));//Compare two file content
+    }
+    public void compareOutputToFile(String pathExpected, String obtainedContent) throws IOException {
+        String expectedContent = readFileContent(pathExpected);//Read two file content
+        Assert.assertEquals("The file: "+pathExpected+" don't match.",expectedContent.replaceAll("\\r\\n", "\n"), obtainedContent.replaceAll("\\r\\n", "\n"));//Compare two file content
     }
     private String readFileContent(String filePath) throws IOException {
         Path path = Paths.get(filePath);

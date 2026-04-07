@@ -23,12 +23,10 @@ public interface IRetorchOrchestrator {
      * code of the workflow
      *
      * @param tJobWithTestCases {@code TJob} to be executed
-     * @param port              Integer with the SUT port
-     * @param uriResource       String with the SUT URI
      * @param resource          String with the {@code Resource} identifier
      * @param tJobId            String with the {@code TJob} identifier
      */
-    String generateTestCaseExecutionDirective(TJob tJobWithTestCases, String uriResource, int port,
+    String generateTestCaseExecutionDirective(TJob tJobWithTestCases,
                                               String resource, String tJobId, int stage);
 
     /**

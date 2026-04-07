@@ -1,25 +1,25 @@
 #!/bin/bash
-# The waitforSUT.sh script waits for the readiness of the SUT frontend. It performs a wait of up to 200 seconds,
-# checking the frontend every 5 seconds. If the SUT is not ready after this period, all containers are teared down.
+# The waitforSUT.sh script waits until a given container reaches the 'healthy' state. It polls every 5 seconds
+# for up to 200 seconds. If the container is not healthy after this period, all containers are torn down.
 
-if [ "$#" -ne 1 ]; then
-  "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "TJob-$1-set-up"  "Usage: $0 <TJobName>"
+if [ "$#" -ne 2 ]; then
+  "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "TJob-$1-set-up"  "Usage: $0 <URL> <TJOB_NAME>"
   exit 1
 fi
 DOCKER_HOST_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
 COUNTER=0
 WAIT_LIMIT=40
 
-while ! curl --insecure -s "${FRONTEND_DOCKER_ID}$1:${PORT_FRONTEND}" | grep -q "${HTML_DOM}"; do
-  "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "TJob-$1-set-up" "Waiting $COUNTER seconds for $1 with URL ${FRONTEND_DOCKER_ID}$1:${PORT_FRONTEND}"
+while ! curl --insecure -s "$1" | grep -q "${SUT-WAIT-HTML}"; do
+  "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$2-set-up" "Waiting $COUNTER seconds for $1"
   sleep 5
   ((COUNTER++))
 
   if ((COUNTER > WAIT_LIMIT)); then
-    "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "TJob-$1-set-up" "SUT is down, making a preventive tear-down and storing the logs"
-    "$WORKSPACE/retorchfiles/scripts/storeContainerLogs.sh" "$1"
+    "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$2 set-up" "SUT is down, making a preventive tear-down and storing the logs"
+    "$WORKSPACE/.retorch/scripts/storeContainerLogs.sh" "$2"
     # Tearing down the system.
-    docker compose -f docker-compose.yml --env-file "$WORKSPACE/retorchfiles/envfiles/$1.env" --ansi never -p "$1" down --volumes
+    docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$2.env" --ansi never -p "$2" down --volumes
     exit 1
   fi
 done

@@ -3,7 +3,7 @@ pipeline {
   environment {
     SELENOID_PRESENT = "TRUE"
     SUT_LOCATION = "$WORKSPACE"
-    SCRIPTS_FOLDER = "$WORKSPACE/retorchfiles/scripts"
+    SCRIPTS_FOLDER = "$WORKSPACE/.retorch/scripts"
   } // EndEnvironment
   options {
     disableConcurrentBuilds()
@@ -31,8 +31,8 @@ pipeline {
         stage('tjoba IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjoba 0'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjoba 0 https://full-teaching- 5000 "AggregatorClassTests#tActZeroFiveSch,AggregatorClassTests#tActZerotFourSch,AggregatorClassTests#tActZerotThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjoba 0 "http://full-teaching-tjoba:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjoba 0 "http://full-teaching-tjoba:5000" "AggregatorClassTests#tActZeroFiveSch,AggregatorClassTests#tActZerotFourSch,AggregatorClassTests#tActZerotThreeSch"'
             }// EndExecutionStageErrortjoba
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjoba 0'
           }// EndStepstjoba
@@ -45,8 +45,8 @@ pipeline {
         stage('tjobb IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobb 1'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobb 1 https://full-teaching- 5000 "AggregatorClassTests#tActOneFiveSch,AggregatorClassTests#tActOnetFourSch,AggregatorClassTests#tActOnetThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobb 1 "http://full-teaching-tjobb:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobb 1 "http://full-teaching-tjobb:5000" "AggregatorClassTests#tActOneFiveSch,AggregatorClassTests#tActOnetFourSch,AggregatorClassTests#tActOnetThreeSch"'
             }// EndExecutionStageErrortjobb
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobb 1'
           }// EndStepstjobb
@@ -54,8 +54,8 @@ pipeline {
         stage('tjobc IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobc 1'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobc 1 https://full-teaching- 5000 "AggregatorClassTests#tActTwoFiveSch,AggregatorClassTests#tActTwotFourSch,AggregatorClassTests#tActTwotThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobc 1 "http://full-teaching-tjobc:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobc 1 "http://full-teaching-tjobc:5000" "AggregatorClassTests#tActTwoFiveSch,AggregatorClassTests#tActTwotFourSch,AggregatorClassTests#tActTwotThreeSch"'
             }// EndExecutionStageErrortjobc
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobc 1'
           }// EndStepstjobc
@@ -63,8 +63,8 @@ pipeline {
         stage('tjobd IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobd 1'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobd 1 https://full-teaching- 5000 "AggregatorClassTests#tActThreeFiveSch,AggregatorClassTests#tActThreetFourSch,AggregatorClassTests#tActThreetThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobd 1 "http://full-teaching-tjobd:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobd 1 "http://full-teaching-tjobd:5000" "AggregatorClassTests#tActThreeFiveSch,AggregatorClassTests#tActThreetFourSch,AggregatorClassTests#tActThreetThreeSch"'
             }// EndExecutionStageErrortjobd
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobd 1'
           }// EndStepstjobd
@@ -84,8 +84,8 @@ pipeline {
         stage('tjobe IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobe 3'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobe 3 https://full-teaching- 5000 "AggregatorClassTests#tActFiveFiveSch,AggregatorClassTests#tActFivetFourSch,AggregatorClassTests#tActFivetThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobe 3 "http://full-teaching-tjobe:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobe 3 "http://full-teaching-tjobe:5000" "AggregatorClassTests#tActFiveFiveSch,AggregatorClassTests#tActFivetFourSch,AggregatorClassTests#tActFivetThreeSch"'
             }// EndExecutionStageErrortjobe
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobe 3'
           }// EndStepstjobe
@@ -93,8 +93,8 @@ pipeline {
         stage('tjobf IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobf 3'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobf 3 https://full-teaching- 5000 "AggregatorClassTests#tActSixFiveSch,AggregatorClassTests#tActSixtFourSch,AggregatorClassTests#tActSixtThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobf 3 "http://full-teaching-tjobf:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobf 3 "http://full-teaching-tjobf:5000" "AggregatorClassTests#tActSixFiveSch,AggregatorClassTests#tActSixtFourSch,AggregatorClassTests#tActSixtThreeSch"'
             }// EndExecutionStageErrortjobf
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobf 3'
           }// EndStepstjobf
@@ -107,8 +107,8 @@ pipeline {
         stage('tjobg IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobg 4'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobg 4 https://full-teaching- 5000 "AggregatorClassTests#tActSevenFiveSch,AggregatorClassTests#tActSeventFourSch,AggregatorClassTests#tActSeventThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobg 4 "http://full-teaching-tjobg:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobg 4 "http://full-teaching-tjobg:5000" "AggregatorClassTests#tActSevenFiveSch,AggregatorClassTests#tActSeventFourSch,AggregatorClassTests#tActSeventThreeSch"'
             }// EndExecutionStageErrortjobg
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobg 4'
           }// EndStepstjobg
@@ -121,8 +121,8 @@ pipeline {
         stage('tjobh IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobh 5'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobh 5 https://full-teaching- 5000 "AggregatorClassTests#tActEightFiveSch,AggregatorClassTests#tActEighttFourSch,AggregatorClassTests#tActEighttThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobh 5 "http://full-teaching-tjobh:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobh 5 "http://full-teaching-tjobh:5000" "AggregatorClassTests#tActEightFiveSch,AggregatorClassTests#tActEighttFourSch,AggregatorClassTests#tActEighttThreeSch"'
             }// EndExecutionStageErrortjobh
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobh 5'
           }// EndStepstjobh
@@ -135,8 +135,8 @@ pipeline {
         stage('tjobi IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobi 6'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobi 6 https://full-teaching- 5000 "AggregatorClassTests#tActNineFiveSch,AggregatorClassTests#tActNinetFourSch,AggregatorClassTests#tActNinetThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobi 6 "http://full-teaching-tjobi:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobi 6 "http://full-teaching-tjobi:5000" "AggregatorClassTests#tActNineFiveSch,AggregatorClassTests#tActNinetFourSch,AggregatorClassTests#tActNinetThreeSch"'
             }// EndExecutionStageErrortjobi
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobi 6'
           }// EndStepstjobi
@@ -144,8 +144,8 @@ pipeline {
         stage('tjobj IdResource: MedInElasRest mediumElasticResource ') {
           steps {
             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobj 6'
-              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobj 6 https://full-teaching- 5000 "AggregatorClassTests#tActTenFiveSch,AggregatorClassTests#tActTentFourSch,AggregatorClassTests#tActTentThreeSch"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh tjobj 6 "http://full-teaching-tjobj:5000"'
+              sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh tjobj 6 "http://full-teaching-tjobj:5000" "AggregatorClassTests#tActTenFiveSch,AggregatorClassTests#tActTentFourSch,AggregatorClassTests#tActTentThreeSch"'
             }// EndExecutionStageErrortjobj
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobj 6'
           }// EndStepstjobj
@@ -166,4 +166,4 @@ post {
         archiveArtifacts artifacts: 'target/containerlogs/**/*.*', onlyIfSuccessful: false
     }// EndAlways
 } // EndPostActions
-} // EndPipeline 
+} // EndPipeline

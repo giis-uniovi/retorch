@@ -22,14 +22,11 @@ import java.util.*;
 public class JenkinsOrchestrator implements IRetorchOrchestrator {
 
     private static final String TJOB_BASE_PATH = "testsBasePath";
-    private static final String ENVIRONMENT_FOLDER_NAME = "retorchfiles/envfiles/";
+    private static final String APP_URL_PROPERTY = "app-url";
+    private static final String ENVIRONMENT_FOLDER_NAME = ".retorch/envfiles/";
     private static final Logger log = LoggerFactory.getLogger(JenkinsOrchestrator.class);
     private static final String SH_COMMAND = "          sh '";
     private final Properties ciConfiguration;
-    int tJobCounter;
-    int poolPorts = 5000;
-    String frontendPort = "";
-    HashMap<String, String> portsSUTs;
     private ExecutionPlan executionPlan;
     private final Map<String, Resource> listAllResources;
     ResourceSerializer deserializer;
@@ -44,13 +41,11 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         this.executionPlan = new ExecutionPlan("defaultName", activityEntityListFromScheduler);
         this.listAllResources = deserializer.deserializeResources(systemName);
         ciConfiguration = new Properties();
-        try (InputStream input = Files.newInputStream(Paths.get("retorchfiles/configurations/retorchCI.properties"))) {
+        try (InputStream input = Files.newInputStream(Paths.get(".retorch/configurations/retorchCI.properties"))) {
             ciConfiguration.load(input);
         } catch (IOException e) {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
         }
-        this.tJobCounter = 1;
-        portsSUTs = new HashMap<>();
     }
 
     @Override
@@ -64,15 +59,16 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
     }
 
     @Override
-    public String generateTestCaseExecutionDirective(TJob tJobWithTestCases, String uriResource, int port,
+    public String generateTestCaseExecutionDirective(TJob tJobWithTestCases,
                                                      String resource, String tJobId, int stage) {
         List<TestCase> testCases = tJobWithTestCases.getListTestCases();
         StringBuilder strBuilder = new StringBuilder();
         strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh");
-        String url = ciConfiguration.getProperty("external-binded-port").isEmpty() ? ciConfiguration.getProperty("docker-frontend-name") :
-                ciConfiguration.getProperty("external-frontend-url");
+        String url = ciConfiguration.getProperty(APP_URL_PROPERTY).replace("$TJOB_NAME",tJobId.toLowerCase(Locale.ROOT));
+
         strBuilder.append(" ").append(tJobId.toLowerCase(Locale.ROOT)).append(" ").append(stage).append(" ")
-                .append(url).append(" ").append(frontendPort).append(" \"");
+                .append(url).append(" \"");
+
         boolean firstElement = true;
         String testClassName;
         for (TestCase testcase : testCases) {
@@ -97,7 +93,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                     .append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)).append(" ").append(stage).append("'\n");
         } else {
             strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh").append(" ")
-                    .append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)).append(" ").append(stage).append("'\n");
+                    .append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)).append(" ").append(stage).append(" ").append(configurations.get(APP_URL_PROPERTY)).append("'\n");
         }
         return strBuilder.toString();
     }
@@ -115,8 +111,6 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                 String [] placeHolderWithImage=res.getDockerImage().split(";");
                 mapWithPlaceHoldersAndImages.put(placeHolderWithImage[0], placeHolderWithImage[1]);
             }
-            this.tJobCounter++;
-
             stringBuilder.append("        stage('")
                     .append(tJobWithTestCases.getIdTJob())
                     .append(" IdResource: ")
@@ -130,8 +124,6 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                     .append(generateResourceDeploymentDirective(tJobWithTestCases, false, mapData, stage)).append("    ")
                     .append(generateTestCaseExecutionDirective(
                             tJobWithTestCases,
-                            String.valueOf(mapData.get("mainuri")),
-                            Integer.parseInt(portsSUTs.get(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT))),
                             this.getContainedResourceID(tJobWithTestCases),
                             tJobWithTestCases.getIdTJob(),
                             stage))
@@ -149,8 +141,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         StringBuilder stringBuilder = new StringBuilder();
         Integer maxStagesValue = Collections.max(listActivities.keySet());
         //Remove scripts directory to avoid
-        if (Files.exists(Paths.get("retorchfiles/scripts"))) {
-            FileUtils.deleteDirectory(new File("retorchfiles/scripts"));
+        if (Files.exists(Paths.get(".retorch/scripts"))) {
+            FileUtils.deleteDirectory(new File(".retorch/scripts"));
         }
         ScriptGenerator scriptler = new ScriptGenerator();
         stringBuilder.append("pipeline {\n")
@@ -158,7 +150,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                 .append("  environment {\n")
                 .append("    SELENOID_PRESENT = \"TRUE\"\n")
                 .append("    SUT_LOCATION = \"").append(ciConfiguration.getProperty("sut-location")).append("\"\n")
-                .append("    SCRIPTS_FOLDER = \"$WORKSPACE/retorchfiles/scripts\"\n")
+                .append("    SCRIPTS_FOLDER = \"$WORKSPACE/.retorch/scripts\"\n")
                 .append("  } // EndEnvironment\n")
                 .append("  options {\n")
                 .append("    disableConcurrentBuilds()\n")
@@ -202,7 +194,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         generateInfrastructureTearDown(stringBuilder);
         stringBuilder.append("} // EndStagesPipeline\n")
                 .append(this.generateDisposingDirective())
-                .append("} // EndPipeline \n");
+                .append("} // EndPipeline\n");
 
         scriptler.generateScriptsTJob();
         scriptler.generateScriptsCOI();
@@ -258,24 +250,11 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
     public Map<String, String> getMapWithInformation(Map<String, String> mapWithDockerImages, TJob tJobWithTestCases) {
         Map<String, String> mapData = new HashMap<>();
 
-        mapData.put("tjobname", tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT));
+        mapData.put("tjob_name", tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT));
         mapData.put(TJOB_BASE_PATH, ciConfiguration.getProperty(TJOB_BASE_PATH));
         mapData.putAll(mapWithDockerImages);
+        mapData.put(APP_URL_PROPERTY,ciConfiguration.getProperty(APP_URL_PROPERTY).replace("$TJOB_NAME",tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)));
 
-        if (ciConfiguration.getProperty("external-binded-port").isEmpty()) {
-            frontendPort = ciConfiguration.getProperty("docker-frontend-port");
-            mapData.put("frontend_port", frontendPort);
-        } else {
-            mapData.put("frontend_port", String.valueOf(poolPorts));
-            frontendPort = String.valueOf(poolPorts);
-            poolPorts += 1;
-        }
-        portsSUTs.put(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT), String.valueOf(frontendPort));
-        String[] listPortsId = new String[]{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"};
-        for (String s : listPortsId) {
-            mapData.put("retorchport" + s, String.valueOf(poolPorts));
-            poolPorts += 1;
-        }
         return mapData;
     }
 
@@ -286,30 +265,28 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
      * @param mapProperties Dictionary with the different placeholders values
      */
     public void generateDockerComposeEnvironmentFiles(Map<String, String> mapProperties, TJob tJobWithTestCases) throws IOException {
-        String resourcePath = ENVIRONMENT_FOLDER_NAME + File.separator;
+        String resourcePath = ENVIRONMENT_FOLDER_NAME;
         Files.createDirectories(Paths.get(resourcePath));
         StringBuilder contentEnvFile = new StringBuilder();
         contentEnvFile.append("# Environment file for the TJob: ").append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT));
-        contentEnvFile.append("like ports, docker images or the tjobname itself.\n");
-        try {
-            for (Map.Entry<String, String> entry : mapProperties.entrySet()) {
-                contentEnvFile.append(entry.getKey())
-                        .append("=")
-                        .append(entry.getValue())
-                        .append("\n");
-            }
-            if (Files.exists(Paths.get("retorchfiles/customscriptscode/custom.env"))) {
-                contentEnvFile.append(readFileContent("retorchfiles/customscriptscode/custom.env"));
-            }
-            Path envFilePath = Paths.get(resourcePath + tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT) +
-                    ".env");
-            Files.write(envFilePath, Collections.singleton(contentEnvFile.toString()));
-        } finally {
-            if (contentEnvFile.length() == 0) {
-                log.error("The Stream may not be opened");
-            }
-
+        contentEnvFile.append("\n# like ports, docker images or the tjobname itself.\n");
+        for (Map.Entry<String, String> entry : new TreeMap<>(mapProperties).entrySet()) {
+            contentEnvFile.append(toEnvVarName(entry.getKey()))
+                    .append("=")
+                    .append(entry.getValue())
+                    .append("\n");
         }
+        if (Files.exists(Paths.get(".retorch/customscriptscode/custom.env"))) {
+            contentEnvFile.append(readFileContent(".retorch/customscriptscode/custom.env"));
+        }
+        Path envFilePath = Paths.get(resourcePath + tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT) + ".env");
+        Files.write(envFilePath, Collections.singleton(contentEnvFile.toString()));
+    }
+
+    private static String toEnvVarName(String key) {
+        return key.replaceAll("([a-z])([A-Z])", "$1_$2")
+                  .replace('-', '_')
+                  .toUpperCase(Locale.ROOT);
     }
 
     private String readFileContent(String filePath) throws IOException {
