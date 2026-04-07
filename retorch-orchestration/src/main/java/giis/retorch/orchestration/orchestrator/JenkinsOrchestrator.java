@@ -29,7 +29,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
     private final Properties ciConfiguration;
     private ExecutionPlan executionPlan;
     private final Map<String, Resource> listAllResources;
-    ResourceSerializer deserializer;
+    private final ResourceSerializer deserializer;
     /**
      * Default constructor, gets a list of {@code Activity} and deserialize the ResourceJSON.json and retorchCI properties
      * the files, filling the different structures that would be used by the JenkinsOrchestrator
@@ -144,7 +144,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         if (Files.exists(Paths.get(".retorch/scripts"))) {
             FileUtils.deleteDirectory(new File(".retorch/scripts"));
         }
-        ScriptGenerator scriptler = new ScriptGenerator();
+        ScriptGenerator scriptler = new ScriptGenerator(this.ciConfiguration);
         stringBuilder.append("pipeline {\n")
                 .append("  agent {label '").append(this.ciConfiguration.getProperty("agentCIName")).append("'}\n")
                 .append("  environment {\n")
@@ -248,13 +248,12 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
      * @param tJobWithTestCases {@code TJob} to put into the
      */
     public Map<String, String> getMapWithInformation(Map<String, String> mapWithDockerImages, TJob tJobWithTestCases) {
+        String tJobNameLower = tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT);
         Map<String, String> mapData = new HashMap<>();
-
-        mapData.put("tjob_name", tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT));
+        mapData.put("tjob_name", tJobNameLower);
         mapData.put(TJOB_BASE_PATH, ciConfiguration.getProperty(TJOB_BASE_PATH));
         mapData.putAll(mapWithDockerImages);
-        mapData.put(APP_URL_PROPERTY,ciConfiguration.getProperty(APP_URL_PROPERTY).replace("$TJOB_NAME",tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT)));
-
+        mapData.put(APP_URL_PROPERTY, ciConfiguration.getProperty(APP_URL_PROPERTY).replace("$TJOB_NAME", tJobNameLower));
         return mapData;
     }
 
