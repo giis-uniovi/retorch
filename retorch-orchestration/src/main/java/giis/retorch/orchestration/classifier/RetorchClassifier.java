@@ -28,9 +28,8 @@ public class RetorchClassifier {
 
     private static final String CHORUS_ATTRIBUTES = " is not present";
     private static final String NO_EXIST = " doesn't exist";
+    private static final String JACOCO_INIT_METHOD = "$jacocoInit";
     private final ResourceSerializer deserializer; //Serializer employed to deserialize the resources info
-
-    private Map<String, Resource> listAllResources;
 
     /**
      * Empty constructor used to validate RETORCH in the test case
@@ -54,6 +53,7 @@ public class RetorchClassifier {
         }
         URL resourceURL = classLoader.getResource(packageName.replace('.', '/'));
         if (resourceURL == null) {
+            log.error("Package {} not found on classpath.", packageName);
             throw new EmptyInputException("Package " + packageName + " not found on classpath.");
         }
         URI uri = resourceURL.toURI();
@@ -103,22 +103,22 @@ public class RetorchClassifier {
      */
     public System getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
             IOException, ClassNotFoundException, URISyntaxException {
-        this.listAllResources= new HashMap<>();
-        for (Resource res:deserializer.deserializeResources(systemName).values()){
-            if (resourceChecker(res)){
-                this.listAllResources.put(res.getResourceID(),res);
+        Map<String, Resource> validatedResources = new HashMap<>();
+        for (Resource res : deserializer.deserializeResources(systemName).values()) {
+            if (resourceChecker(res)) {
+                validatedResources.put(res.getResourceID(), res);
             }
         }
         System systemRetorch = new System(systemName);
         File directory = getPackageSourceDirectory(packageName);
         List<Class<?>> listClassesPackage = findClasses(directory, packageName);
         for (Class<?> currentClass : listClassesPackage) {
-            System temporalSystem = getSystemFromClass(systemName, currentClass);
+            System temporalSystem = getSystemFromClass(systemName, currentClass, validatedResources);
             addUniqueResources(systemRetorch, temporalSystem);
             systemRetorch.addListTestCases(temporalSystem.getTestCases());
         }
         sortSystemClass(systemRetorch);
-        return checkSystemClass(systemRetorch);
+        return checkSystemClass(systemRetorch, validatedResources);
     }
 
     private void addUniqueResources(System systemRetorch, System temporalSystem) {
@@ -143,20 +143,27 @@ public class RetorchClassifier {
      */
     public System getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
             IOException {
-        this.listAllResources = deserializer.deserializeResources(systemName);
+        Map<String, Resource> resourceMap = deserializer.deserializeResources(systemName);
+        return getSystemFromClass(systemName, testCaseClass, resourceMap);
+    }
+
+    private System getSystemFromClass(String systemName, Class<?> testCaseClass, Map<String, Resource> resourceMap)
+            throws EmptyInputException {
         System systemRetorch = new System(systemName);
         List<Method> listMethods = this.getClassMethods(testCaseClass);
-        systemRetorch.addListOfResources(new ArrayList<>(listAllResources.values()));
+        systemRetorch.addListOfResources(new ArrayList<>(resourceMap.values()));
         for (Method m : listMethods) {
-            TestCase testCase = getTestCasesFromMethod(m, testCaseClass);
+            TestCase testCase = getTestCasesFromMethod(m, testCaseClass, resourceMap);
             if (validateTestCase(testCase)) {
                 systemRetorch.addTestCase(testCase);
             }
         }
-        if (listMethods.isEmpty())
+        if (listMethods.isEmpty()) {
+            log.error("No annotated methods found in class {}", testCaseClass.getName());
             throw new EmptyInputException(String.format("No annotated methods found in class %s",
                     testCaseClass.getName()));
-        return checkSystemClass(systemRetorch);
+        }
+        return checkSystemClass(systemRetorch, resourceMap);
     }
 
     /**
@@ -182,11 +189,12 @@ public class RetorchClassifier {
      * the access modes, for later create a new TestCaseClass object with the method name and its access modes*
      * @param currentClass  Class that belongs the method
      * @param currentMethod Test case Method
+     * @param resourceMap   Map of available resources
      */
-    public TestCase getTestCasesFromMethod(Method currentMethod, Class<?> currentClass) {
+    public TestCase getTestCasesFromMethod(Method currentMethod, Class<?> currentClass,
+                                           Map<String, Resource> resourceMap) {
         String methodName = currentMethod.getName();
-        // Directly assign the result of getAccessModesFromMethod to listAccessModesMethod
-        List<AccessMode> listAccessModesMethod = this.getAccessModesFromMethod(currentMethod);
+        List<AccessMode> listAccessModesMethod = this.getAccessModesFromMethod(currentMethod, resourceMap);
         TestCase newTestCase = new TestCase(methodName, currentClass);
         newTestCase.setAccessMode(listAccessModesMethod);
         return newTestCase;
@@ -198,9 +206,10 @@ public class RetorchClassifier {
      * it, checks if the resource and Access mode RETORCH annotations are present, retrieving a list with them.Then
      * creates
      * the accessModes with all the information retrieved from the annotations ( resource,elasticity,sharing...)
-     * @param testMethod Method to retrieve the annotations.
+     * @param testMethod  Method to retrieve the annotations.
+     * @param resourceMap Map of available resources
      */
-    public List<AccessMode> getAccessModesFromMethod(Method testMethod) {
+    public List<AccessMode> getAccessModesFromMethod(Method testMethod, Map<String, Resource> resourceMap) {
         List<AccessMode> listAccessModes = new ArrayList<>(); // Use ArrayList instead of LinkedList for better
 
         List<giis.retorch.annotations.AccessMode> listAccessModesTag = new ArrayList<>();  // random access performance
@@ -214,13 +223,15 @@ public class RetorchClassifier {
            }
         for (giis.retorch.annotations.AccessMode accessTag : listAccessModesTag) {
             if (this.accessModeTagChecker(accessTag, testMethod.getName())) {
-                AccessMode currentAccessMode = new AccessMode();
-                currentAccessMode.setConcurrency(accessTag.concurrency());
-                Resource requiredResource = getRequiredResource(accessTag.resID());
-                currentAccessMode.setResource(requiredResource);
-                currentAccessMode.setSharing(accessTag.sharing());
-                currentAccessMode.setType(new AccessModeTypes(accessTag.accessMode()));
-                listAccessModes.add(currentAccessMode);
+                Optional<Resource> requiredResource = getRequiredResource(accessTag.resID(), resourceMap);
+                if (requiredResource.isPresent()) {
+                    AccessMode currentAccessMode = new AccessMode();
+                    currentAccessMode.setConcurrency(accessTag.concurrency());
+                    currentAccessMode.setResource(requiredResource.get());
+                    currentAccessMode.setSharing(accessTag.sharing());
+                    currentAccessMode.setType(new AccessModeTypes(accessTag.accessMode()));
+                    listAccessModes.add(currentAccessMode);
+                }
             }
         }
         return listAccessModes;
@@ -229,14 +240,12 @@ public class RetorchClassifier {
     /**
      * Support method that checks the resources annotated with the access mode
      */
-    public Resource getRequiredResource(String idResource) {
-        String message;
-        if (listAllResources.containsKey(idResource)) {
-            return listAllResources.get(idResource);
+    public Optional<Resource> getRequiredResource(String idResource, Map<String, Resource> resourceMap) {
+        if (resourceMap.containsKey(idResource)) {
+            return Optional.of(resourceMap.get(idResource));
         } else {
-            message=String.format("The resource %s is not tagged", idResource);
-            log.info(message);
-            return new Resource("Resource Not valid");
+            log.error("The resource {} is not tagged", idResource);
+            return Optional.empty();
         }
     }
 
@@ -248,10 +257,21 @@ public class RetorchClassifier {
     public List<Method> getClassMethods(Class<?> testClass) {
         List<Method> methods = Arrays.stream(testClass.getDeclaredMethods())
                 .sorted(Comparator.comparing(Method::toString)) // Sort methods
-                .filter(meth -> !meth.getName().equals("$jacocoInit")) // Filter out methods with name "$jacocoInit"
+                .filter(meth -> !meth.getName().equals(JACOCO_INIT_METHOD)) // Filter out JaCoCo instrumentation methods
                 .collect(Collectors.toList());// Collect results to a list
         methods.forEach(meth -> log.info("The method name its : {}", meth.getName()));
         return methods;
+    }
+
+    private boolean logAndReturn(List<String> messages, String context) {
+        if (messages.isEmpty()) {
+            log.debug("No errors produced during the {}", context);
+        } else {
+            for (String message : messages) {
+                log.error(message);
+            }
+        }
+        return messages.isEmpty();
     }
 
     /**
@@ -277,10 +297,7 @@ public class RetorchClassifier {
             listMessages.add(String.format("There are more than 2 HierarchyParents in resource %s and is mandatory provide " +
                     "only one ",resource.getResourceID()));
         }
-        if(listMessages.isEmpty()) log.debug("No errors produced during the Resource checking");
-        else{for (String message : listMessages) {log.error(message);}}
-
-        return elasticityChecker(resource) && listMessages.isEmpty();
+        return elasticityChecker(resource) && logAndReturn(listMessages, "Resource checking");
     }
 
     /**
@@ -314,10 +331,7 @@ public class RetorchClassifier {
                 listMessages.add(String.format("The Specified Elasticity Cost in resource %s is not valid", resource.getResourceID()));
             }
         }
-        if(listMessages.isEmpty()) log.debug("No errors produced during the ElasticityMode checking");
-        else{for (String message : listMessages) {log.error(message);}}
-
-        return listMessages.isEmpty();
+        return logAndReturn(listMessages, "ElasticityModel checking");
     }
 
     /**
@@ -336,13 +350,7 @@ public class RetorchClassifier {
         }
         checkAccessModeType(accessModeTag, methodName, listMessages);
 
-        if (listMessages.isEmpty()) {
-            log.debug("No errors produced during the AccessModeTag checking");
-        } else {
-            for (String message: listMessages) {log.error(message);}
-        }
-
-        return listMessages.isEmpty();
+        return logAndReturn(listMessages, "AccessModeTag checking");
     }
 
     private void checkConcurrency(giis.retorch.annotations.AccessMode accessModeTag, String methodName, List<String> listMessages) {
@@ -369,10 +377,11 @@ public class RetorchClassifier {
     /**
      * Support method that validates the System provided as parameter. It checks  that the replaceable resources exists
      * @param systemToCheck System to check tag
+     * @param resourceMap   Map of available resources
      */
-    private System checkSystemClass(System systemToCheck) {
+    private System checkSystemClass(System systemToCheck, Map<String, Resource> resourceMap) {
         System systemOutput = new System(systemToCheck.getName());
-        List<String> idResourcesList = listAllResources.values().stream()
+        List<String> idResourcesList = resourceMap.values().stream()
                 .map(Resource::getResourceID).collect(Collectors.toList());
         systemToCheck.getResources().stream()
                 .filter(res -> idResourcesList.containsAll(res.getReplaceable()))

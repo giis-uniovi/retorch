@@ -3,6 +3,7 @@ package giis.retorch.orchestration.scheduler;
 import giis.retorch.orchestration.model.Resource;
 import giis.retorch.orchestration.model.TJob;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,16 +39,14 @@ public class ScheduleStruct {
         }
     }
 
-    public void removeListResources(List<Resource> elementsToDelete, List<Resource> listToBeDeleted) {
-        for (Resource resToBeDeleted : elementsToDelete) {
-            int i = 0;
-            boolean isDeleted = false;
-            while (i < listToBeDeleted.size() && !isDeleted) {
-                if (listToBeDeleted.get(i).equals(resToBeDeleted)) {
-                    listToBeDeleted.remove(i);
-                    isDeleted = true;
+    public void removeListResources(List<Resource> resourcesToConsume, List<Resource> availableResources) {
+        for (Resource toRemove : resourcesToConsume) {
+            Iterator<Resource> it = availableResources.iterator();
+            while (it.hasNext()) {
+                if (it.next().equals(toRemove)) {
+                    it.remove();
+                    break;
                 }
-                i++;
             }
         }
     }

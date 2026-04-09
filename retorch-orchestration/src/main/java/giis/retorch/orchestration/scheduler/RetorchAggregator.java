@@ -16,15 +16,16 @@ import java.util.stream.Collectors;
 public class RetorchAggregator {
 
     private static final Logger logRetorchAggregator = LoggerFactory.getLogger(RetorchAggregator.class);
-    final Marker errorMarker = MarkerFactory.getMarker("ErrorMarker");
+    private final Marker errorMarker = MarkerFactory.getMarker("ErrorMarker");
     private final HashMap<String, TGroup> mapTGroups;
     private final System aggregatorSystem;
     private Map<String, Resource> mapAvailableResources;
 
     public RetorchAggregator(System system) throws NotValidSystemException, IOException {
-        this.aggregatorSystem = validateSystem(system) ? system : new System("EmptySystem ERROR");
+        boolean isValid = validateSystem(system);
+        this.aggregatorSystem = isValid ? system : new System("EmptySystem ERROR");
         this.mapTGroups = new HashMap<>();
-        if (validateSystem(system)) {
+        if (isValid) {
             ResourceSerializer serializer = new ResourceSerializer();
             this.mapAvailableResources = serializer.deserializeResources(system.getName());
         }
@@ -42,8 +43,8 @@ public class RetorchAggregator {
      */
 
     public boolean validateSystem(System systemToCheck) throws NotValidSystemException {
-        boolean areResourcesEmpty = true;
-        boolean areTestCasesEmpty = true;
+        boolean hasResources = true;
+        boolean hasTestCases = true;
         boolean areAllResourcesRequiredByTestCase;
         boolean areAllResourcesFullFill;
         boolean thereAreNoDuplicates = true;
@@ -52,13 +53,13 @@ public class RetorchAggregator {
             message=String.format("The number of resources in the system %s is zero",
                     systemToCheck.getName());
             logRetorchAggregator.error(message);
-            areResourcesEmpty = false;
+            hasResources = false;
         }
         if (systemToCheck.getTestCases().isEmpty()) {
             message=String.format("The number of test cases in the system %s is zero",
                     systemToCheck.getName());
             logRetorchAggregator.error(message);
-            areTestCasesEmpty = false;
+            hasTestCases = false;
         }
         Set<String> duplicateTestCases = findDuplicates(systemToCheck.getTestCases());
         if (!duplicateTestCases.isEmpty()) {
@@ -70,7 +71,7 @@ public class RetorchAggregator {
         areAllResourcesRequiredByTestCase = isRequiredByATestCase(systemToCheck);
         areAllResourcesFullFill = isAllTestCasesFullFill(systemToCheck);
 
-        return thereAreNoDuplicates && areResourcesEmpty && areAllResourcesFullFill && areTestCasesEmpty && areAllResourcesRequiredByTestCase;
+        return thereAreNoDuplicates && hasResources && areAllResourcesFullFill && hasTestCases && areAllResourcesRequiredByTestCase;
     }
 
     /**
@@ -94,33 +95,18 @@ public class RetorchAggregator {
      * @param systemToCheck System on which there are the resources and test cases to validate
      */
     private boolean isRequiredByATestCase(System systemToCheck) {
-        String message;
-
-        // Get all resources in the system
-        List<String> resourcesSystem =
-                systemToCheck.getResources().stream().map(Resource::getResourceID).collect(Collectors.toList());
-        // Iterate over all resources
-        for (String resource : resourcesSystem) {
-            // Assume the resource is not required by any test case
-            boolean resourceRequired = false;
-            // Iterate over all test cases
-            for (TestCase testCase : systemToCheck.getTestCases()) {
-                // Get all resources required by the test case
-                List<String> resourcesAccessMode =
-                        testCase.getAccessMode().stream().map(AccessMode::getResource).map(Resource::getResourceID).collect(Collectors.toList());
-                // If the test case requires the resource, set resourceRequired to true and break out of the loop
-                if (resourcesAccessMode.contains(resource)) {
-                    resourceRequired = true;
-                    break;
-                }
-            }
-            if (!resourceRequired) { // If the resource is not required by any test case, log an error and return false
-                message=String.format("Resource %s not required by any test case", resource);
-                logRetorchAggregator.error(message);
+        Set<String> requiredResourceIds = systemToCheck.getTestCases().stream()
+                .flatMap(tc -> tc.getAccessMode().stream())
+                .map(am -> am.getResource().getResourceID())
+                .collect(Collectors.toSet());
+        for (Resource resource : systemToCheck.getResources()) {
+            if (!requiredResourceIds.contains(resource.getResourceID())) {
+                logRetorchAggregator.error("Resource {} not required by any test case",
+                        resource.getResourceID());
                 return false;
             }
         }
-        return true; // If all resources are required by at least one test case, return true
+        return true;
     }
 
     /**

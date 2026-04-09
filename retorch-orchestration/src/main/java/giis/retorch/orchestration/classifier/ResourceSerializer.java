@@ -52,8 +52,11 @@ public class ResourceSerializer {
         ElasticityModel elasModel = new ElasticityModel("elasModel" + resourceId);
         elasModel.setElasticityCost(elasticityCost);
         elasModel.setElasticity(elasticity);
+        List<String> parents = (hierarchyParent != null)
+                ? new LinkedList<>(Collections.singletonList(hierarchyParent))
+                : new LinkedList<>();
         resourcesToSerialize.put(resourceId, new Resource(resourceId,
-                new LinkedList<>(Collections.singletonList(hierarchyParent)), new LinkedList<>(), elasModel,
+                parents, new LinkedList<>(), elasModel,
                 getResourceTypeFromAnnotation(resourceType), new LinkedList<>(), "someimage"));
     }
 
@@ -66,12 +69,13 @@ public class ResourceSerializer {
         try {
             return Resource.type.valueOf(type);
         } catch (IllegalArgumentException e) {
-            return Resource.type.LOGICAL; // Default to LOGICAL if type is not recognized
+            logSerializer.warn("Unknown resource type '{}', defaulting to LOGICAL", type);
+            return Resource.type.LOGICAL;
         }
     }
 
     /**
-     * Support method that adds a resource to the dictionary to serialize without hierarchy  parent
+     * Support method that adds a resource to the dictionary to serialize without hierarchy parent
      *
      * @param elasticity     Integer with the resource elasticity
      * @param elasticityCost Double with the elasticity cost
@@ -79,11 +83,7 @@ public class ResourceSerializer {
      * @param resourceId     String with the resource ID
      */
     public void addResourceToSerialize(String resourceId, double elasticityCost, int elasticity, String resourceType) {
-        ElasticityModel elasModel = new ElasticityModel("elasModel" + resourceId);
-        elasModel.setElasticityCost(elasticityCost);
-        elasModel.setElasticity(elasticity);
-        resourcesToSerialize.put(resourceId, new Resource(resourceId, new LinkedList<>(), new LinkedList<>(),
-                elasModel, getResourceTypeFromAnnotation(resourceType), new LinkedList<>(), "someImage"));
+        addResourceToSerialize(resourceId, elasticityCost, elasticity, resourceType, null);
     }
 
     /**
@@ -103,14 +103,9 @@ public class ResourceSerializer {
      * @param filePath the path of the file to write to
      * @param output   the string to write to the file
      */
-    private void writeSerializationToFile(String filePath, String output) {
-        try {
-            Path path = Paths.get(filePath);
-            byte[] strToBytes = output.getBytes();
-            Files.write(path, strToBytes);
-        } catch (IOException e) {
-            logSerializer.error("The path {} doesn't exist", filePath);
-        }
+    private void writeSerializationToFile(String filePath, String output) throws IOException {
+        Path path = Paths.get(filePath);
+        Files.write(path, output.getBytes());
     }
 
     /**

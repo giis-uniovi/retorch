@@ -3,7 +3,12 @@ package giis.retorch.orchestration.orchestrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,41 +52,42 @@ public class ScriptGenerator {
     private static final Logger log = LoggerFactory.getLogger(ScriptGenerator.class);
     private final Properties ciConfiguration;
 
+    public ScriptGenerator(Properties ciConfiguration) {
+        this.ciConfiguration = ciConfiguration;
+    }
+
     public ScriptGenerator() {
-        ciConfiguration = new Properties();
+        this(loadProperties());
+    }
+
+    private static Properties loadProperties() {
+        Properties props = new Properties();
         try (InputStream input = Files.newInputStream(Paths.get(".retorch/configurations/retorchCI.properties"))) {
-            ciConfiguration.load(input);
+            props.load(input);
         } catch (IOException e) {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
         }
+        return props;
     }
 
     /**
      * This method generates all the set-up, execution and disposing scripts required to execute the {@code ExecutionPlan}
      * in the continuous integration system.
      */
-    public void generateScriptsTJob() {
-        try {
-            checkFolderExists(DIRECTORY_TJOBS_NAME);
-            Map<String, String> mapValues = new HashMap<>();
-            mapValues.put("${SUT_CONTAINER_NAME}", ciConfiguration.getProperty("sut-container-name"));
-            mapValues.put("${SUT-WAIT-HTML}", ciConfiguration.getProperty("sut-wait-html"));
-            mapValues.put("${CUSTOM_SETUP_TJOB_COMMANDS}", getCustomContent("tjob-setup"));
-            mapValues.put("${CUSTOM_TEARDOWN_TJOB_COMMANDS}", getCustomContent("tjob-teardown"));
-
-
-
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_SETUP_TEMPLATE, OUTPUT_FILE_TJOB_SETUP);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TESTEXECUTION_TEMPLATE,
-                    OUTPUT_FILE_TJOB_TESTEXECUTION);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TEARDOWN_TEMPLATE, OUTPUT_FILE_TJOB_TEARDOWN);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_WAITER_TEMPLATE, OUTPUT_FILE_WAITER);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_WRITE_TIME_TEMPLATE, OUTPUT_FILE_WRITE_TIME);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_CONTAINER_LOGS, OUTPUT_FILE_CONTAINER_LOGS);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_LOGGING, OUTPUT_FILE_LOGGING);
-        } catch (IOException e) {
-            log.error("Error while generating TJOBs scripts: {}", e.getMessage());
-        }
+    public void generateScriptsTJob() throws IOException {
+        checkFolderExists(DIRECTORY_TJOBS_NAME);
+        Map<String, String> mapValues = new HashMap<>();
+        mapValues.put("${SUT_CONTAINER_NAME}", ciConfiguration.getProperty("sut-container-name"));
+        mapValues.put("${SUT-WAIT-HTML}", ciConfiguration.getProperty("sut-wait-html"));
+        mapValues.put("${CUSTOM_SETUP_TJOB_COMMANDS}", getCustomContent("tjob-setup"));
+        mapValues.put("${CUSTOM_TEARDOWN_TJOB_COMMANDS}", getCustomContent("tjob-teardown"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_SETUP_TEMPLATE, OUTPUT_FILE_TJOB_SETUP);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TESTEXECUTION_TEMPLATE, OUTPUT_FILE_TJOB_TESTEXECUTION);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TEARDOWN_TEMPLATE, OUTPUT_FILE_TJOB_TEARDOWN);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_WAITER_TEMPLATE, OUTPUT_FILE_WAITER);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_WRITE_TIME_TEMPLATE, OUTPUT_FILE_WRITE_TIME);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_CONTAINER_LOGS, OUTPUT_FILE_CONTAINER_LOGS);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_LOGGING, OUTPUT_FILE_LOGGING);
     }
 
     public static void checkFolderExists(String path) throws IOException {
@@ -91,7 +97,7 @@ public class ScriptGenerator {
             Files.createDirectories(directoryPath);
             log.debug("Directory created successfully.");
         } else {
-            log.error("The directory already exists.");
+            log.debug("The directory {} already exists.", path);
         }
     }
 
@@ -134,19 +140,18 @@ public class ScriptGenerator {
      * @param values        the map with the different configuration values
      * @param outputFile    String with the location of the output file
      */
-    public void replacePlaceholderTemplate(Map<String, String> values, String inputTemplate, String outputFile) {
-        try (BufferedReader br = getFileFromResource(inputTemplate); BufferedWriter bw =
-                new BufferedWriter(new FileWriter(outputFile))) {
-            System.setProperty("line.separator", "\n");
+    public void replacePlaceholderTemplate(Map<String, String> values, String inputTemplate, String outputFile)
+            throws IOException {
+        try (BufferedReader br = getFileFromResource(inputTemplate);
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
+                     Files.newOutputStream(Paths.get(outputFile)), StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 StringBuilder sb = getStringBuilder(values, line);
                 bw.write(sb.toString());
-                bw.newLine();
+                bw.write("\n");
             }
             log.info("Files successfully created.");
-        } catch (IOException e) {
-            log.error("Error while writing to file: {}", e.getMessage());
         }
     }
 
@@ -168,20 +173,18 @@ public class ScriptGenerator {
     private BufferedReader getFileFromResource(String fileName) {
         ClassLoader classLoader = getClass().getClassLoader();
         InputStream in = classLoader.getResourceAsStream(fileName);
-        assert in != null;
+        if (in == null) {
+            throw new IllegalStateException("Template resource not found on classpath: " + fileName);
+        }
         return new BufferedReader(new InputStreamReader(in));
     }
 
-    public void generateScriptsCOI() {
-        try {
-            checkFolderExists(DIRECTORY_COI_NAME);
-            Map<String, String> mapValues = new HashMap<>();
-            mapValues.put("${CUSTOM_SETUP_COI_COMMANDS}", getCustomContent("coi-setup"));
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_SETUP_TEMPLATE, OUTPUT_FILE_COI_SETUP);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_TEARDOWN_TEMPLATE, OUTPUT_FILE_COI_TEARDOWN);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE, OUTPUT_FILE_SAVE_ALL_TJOBS);
-        } catch (IOException e) {
-            log.error("Error while generating COI scripts: {}", e.getMessage());
-        }
+    public void generateScriptsCOI() throws IOException {
+        checkFolderExists(DIRECTORY_COI_NAME);
+        Map<String, String> mapValues = new HashMap<>();
+        mapValues.put("${CUSTOM_SETUP_COI_COMMANDS}", getCustomContent("coi-setup"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_SETUP_TEMPLATE, OUTPUT_FILE_COI_SETUP);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_TEARDOWN_TEMPLATE, OUTPUT_FILE_COI_TEARDOWN);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE, OUTPUT_FILE_SAVE_ALL_TJOBS);
     }
 }

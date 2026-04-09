@@ -1,8 +1,6 @@
 package giis.retorch.orchestration.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -18,8 +16,6 @@ import java.util.List;
 public class Resource {
 
     public enum type {PHYSICAL, LOGICAL, COMPUTATIONAL}
-
-    private final Logger logResourceClass = LoggerFactory.getLogger(Resource.class);
 
     Marker errorMarker = MarkerFactory.getMarker("Error");
     private String resourceID;
@@ -91,13 +87,9 @@ public class Resource {
 
     @Override
     public boolean equals(Object obj) {
-        String message;
         if (obj == null || !obj.getClass().equals(this.getClass())) return false;
         Resource resClass = (Resource) obj;
         if (!this.elasticityModel.equals(resClass.elasticityModel)) {
-            if (this.elasticityModel.getElasticityID().equals(resClass.elasticityModel.getElasticityID())){
-                message=String.format("The elasticityModel of the resources with the same identifier " + "%s differ", resClass.getResourceID());
-                logResourceClass.error(message);}
             return false;
         }
         if ((!containsAllReplaceableElements(this.replaceable, resClass.getReplaceable())) ||
