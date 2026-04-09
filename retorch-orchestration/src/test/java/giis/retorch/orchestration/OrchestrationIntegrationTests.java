@@ -39,15 +39,11 @@ public class OrchestrationIntegrationTests {
     protected static final String OUTPUT_PATH_ENVFILES = ".retorch/envfiles/";
     private RetorchClassifier classifier;
     private IntegrationUtils utils;
-    Logger loggerTesIntegration = LoggerFactory.getLogger(OrchestrationIntegrationTests.class);
+    private static final Logger log = LoggerFactory.getLogger(OrchestrationIntegrationTests.class);
 
     @Before
-    public void setUp() {
-        try {
-            utils = new IntegrationUtils();
-        } catch (IOException e) {
-            loggerTesIntegration.error("The integration utils cant be loaded");
-        }
+    public void setUp() throws IOException {
+        utils = new IntegrationUtils();
         classifier = new RetorchClassifier();
     }
 
@@ -80,7 +76,7 @@ public class OrchestrationIntegrationTests {
         String expectedOutput = EXPECTED_OUTPUT_PATH + "/orchestrationgenerator/";
         for (int i = 0; i < numberTJobs; i++) {
             String tjobEnvFile = "tjob" + (char) ('a' + (i % 26)) + ".env";
-            loggerTesIntegration.debug("Checking TJob env file: {} ", tjobEnvFile);
+            log.debug("Checking TJob env file: {} ", tjobEnvFile);
             utils.compareFiles(expectedOutput + "int-" + tjobEnvFile, OUTPUT_PATH_ENVFILES + tjobEnvFile);
         }
     }

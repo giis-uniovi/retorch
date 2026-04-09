@@ -20,13 +20,13 @@ import java.util.Map;
  */
 public class JenkinsOrchestratorTests {
 
-    protected static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/";
-    protected static final String OUTPUT_PATH_ENVFILES = ".retorch/envfiles/";
+    private static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/";
+    private static final String OUTPUT_PATH_ENVFILES = ".retorch/envfiles/";
+    private static final String SYSTEM_NAME = "AggregatorUnitTests";
 
     private final Logger logger = LoggerFactory.getLogger(JenkinsOrchestratorTests.class);
     private JenkinsOrchestrator jenkinsOrchestrator;
     private OrchestratorUtils utils;
-    private final String systemName = "AggregatorUnitTests";
 
     @Before
     public void setUp() {
@@ -39,7 +39,7 @@ public class JenkinsOrchestratorTests {
         String expectedOutputPath = EXPECTED_OUTPUT_PATH + "/outputTestUnitArchOrchValidComplexGraph";
         List<Activity> listComplexActivities = utils.getListComplexActivities();
 
-        jenkinsOrchestrator = new JenkinsOrchestrator(listComplexActivities, systemName);
+        jenkinsOrchestrator = new JenkinsOrchestrator(listComplexActivities, SYSTEM_NAME);
         Map<Integer, LinkedList<Activity>> listActivities = jenkinsOrchestrator.getExecutionPlan().getSortedActivities();
         String actualOutput = jenkinsOrchestrator.generatePipeline(listActivities);
 
@@ -63,7 +63,7 @@ public class JenkinsOrchestratorTests {
         String expectedOutputPath = EXPECTED_OUTPUT_PATH + "/outputTestUnitArchOrchValidSimpleGraph";
 
         List<Activity> listSimpleActivities = utils.getListSimpleActivities();
-        jenkinsOrchestrator = new JenkinsOrchestrator(listSimpleActivities, systemName);
+        jenkinsOrchestrator = new JenkinsOrchestrator(listSimpleActivities, SYSTEM_NAME);
         Map<Integer, LinkedList<Activity>> listActivities = jenkinsOrchestrator.getExecutionPlan().getSortedActivities();
         String executionPipeline = jenkinsOrchestrator.generatePipeline(listActivities);
 
@@ -93,14 +93,14 @@ public class JenkinsOrchestratorTests {
     @Test(expected = EmptyInputException.class)
     public void testUnitArchOrchInvalidNoActivities() throws EmptyInputException, NoFinalActivitiesException,
             IOException {
-        jenkinsOrchestrator = new JenkinsOrchestrator(new LinkedList<>(), systemName);
+        jenkinsOrchestrator = new JenkinsOrchestrator(new LinkedList<>(), SYSTEM_NAME);
     }
 
     @Test(expected = NoFinalActivitiesException.class)
     public void testUnitArchOrchInvalidNoInitialAndFinalActivities() throws EmptyInputException,
             NoFinalActivitiesException, IOException {
         List<Activity> listSimpleActivities = utils.getNotValidActivities();
-        jenkinsOrchestrator = new JenkinsOrchestrator(listSimpleActivities, systemName);
+        jenkinsOrchestrator = new JenkinsOrchestrator(listSimpleActivities, SYSTEM_NAME);
     }
 
 }
