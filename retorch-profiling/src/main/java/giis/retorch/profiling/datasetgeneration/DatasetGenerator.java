@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static giis.retorch.profiling.utils.CsvConstants.*;
+
 /**
  * The {@code DatasetGenerator} class contains the necessary methods that enable the processing of the execution data
  * files in order to create the  average dataset with duration of each {@code TJob} and {@code CloudObject} lifecycle
@@ -21,15 +23,8 @@ import java.util.stream.Collectors;
 public class DatasetGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetGenerator.class);
-    private static final String TJOB_HEADER = "tjobname";
-    private static final String STAGE_HEADER = "stage";
-    private static final String COI_SETUP_LABEL = "COI-setup";
-    private static final String TJOB_SETUP_LABEL = "tjob-setup";
-    private static final String TJOB_TEST_EXEC_LABEL = "tjob-testexec";
-    private static final String TJOB_TEARDOWN_LABEL = "tjob-teardown";
-    private static final String COI_TEARDOWN_LABEL = "coi-teardown";
-    private static final String END_SUFIX = "-end";
-    private static final String START_SUFIX = "-start";
+
+    private static final int STAGE_GAP_SECONDS = 1;
 
     private static final List<String> LIFECYCLES = Arrays.asList(
             COI_SETUP_LABEL,
@@ -56,11 +51,11 @@ public class DatasetGenerator {
         }
 
         List<DataTuple> allDataTuples = new ArrayList<>();
-        String[] tableHeaders = {TJOB_HEADER, STAGE_HEADER, COI_SETUP_LABEL + START_SUFIX,
-                COI_SETUP_LABEL + END_SUFIX, TJOB_SETUP_LABEL + START_SUFIX,
-                TJOB_SETUP_LABEL + END_SUFIX, TJOB_TEST_EXEC_LABEL + START_SUFIX, TJOB_TEST_EXEC_LABEL + END_SUFIX,
-                TJOB_TEARDOWN_LABEL + START_SUFIX,
-                TJOB_TEARDOWN_LABEL + END_SUFIX, COI_TEARDOWN_LABEL + START_SUFIX, COI_TEARDOWN_LABEL + END_SUFIX};
+        String[] tableHeaders = {TJOB_HEADER, STAGE_HEADER, COI_SETUP_LABEL + START_SUFFIX,
+                COI_SETUP_LABEL + END_SUFFIX, TJOB_SETUP_LABEL + START_SUFFIX,
+                TJOB_SETUP_LABEL + END_SUFFIX, TJOB_TEST_EXEC_LABEL + START_SUFFIX, TJOB_TEST_EXEC_LABEL + END_SUFFIX,
+                TJOB_TEARDOWN_LABEL + START_SUFFIX,
+                TJOB_TEARDOWN_LABEL + END_SUFFIX, COI_TEARDOWN_LABEL + START_SUFFIX, COI_TEARDOWN_LABEL + END_SUFFIX};
         // Parse each .csv file
         for (File file : csvFiles) {
             try (FileReader fileReader = new FileReader(file)) {
@@ -122,8 +117,8 @@ public class DatasetGenerator {
     private DataTuple generateDataTupleFromRecord(CSVRecord csvRecord) {
         DataTuple tuple = new DataTuple(csvRecord.get(TJOB_HEADER), Integer.parseInt(csvRecord.get(STAGE_HEADER)));
         for (String lifecycle : LIFECYCLES) {
-            double start = Double.parseDouble(csvRecord.get(lifecycle + START_SUFIX));
-            double end = Double.parseDouble(csvRecord.get(lifecycle + END_SUFIX));
+            double start = Double.parseDouble(csvRecord.get(lifecycle + START_SUFFIX));
+            double end = Double.parseDouble(csvRecord.get(lifecycle + END_SUFFIX));
             tuple.putLifeCycleDuration(lifecycle, end - start);
         }
 
@@ -206,10 +201,10 @@ public class DatasetGenerator {
             return;
         }
         String[] headers = {
-                TJOB_HEADER, STAGE_HEADER, COI_SETUP_LABEL + START_SUFIX, COI_SETUP_LABEL + END_SUFIX,
-                TJOB_SETUP_LABEL + START_SUFIX, TJOB_SETUP_LABEL + END_SUFIX, TJOB_TEST_EXEC_LABEL + START_SUFIX,
-                TJOB_TEST_EXEC_LABEL + END_SUFIX, TJOB_TEARDOWN_LABEL + START_SUFIX, TJOB_TEARDOWN_LABEL + END_SUFIX,
-                COI_TEARDOWN_LABEL + START_SUFIX, COI_TEARDOWN_LABEL + END_SUFIX
+                TJOB_HEADER, STAGE_HEADER, COI_SETUP_LABEL + START_SUFFIX, COI_SETUP_LABEL + END_SUFFIX,
+                TJOB_SETUP_LABEL + START_SUFFIX, TJOB_SETUP_LABEL + END_SUFFIX, TJOB_TEST_EXEC_LABEL + START_SUFFIX,
+                TJOB_TEST_EXEC_LABEL + END_SUFFIX, TJOB_TEARDOWN_LABEL + START_SUFFIX, TJOB_TEARDOWN_LABEL + END_SUFFIX,
+                COI_TEARDOWN_LABEL + START_SUFFIX, COI_TEARDOWN_LABEL + END_SUFFIX
         };
         Map<Integer, Double> startingStages = calculateStartingStages(listTuples);
 
@@ -228,13 +223,13 @@ public class DatasetGenerator {
                         String.format(Locale.ENGLISH, "%.1f", durations.get(COI_SETUP_LABEL)),
                         String.format(Locale.ENGLISH, "%.1f", stageStartTime),
                         String.format(Locale.ENGLISH, "%.1f", stageStartTime + durations.get(TJOB_SETUP_LABEL)),
-                        String.format(Locale.ENGLISH, "%.1f", stageStartTime + durations.get(TJOB_SETUP_LABEL) + 1),
+                        String.format(Locale.ENGLISH, "%.1f", stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS),
                         String.format(Locale.ENGLISH, "%.1f",
-                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + 1 + durations.get(TJOB_TEST_EXEC_LABEL)),
+                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEST_EXEC_LABEL)),
                         String.format(Locale.ENGLISH, "%.1f",
-                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + 1 + durations.get(TJOB_TEST_EXEC_LABEL) + 1),
+                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEST_EXEC_LABEL) + STAGE_GAP_SECONDS),
                         String.format(Locale.ENGLISH, "%.1f",
-                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + 1 + durations.get(TJOB_TEST_EXEC_LABEL) + 1 + durations.get(TJOB_TEARDOWN_LABEL)),
+                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEST_EXEC_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEARDOWN_LABEL)),
                         String.format(Locale.ENGLISH, "%.1f", lastJobEndTime),
                         String.format(Locale.ENGLISH, "%.1f", lastJobEndTime + durations.get(COI_TEARDOWN_LABEL)));
             }
@@ -253,14 +248,14 @@ public class DatasetGenerator {
      */
     private Map<Integer, Double> calculateStartingStages(List<DataTuple> listTuples) {
         Map<Integer, Double> startingStages = new HashMap<>();
-        startingStages.put(0, listTuples.get(0).getLifecycleDuration().get(COI_SETUP_LABEL) + 1);
+        startingStages.put(0, listTuples.get(0).getLifecycleDuration().get(COI_SETUP_LABEL) + STAGE_GAP_SECONDS);
 
         for (DataTuple tuple : listTuples) {
-            double durationCurrentTJob = tuple.getLifecycleDuration().get(TJOB_SETUP_LABEL) + 1 +
-                    tuple.getLifecycleDuration().get(TJOB_TEST_EXEC_LABEL) + 1 +
+            double durationCurrentTJob = tuple.getLifecycleDuration().get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS +
+                    tuple.getLifecycleDuration().get(TJOB_TEST_EXEC_LABEL) + STAGE_GAP_SECONDS +
                     tuple.getLifecycleDuration().get(TJOB_TEARDOWN_LABEL);
             startingStages.merge(tuple.getStage() + 1,
-                    durationCurrentTJob + startingStages.get(tuple.getStage()) + 1,
+                    durationCurrentTJob + startingStages.get(tuple.getStage()) + STAGE_GAP_SECONDS,
                     Math::max);
         }
 

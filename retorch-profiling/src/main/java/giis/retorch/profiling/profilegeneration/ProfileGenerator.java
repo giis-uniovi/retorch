@@ -19,7 +19,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static giis.retorch.profiling.model.ContractedCapacity.getCapacityNames;
+import static giis.retorch.orchestration.model.Capacity.getCapacityNames;
+import static giis.retorch.profiling.utils.CsvConstants.*;
+
 /**
  * The {@code ProfileGenerator} class provides the necessary methods to generate the dataset with the use of
  * the {@code ContractedCapacity} by the different {@code ResourceInstances} of an {@code ExecutionPlan}
@@ -29,21 +31,7 @@ public class ProfileGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(ProfileGenerator.class);
 
-    private static final String TJOB_HEADER = "tjobname";
-    private static final String CAPACITY_HEADER = "capacity";
-    private static final String PLAN_HEADER = "executionplan";
-    private static final String STAGE_HEADER = "stage";
-    private static final String LIFECYCLE_HEADER="lifecyclephase";
-    private static final String COI_LABEL="coi-";
-    private static final String COI_SETUP_LABEL = COI_LABEL + CloudObjectInstance.SETUP_NAME;
-    private static final String COI_TEARDOWN_LABEL = COI_LABEL + CloudObjectInstance.TEARDOWN_NAME;
-    private static final String TJOB_LABEL="tjob-";
-    private static final String TJOB_SETUP_LABEL = TJOB_LABEL + TJob.LIFECYCLE_SETUP_NAME;
-    private static final String TJOB_TEST_EXEC_LABEL = TJOB_LABEL + TJob.LIFECYCLE_TESTEXECUTION_NAME;
-    private static final String TJOB_TEARDOWN_LABEL = TJOB_LABEL + TJob.LIFECYCLE_TEARDOWN_NAME;
-    private static final String END_SUFFIX = "-end";
-    private static final String START_SUFFIX = "-start";
-    private static final String AGGREGATION_VALUE = "TOTAL";
+    private static final int EXECUTION_GAP_SECONDS = 5;
 
     /**
      * The {@code generateExecutionPlanCapacitiesUsage} method generates the comma-separated values file with the usage
@@ -64,7 +52,7 @@ public class ProfileGenerator {
         listTJobs.sort(Comparator.comparing(TJob::getStage).thenComparing(TJob::getIdTJob));
         loadAvgLifecyclesTimeIntoTJob(listTJobs, pathAvgDurationPlan);
         double longerTJob = findLongerTJob(listTJobs);
-        if ((executions * longerTJob + executions * 5) > windowTime) {
+        if ((executions * longerTJob + executions * EXECUTION_GAP_SECONDS) > windowTime) {
             throw new IllegalArgumentException("The number of executions is longer than the window");
         }
         Map<String, double[]> mapWithJobsProfile = generateEmptyMapOfCapacities(listTJobs, windowTime);
@@ -180,7 +168,7 @@ public class ProfileGenerator {
         headers = concatenateArrays(headers, intStringArray);
         try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
                 CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(";").build())) {
-            addTJobCapacitiesUsed(tJobList, mapWithCapacitiesTJob, printer);
+            addTJobCapacitiesUsed(tJobList, mapWithCapacitiesTJob, printer, planName);
             addTotalCapacitiesUsed(mapWithCapacitiesTJob, planName, windowInt, printer);
         } catch (IOException e) {
             log.error("Error writing CSV file: {}", e.getMessage());
@@ -201,7 +189,7 @@ public class ProfileGenerator {
         double total = 0;
         arrayStartPointsExecutions[0] = 0;
         for (int i = 1; i < executions; i++) {
-            total += testSuiteDuration + 5;
+            total += testSuiteDuration + EXECUTION_GAP_SECONDS;
             arrayStartPointsExecutions[i] = total;
         }
 
@@ -230,13 +218,14 @@ public class ProfileGenerator {
      @param  tJobList List with all the {@code TJob }
      @param  mapWithCapacitiesTJob Map with the {@code ContractedCapacity} used by the TJob
      @param  printer CSV printer for output used
+     @param  planName String with the {@code ExecutionPlan} name
      */
     private static void addTJobCapacitiesUsed(List<TJob> tJobList, Map<String, double[]> mapWithCapacitiesTJob,
-                                              CSVPrinter printer) throws IOException {
+                                              CSVPrinter printer, String planName) throws IOException {
         for (TJob e : tJobList) {
             for (String phase : TJob.getListTJobLifecyclesNames()) {
                 for (String capacity : e.getCapacityNames()) {
-                    String[] firstCols = {"OneScheduling", e.getIdTJob(), phase, capacity};
+                    String[] firstCols = {planName, e.getIdTJob(), phase, capacity};
                     double[] capacitiesArray = mapWithCapacitiesTJob.get(e.getIdTJob() + "-" + phase + "-" + capacity);
                     String[] capacitiesUsedStringArray =
                             Arrays.stream(capacitiesArray).mapToObj(d -> String.format(Locale.ENGLISH, "%.1f", d)).toArray(String[]::new);

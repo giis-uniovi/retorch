@@ -11,8 +11,8 @@ import java.util.Map;
  */
 public class DataTuple implements Serializable {
 
-    String idTJob;
-    int stage;
+    private String idTJob;
+    private int stage;
     private Map<String, Double> lifecycleDuration;
 
     public DataTuple(String idTJob, int stage) {

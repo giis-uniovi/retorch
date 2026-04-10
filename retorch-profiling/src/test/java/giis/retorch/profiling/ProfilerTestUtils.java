@@ -17,6 +17,8 @@ import org.jfree.chart.JFreeChart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.fail;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -35,6 +37,26 @@ public class ProfilerTestUtils {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private String debugPath= "target/debug/";
+
+    public static void ensureDirectoryExists(String path, Logger log) {
+        File dir = new File(path);
+        if (dir.exists()) {
+            log.debug("The directory already exists: {}", dir.getAbsolutePath());
+            return;
+        }
+        try {
+            boolean isCreated = dir.mkdirs();
+            if (isCreated) {
+                log.debug("Directory successfully created: {}", dir.getAbsolutePath());
+            } else {
+                log.warn("Not able to create the directory: {}", dir.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            log.error("Something wrong happened creating the directory {}: {}", dir.getAbsolutePath(), e.getMessage());
+            fail("The directory " + dir.getAbsolutePath() + " cannot be created");
+        }
+    }
+
     public boolean profileComparator(String expectedProfilePath, UsageProfile actualProfile,String coiName) throws IOException {
 
         UsageProfile expectedProfile=deserializeUsageProfile(expectedProfilePath);

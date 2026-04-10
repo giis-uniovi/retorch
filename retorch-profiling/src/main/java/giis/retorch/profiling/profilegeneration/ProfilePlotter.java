@@ -2,6 +2,10 @@ package giis.retorch.profiling.profilegeneration;
 
 import giis.retorch.orchestration.model.TJob;
 import giis.retorch.profiling.model.UsageProfile;
+import static giis.retorch.profiling.utils.CsvConstants.AGGREGATION_VALUE;
+import static giis.retorch.profiling.utils.CsvConstants.TJOB_HEADER;
+import static giis.retorch.profiling.utils.CsvConstants.CAPACITY_HEADER;
+import static giis.retorch.profiling.utils.CsvConstants.LIFECYCLE_HEADER;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -39,12 +43,11 @@ public class ProfilePlotter {
 
     private static final Logger log = LoggerFactory.getLogger(ProfilePlotter.class);
 
-    List<CSVRecord> csvProfileRecords;
-    private static final String CAPACITY_HEADER = "capacity";
-    private static final String LIFECYCLE_HEADER = "lifecyclephase";
+    private List<CSVRecord> csvProfileRecords;
     private UsageProfile usageProfile;
 
     public ProfilePlotter(String path) {
+        csvProfileRecords = Collections.emptyList();
         try (FileReader fileReader = new FileReader(path)) {
             CSVFormat csvFormat = CSVFormat.DEFAULT.builder().setDelimiter(";").setHeader()
                     .setSkipHeaderRecord(true)
@@ -87,7 +90,7 @@ public class ProfilePlotter {
      */
     private void loadCapacitiesData(Map<String, DefaultTableXYDataset> capacitiesData, Map<String, DefaultTableXYDataset> contractedCapacitiesData) {
         for (CSVRecord lifecycleRecord : csvProfileRecords) {
-            if (lifecycleRecord.get("tjobname").equals("TOTAL")) {
+            if (lifecycleRecord.get(TJOB_HEADER).equals(AGGREGATION_VALUE)) {
                 boolean isContracted = lifecycleRecord.get(LIFECYCLE_HEADER).equals("CONTRACTED");
                 String capacityHeader = lifecycleRecord.get(CAPACITY_HEADER);
                 Map<String, DefaultTableXYDataset> targetMap = isContracted ? contractedCapacitiesData : capacitiesData;
@@ -266,7 +269,7 @@ public class ProfilePlotter {
                     SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
                     svgGenerator.setSVGCanvasSize(new Dimension(width, height));
                     chart.draw(svgGenerator, new Rectangle(width, height));
-                    try (FileWriter out = new FileWriter(filePath)) {
+                    try (FileWriter out = new FileWriter(pathGraph + ".svg")) {
                         svgGenerator.stream(out, true);
                     } catch (IOException e) {
                         log.error("Error saving chart as SVG:{} ", e.getMessage());
@@ -284,13 +287,11 @@ public class ProfilePlotter {
      */
     public void serialize(String filePath) {
         try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(Paths.get(filePath)))) {
-            // Write the chart object to the file
             out.writeObject(this.usageProfile);
-            log.info("Chart serialized and saved to: {}" , filePath);
+            log.info("Chart serialized and saved to: {}", filePath);
         } catch (IOException e) {
-            log.error("Error saving chart:  {}" , e.getMessage());
-
+            log.error("Error saving chart:  {}", e.getMessage());
+        }
     }
-}
 
 }

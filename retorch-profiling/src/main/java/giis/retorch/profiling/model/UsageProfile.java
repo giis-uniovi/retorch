@@ -7,6 +7,7 @@ import org.jfree.data.xy.XYDataset;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class UsageProfile implements Serializable {
 
@@ -41,14 +42,14 @@ public class UsageProfile implements Serializable {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(cloudObjectID, planName);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof UsageProfile) {
             UsageProfile other = (UsageProfile) obj;
-            if (other.getPlots().size()==this.getPlots().size()==other.getPlots().keySet().equals(this.getPlots().keySet())) {
+            if (other.getPlots().size() == this.getPlots().size() && other.getPlots().keySet().equals(this.getPlots().keySet())) {
                 Map<String, JFreeChart> otherPlots = other.getPlots();
                 for (Map.Entry<String, JFreeChart> entry : this.getPlots().entrySet()) {
                     if(!areChartsEqual(entry.getValue(), otherPlots.get(entry.getKey()))){
