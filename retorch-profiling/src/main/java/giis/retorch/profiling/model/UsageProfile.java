@@ -11,6 +11,8 @@ import java.util.Objects;
 
 public class UsageProfile implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private Map<String, JFreeChart> plots;
     private String cloudObjectID;
     private String planName;
@@ -21,12 +23,7 @@ public class UsageProfile implements Serializable {
         this.plots = new HashMap<>();
     }
 
-    public UsageProfile(Map<String, JFreeChart> plots) {
-        this.plots = plots;
-    }
-    public UsageProfile() {
-        plots = new HashMap<>();
-    }
+
 
     public String getPlanName() {return planName;}
     public Map<String, JFreeChart> getPlots() {return plots;}

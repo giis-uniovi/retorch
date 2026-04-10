@@ -249,7 +249,8 @@ public class ProfilePlotter {
     private void saveChartsAsFormat(String coiName,String filePath,String format, int width, int height) {
         UsageProfile profileToSave=usageProfile;
 
-        String filePathBase =filePath + profileToSave.getPlanName() +"-"+coiName+ "-";
+        String separator = filePath.endsWith("/") || filePath.endsWith(File.separator) ? "" : "/";
+        String filePathBase = filePath + separator + profileToSave.getPlanName() + "-" + coiName + "-";
         serialize( filePathBase+ "UsageProfile.serialized");
         for (Map.Entry<String, JFreeChart> entry:profileToSave.getPlots().entrySet()) {
             String pathGraph=filePathBase+entry.getKey();

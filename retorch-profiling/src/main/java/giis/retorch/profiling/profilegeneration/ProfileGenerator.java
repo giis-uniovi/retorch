@@ -197,7 +197,7 @@ public class ProfileGenerator {
     }
     private double getStartTime(double[] allStartTimes, int currentTime) {
         double output = 0;
-        for (int i = 0; i < allStartTimes.length - 1; i++) {
+        for (int i = 0; i < allStartTimes.length; i++) {
             if (allStartTimes[i] <= currentTime) {
                 output = allStartTimes[i];
             }
@@ -206,7 +206,7 @@ public class ProfileGenerator {
         return output;
     }
 
-    public static <T> T[] concatenateArrays(T[] a, T[] b) {
+    static <T> T[] concatenateArrays(T[] a, T[] b) {
         int length = a.length + b.length;
         T[] result = Arrays.copyOf(a, length);
         System.arraycopy(b, 0, result, a.length, b.length);
@@ -289,7 +289,7 @@ public class ProfileGenerator {
                             .collect(Collectors.toList());
 
         } catch (IOException e) {
-            log.error("Failed to find the profile file while creating the COI");
+            throw new IOException("Failed to find the profile file while creating the COI: " + inputPath, e);
         }
         HashMap<String, ArrayList<String>> mapPriorCalculate = aggregateLifecycleCapacities(tuplesToTreatCSV);
         HashMap<String, ArrayList<String>> outputMap = new HashMap<>();
@@ -317,7 +317,7 @@ public class ProfileGenerator {
         HashMap<String, ArrayList<String>> mapPriorCalculate = new HashMap<>();
         for (CSVRecord tupleCSV : tuplesToTreatCSV) {
             ArrayList<String> values = new ArrayList<>();
-            for (int i = 4; i < tupleCSV.size(); i++) {
+            for (int i = CSV_DATA_START_COLUMN; i < tupleCSV.size(); i++) {
                 values.add(tupleCSV.get(i));
             }
             if (mapPriorCalculate.containsKey(tupleCSV.get(CAPACITY_HEADER))) {
@@ -339,7 +339,7 @@ public class ProfileGenerator {
      @param outputPath   Path with the output file
      @param outputMap  Map with the {@code ContractedCapacities}
      */
-    public void generateNewProfileDatasetWithCapacitiesUsed(List<CSVRecord> listRecords, String[] headerNames,
+    void generateNewProfileDatasetWithCapacitiesUsed(List<CSVRecord> listRecords, String[] headerNames,
                                                             String outputPath,
                                                             Map<String, ArrayList<String>> outputMap) throws IOException {
         try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
@@ -368,7 +368,7 @@ public class ProfileGenerator {
      @param capacityValue   Capacity value
      @param coi {@code CloudObjectInstance} considered
      */
-    public double getProvisionedCapacityGivenTime(int currentTime, ContractedCapacity capacity, double capacityValue,
+    double getProvisionedCapacityGivenTime(int currentTime, ContractedCapacity capacity, double capacityValue,
                                                   CloudObjectInstance coi,
                                                   Triplet<Integer, Integer, Integer>[] mapCapacitiesUsed) {
         int numberOfUsedGaps = (int) Math.ceil(capacityValue / capacity.getGranularity());
@@ -401,7 +401,7 @@ public class ProfileGenerator {
         return gap != null && (currentTime - gap.getValue1() >= timePeriod) && (currentTime != gap.getValue2());
     }
 
-    public List<String> aggregateArraylists(List<String> firstRecord, List<String> secondRecord) {
+    List<String> aggregateArraylists(List<String> firstRecord, List<String> secondRecord) {
         ArrayList<String> aggregatedList;
         if (firstRecord.size() == secondRecord.size()) {
             aggregatedList = new ArrayList<>();
