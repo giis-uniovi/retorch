@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>io.github.giis-uniovi</groupId>
 		<artifactId>retorch</artifactId>
-		<version>1.1.1-SNAPSHOT</version>
+		<version>1.2.0</version>
 	</parent>
 	<artifactId>retorch-orchestration</artifactId>
 	<packaging>jar</packaging>
