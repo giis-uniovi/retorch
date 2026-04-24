@@ -72,7 +72,7 @@ public class CloudObjectInstance {
             this.setStartTJobExec(stExec);
             this.setStartTearDown(stTearDown);
             this.setEndSetUp(endSetUp);
-            this.setStartTJobExec(endExec);
+            this.setEndTJobExec(endExec);
             this.setEndTearDown(endTearDown);
         } else {
             throw new IllegalArgumentException("One or more times provided are not correct, please review that each phase starts before the end, and are continuous");

@@ -10,12 +10,13 @@ import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.properties.AreaBreakType;
-import com.itextpdf.svg.converter.SvgConverter;
 import giis.retorch.orchestration.model.Capacity;
 import giis.retorch.profiling.model.UsageProfile;
 import org.jfree.chart.JFreeChart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.fail;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -35,6 +36,26 @@ public class ProfilerTestUtils {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private String debugPath= "target/debug/";
+
+    public static void ensureDirectoryExists(String path, Logger log) {
+        File dir = new File(path);
+        if (dir.exists()) {
+            log.debug("The directory already exists: {}", dir.getAbsolutePath());
+            return;
+        }
+        try {
+            boolean isCreated = dir.mkdirs();
+            if (isCreated) {
+                log.debug("Directory successfully created: {}", dir.getAbsolutePath());
+            } else {
+                log.warn("Not able to create the directory: {}", dir.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            log.error("Something wrong happened creating the directory {}: {}", dir.getAbsolutePath(), e.getMessage());
+            fail("The directory " + dir.getAbsolutePath() + " cannot be created");
+        }
+    }
+
     public boolean profileComparator(String expectedProfilePath, UsageProfile actualProfile,String coiName) throws IOException {
 
         UsageProfile expectedProfile=deserializeUsageProfile(expectedProfilePath);
@@ -51,39 +72,6 @@ public class ProfilerTestUtils {
 
     }
 
-
-    public void createTestFailSVGReport(String pathExpected, String pathActual, String pathReport) throws IOException {
-        try (PdfDocument doc = new PdfDocument(new PdfWriter(pathReport, new WriterProperties().setCompressionLevel(0)))) {
-            Image imageActual = SvgConverter.convertToImage(Files.newInputStream(Paths.get(pathActual)), doc);
-            imageActual.setFixedPosition(20, 600);
-            imageActual.scaleToFit(550, 300);
-            Image imageExpected = SvgConverter.convertToImage(Files.newInputStream(Paths.get(pathExpected)), doc);
-            imageExpected.setFixedPosition(20, 400);
-            imageExpected.scaleToFit(550, 300);
-            Document layoutdoc = new Document(doc);
-            // Add ACTUAL label
-            Paragraph actualLabel = new Paragraph("ACTUAL");
-            actualLabel.setFixedPosition(20, 780, 100);
-            layoutdoc.add(actualLabel);
-            //Add image actual
-            layoutdoc.add(imageActual);
-            // Add EXPECTED label
-            Paragraph expectedLabel = new Paragraph("EXPECTED");
-            expectedLabel.setFixedPosition(20, 580, 100);
-            layoutdoc.add(expectedLabel);
-            //Add the expected label
-            layoutdoc.add(imageExpected);
-            //Add the paths of the images
-            Paragraph expectedPath = new Paragraph("EXPECTED, stored in: " + pathExpected);
-            expectedPath.setFixedPosition(20, 250, 550);
-            layoutdoc.add(expectedPath);
-            // Add ACTUAL label
-            Paragraph actualPath = new Paragraph("ACTUAL, stored in: " + pathActual);
-            actualPath.setFixedPosition(20, 300, 550);
-            layoutdoc.add(actualPath);
-            layoutdoc.close();
-        }
-    }
 
     public void createTestFailPNGReport(UsageProfile expectedProfile, UsageProfile actualProfile, String pathReport) throws IOException {
 

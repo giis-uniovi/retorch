@@ -38,26 +38,9 @@ public class ProfileGeneratorTests  {
     @Before
     public void setUp() {
         log.info("****** Running test: {} ******", testName.getMethodName());
-        log.debug("Creating the tmp directory to store methods output");
-        File dir = new File(outBasePath);
         utils = new ProfilerDataGenerationUtils();
         generator = new ProfileGenerator();
-        if (dir.exists()) {
-            log.debug("The directory already exists: {}", dir.getAbsolutePath());
-        } else {
-            try {
-                boolean isCreated = dir.mkdirs();
-                if (isCreated) {
-                    log.debug("Directory successfully created: {}", dir.getAbsolutePath());
-                } else {
-                    log.warn("Not able to create the directory: {}", dir.getAbsolutePath());
-                }
-            } catch (Exception e) {
-                log.error("Something wrong happened creating the directory {} the exception stacktrace is:\n {}",
-                        dir.getAbsolutePath(), e.getStackTrace());
-                fail("The directory" + dir.getAbsolutePath() + "cannot be created");
-            }
-        }
+        ProfilerTestUtils.ensureDirectoryExists(outBasePath, log);
         log.info("****** Set-up for test: {} ended ******", testName.getMethodName());
     }
 
