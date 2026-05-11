@@ -12,6 +12,7 @@ import giis.retorch.profiling.model.ContractedCapacity;
 import giis.retorch.orchestration.model.TJob;
 import giis.retorch.orchestration.model.ExecutionPlan;
 import giis.retorch.orchestration.model.Capacity;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -166,6 +167,7 @@ public class ProfileGenerator {
         String[] intStringArray = Arrays.stream(IntStream.range(0, windowInt).toArray()).mapToObj(String::valueOf).toArray(String[]::new);
         String[] headers = {PLAN_HEADER, TJOB_HEADER, LIFECYCLE_HEADER, CAPACITY_HEADER};
         headers = concatenateArrays(headers, intStringArray);
+        ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
                 CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(";").build())) {
             addTJobCapacitiesUsed(tJobList, mapWithCapacitiesTJob, printer, planName);
@@ -296,7 +298,7 @@ public class ProfileGenerator {
         for (Map.Entry<String, ArrayList<String>> entry : mapPriorCalculate.entrySet()) {
             String capacityName = entry.getKey();
             ContractedCapacity currentCapacity = coiCapacities.get(capacityName);
-            if (currentCapacity.getQuantity() > 0) {
+            if (currentCapacity != null && currentCapacity.getQuantity() > 0 && currentCapacity.getGranularity() > 0) {
                 int amountGaps = (int) Math.ceil(currentCapacity.getQuantity() / currentCapacity.getGranularity());
                 Triplet<Integer, Integer, Integer>[] mapCapacitiesUsed = new Triplet[amountGaps];
                 ArrayList<String> currentValuesContracted = new ArrayList<>();
@@ -342,6 +344,7 @@ public class ProfileGenerator {
     void generateNewProfileDatasetWithCapacitiesUsed(List<CSVRecord> listRecords, String[] headerNames,
                                                             String outputPath,
                                                             Map<String, ArrayList<String>> outputMap) throws IOException {
+        ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
                 CSVFormat.DEFAULT.builder().setHeader(headerNames).setDelimiter(";").build())) {
             String scheduling = "None";
@@ -414,5 +417,12 @@ public class ProfileGenerator {
             throw new IllegalArgumentException("The arrays provided differ in size");
         }
         return aggregatedList;
+    }
+
+    private static void ensureParentDir(String path) {
+        File parent = new File(path).getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
     }
 }

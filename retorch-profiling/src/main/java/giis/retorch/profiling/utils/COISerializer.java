@@ -16,7 +16,7 @@ import java.util.*;
 public class COISerializer {
 
     private static final Logger logSerializer = LoggerFactory.getLogger(COISerializer.class);
-    private static final String FOLDER_RESOURCES = "retorchfiles/resources/";//Base path of the resource files
+    private static final String FOLDER_RESOURCES = ".retorch/infra/";//Base path of the resource files
     final ObjectMapper mapper;
 
 

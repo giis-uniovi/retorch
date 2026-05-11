@@ -247,6 +247,7 @@ public class ProfilePlotter {
      * @param width Int with the width of the chart
      */
     private void saveChartsAsFormat(String coiName,String filePath,String format, int width, int height) {
+        new File(filePath).mkdirs();
         UsageProfile profileToSave=usageProfile;
 
         String separator = filePath.endsWith("/") || filePath.endsWith(File.separator) ? "" : "/";

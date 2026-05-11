@@ -207,6 +207,7 @@ public class DatasetGenerator {
         };
         Map<Integer, Double> startingStages = calculateStartingStages(listTuples);
 
+        ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath);
              CSVPrinter printer = new CSVPrinter(out,
                      CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(";").build())) {
@@ -259,5 +260,12 @@ public class DatasetGenerator {
         }
 
         return startingStages;
+    }
+
+    private static void ensureParentDir(String path) {
+        File parent = new File(path).getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
     }
 }
