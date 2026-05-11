@@ -44,75 +44,74 @@ The diagram below shows the RETORCH data model across its four layers: the test 
 orchestration model, the cloud infrastructure configuration, and the usage profiling artefacts.
 
 ```mermaid
-erDiagram
+flowchart LR
+  %% Classifiers
+  classDef blue fill:#1e497c,stroke:#000000,color:#ffffff;
+  classDef green fill:#234723,stroke:#000000,color:#ffffff;
+  classDef red fill:#911111,stroke:#000000,color:#ffffff;
+  classDef yellow fill:#ffff00,stroke:#000000,color:#000000;
+  classDef orange fill:#f79646,stroke:#000000,color:#ffffff;
+  classDef lightBlue fill:#4f81bd,stroke:#000000,color:#ffffff;
+  classDef lightGreen fill:#548235,stroke:#000000,color:#ffffff;
 
-    TESTCASE ||--o{ ACCESSMODE : "annotated with"
-    ACCESSMODE {
-        string  resID
-        int     concurrency
-        boolean sharing
-        string  accessMode
-    }
+  %% Nodes
+  A[E2E TEST SUITE]:::purple --> B[Custom Annotations]:::orange
+  B --> C[RETORCH Classifier]:::lightBlue
 
-    ACCESSMODE }o--|| RESOURCE : "references"
-    RESOURCE {
-        string resourceID
-        string resourceType
-        string hierarchyParent
-        string dockerImage
-    }
+  %% Retorch Section
+  subgraph Retorch
+    direction TB
+    C --> D[Resource Info.]:::lightBlue
+    D --> E[RETORCH Aggregator]:::blue
+    E --> F[TGroups]:::blue
+    F --> G[RETORCH Scheduler]:::blue
+    G --> H[TJob]:::blue
+    H --> I[RETORCH Orchestrator]:::blue
+    I --> J[Execution Plan]:::lightBlue
+  end
 
-    RESOURCE ||--|| ELASTICITYMODEL : "has"
-    ELASTICITYMODEL {
-        string elasticityID
-        int    elasticity
-        float  elasticityCost
-    }
+  %% Resource Section
+  subgraph Resource
+    direction TB
+    C --> K[Resource]:::lightBlue
+    K --> L[Access Mode]:::lightBlue
+    K --> M[Resource Instance]:::lightBlue
+    M --> N[Minimal Capacities]:::lightBlue
+    N --> O[Capacity]:::lightBlue
+    J --> P[Capacity]:::lightBlue
+  end
 
-    RESOURCE ||--o{ CAPACITY : "requires"
-    CAPACITY {
-        string name
-        float  quantity
-    }
+  %% Cloud Section
+  subgraph Cloud
+    direction TB
+    Q[COI Selection]:::yellow --> R[Cloud Object Instance]:::lightGreen
+    R --> S[Cloud Object]:::lightGreen
+    R --> T[Contracted Capacities]:::lightGreen
+    T --> U[Billing Option]:::lightGreen
+    T --> V[Cloud Configuration]:::lightGreen
+    V --> W[Profile Generator]:::green
+    W --> X[RAW Usage Profile]:::green
+    W --> Y[AVG Dataset]:::green
+    X --> Z[Profile Plotter]:::green
+    Z --> AA[Usage Profile]:::green
+    W --> BB[RETORCH DataTuple]:::green
+    Y --> CC[Dataset Generator]:::green
+  end
 
-    TJOB }o--o{ RESOURCE : "uses"
-    TJOB {
-        string idTJob
-        int    stage
-    }
+  %% Estimation Section
+  subgraph Estimation
+    direction TB
+    CC --> DD[Estimator]:::red
+    DD --> EE[Costs]:::orange
+  end
 
-    EXECUTIONPLAN ||--|{ TJOB : "contains"
-    EXECUTIONPLAN {
-        string name
-    }
+  %% Execution Data
+  J --> FF[Exec. Plan. Dataset]:::yellow
+  FF --> Y
+  FF --> W
 
-    CLOUDOBJECTINSTANCE ||--|| BILLINGOPTION : "billed via"
-    CLOUDOBJECTINSTANCE {
-        string objectName
-    }
-
-    BILLINGOPTION {
-        string billingName
-        string provider
-        int    timePeriod
-    }
-
-    CLOUDOBJECTINSTANCE ||--|{ CONTRACTEDCAPACITY : "contracts"
-    CONTRACTEDCAPACITY {
-        string capacityName
-        double quantity
-        double granularity
-    }
-
-    CONTRACTEDCAPACITY }o--|| CAPACITY : "covers"
-
-    EXECUTIONPLAN ||--o{ USAGEPROFILE : "profiled as"
-    CLOUDOBJECTINSTANCE ||--o{ USAGEPROFILE : "configures"
-    USAGEPROFILE {
-        string cloudObjectID
-        string planName
-    }
 ```
+
 
 The key entities are:
 
