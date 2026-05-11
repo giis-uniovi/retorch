@@ -89,12 +89,6 @@ erDiagram
     CLOUDOBJECTINSTANCE ||--|| BILLINGOPTION : "billed via"
     CLOUDOBJECTINSTANCE {
         string objectName
-        double startSetUp
-        double endSetUp
-        double startTJobExec
-        double endTJobExec
-        double startTearDown
-        double endTearDown
     }
 
     BILLINGOPTION {
@@ -489,9 +483,9 @@ For each Cloud Object Instance the tester must specify:
   - `capacityName`: One of `memory`, `processor`, `storage`, `slots`.
   - `quantity`: Total contracted amount.
   - `granularity`: Smallest provisionable unit (e.g. `32` for a full VM, `0.1` for containers, `1` for slots).
-- `startSetUp`, `endSetUp`: Relative times (seconds) for the COI setup phase within the profiling window.
-- `startTJobExec`, `endTJobExec`: Relative times for the test execution phase.
-- `startTearDown`, `endTearDown`: Relative times for the teardown phase.
+
+The COI lifecycle times (setup, execution, and teardown start/end) are derived automatically from the average
+lifecycle duration CSV produced in the next step — they do not need to be specified in the JSON file.
 
 The following snippet shows an example with one VM-based Cloud Object Instance:
 
@@ -516,15 +510,12 @@ The following snippet shows an example with one VM-based Cloud Object Instance:
       "storage":   { "capacityName": "storage",   "quantity": 32.0, "granularity": 32.0 },
       "slots":     { "capacityName": "slots",     "quantity":  8.0, "granularity":  1.0 }
     },
-    "startSetUp":    0.0,
-    "endSetUp":      3.0,
-    "startTJobExec": 4.0,
-    "endTJobExec":   3580.0,
-    "startTearDown": 3590.0,
-    "endTearDown":   3600.0
   }
 ]
 ```
+
+An example of this file for the FullTeaching test suite can be found at
+[FullTeachingCloudObjectInstances.json](https://github.com/giis-uniovi/retorch-st-fullteaching/blob/main/.retorch/infra/FullTeachingCloudObjectInstances.json).
 
 ### Generate the average lifecycle duration file from the CI execution data
 
@@ -564,10 +555,11 @@ saves one set of PNG charts per instance:
 
 ```java
 usageProfiler.generateCOIUsageProfiles(
-        "FullTeaching",          // system name — loads FullTeachingCloudObjectInstances.json
-        "./output/profile.csv",  // raw TJob profile from previous step
-        "./output/",             // output folder for CSV files and chart images
-        plan.getName()           // plan name used to label the charts
+        "FullTeaching",                  // system name — loads FullTeachingCloudObjectInstances.json
+        "./output/profile.csv",          // raw TJob profile from previous step
+        "./averagedurationfile.csv",     // avg duration CSV — used to derive COI lifecycle times
+        "./output/",                     // output folder for CSV files and chart images
+        plan.getName()                   // plan name used to label the charts
 );
 ```
 
@@ -619,7 +611,7 @@ class RetorchGenerateJenkinfileTest {
 
         // Step 3: overlay contracted capacities and generate charts for each configured COI
         usageProfiler.generateCOIUsageProfiles("sutexample", "./output/profile.csv",
-                "./output/", plan.getName());
+                "./averagedurationfile.csv", "./output/", plan.getName());
     }
 }
 ```

@@ -1,5 +1,7 @@
 package giis.retorch.profiling.main;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,9 +14,12 @@ import giis.retorch.profiling.profilegeneration.ProfilePlotter;
 import giis.retorch.profiling.report.UsageProfileReportGenerator;
 import giis.retorch.profiling.utils.COISerializer;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static giis.retorch.profiling.utils.CsvConstants.*;
 
 /**
  * {@code UsageProfilerToolBox} provides the main methods to generate the different Usage Profiles.
@@ -63,15 +68,18 @@ public class UsageProfilerToolBox {
      * @param systemName     Name of the system — used to locate {@code <systemName>CloudObjectInstances.json}.
      * @param profileCsvPath Path to the raw TJob usage profile CSV (output of
      *                       {@link ProfileGenerator#generateExecutionPlanCapacitiesUsage}).
+     * @param avgCsvPath     Path to the average lifecycle duration CSV (output of
+     *                       {@link #generateAverageDurationCSVFile}), used to derive the COI lifecycle times.
      * @param outputPath     Folder where per-COI contracted-capacity CSVs and chart PNG images will be written.
      * @param planName       Name of the {@code ExecutionPlan}, used to label the generated charts.
      * @throws IOException if the configuration file cannot be read or a profile CSV cannot be written.
      */
-    public void generateCOIUsageProfiles(String systemName, String profileCsvPath,
+    public void generateCOIUsageProfiles(String systemName, String profileCsvPath, String avgCsvPath,
                                           String outputPath, String planName) throws IOException {
         log.debug("Loading Cloud Object Instances for system: {}", systemName);
         List<CloudObjectInstance> cloudObjectInstances =
                 new COISerializer().deserializeCloudObjectInstances(systemName);
+        double[] times = readLifecycleTimesFromCsv(avgCsvPath);
         ProfileGenerator profileGenerator = new ProfileGenerator();
         List<UsageProfile> profiles = new ArrayList<>();
         String sep = outputPath.endsWith("/") || outputPath.endsWith(java.io.File.separator) ? "" : "/";
@@ -79,6 +87,7 @@ public class UsageProfilerToolBox {
         String profilesPath = outputPath + sep + "profiles/";
         for (CloudObjectInstance coi : cloudObjectInstances) {
             log.debug("Generating usage profile for COI: {}", coi.getName());
+            coi.setLifecycleTimes(times[0], times[1], times[2], times[3], times[4], times[5]);
             String coiProfilePath = outputPath + sep + "profile_" + coi.getName() + ".csv";
             profileGenerator.generateCOIContractedCapacities(profileCsvPath, coiProfilePath, coi);
             ProfilePlotter plotter = new ProfilePlotter(coiProfilePath);
@@ -86,5 +95,36 @@ public class UsageProfilerToolBox {
             profiles.add(plotter.getUsageProfile());
         }
         new UsageProfileReportGenerator().generateReport(profiles, outputPath, planName);
+    }
+
+    private double[] readLifecycleTimesFromCsv(String avgCsvPath) {
+        String[] headers = {TJOB_HEADER, STAGE_HEADER,
+                COI_SETUP_LABEL + START_SUFFIX, COI_SETUP_LABEL + END_SUFFIX,
+                TJOB_SETUP_LABEL + START_SUFFIX, TJOB_SETUP_LABEL + END_SUFFIX,
+                TJOB_TEST_EXEC_LABEL + START_SUFFIX, TJOB_TEST_EXEC_LABEL + END_SUFFIX,
+                TJOB_TEARDOWN_LABEL + START_SUFFIX, TJOB_TEARDOWN_LABEL + END_SUFFIX,
+                COI_TEARDOWN_LABEL + START_SUFFIX, COI_TEARDOWN_LABEL + END_SUFFIX};
+        double startSetUp = 0.0;
+        double endSetUp = 0.0;
+        double startTJobExec = Double.MAX_VALUE;
+        double endTJobExec = 0.0;
+        double startTearDown = 0.0;
+        double endTearDown = 0.0;
+        try (FileReader reader = new FileReader(avgCsvPath)) {
+            CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                    .setHeader(headers).setDelimiter(";").setSkipHeaderRecord(true).build();
+            for (CSVRecord csvRecord : csvFormat.parse(reader)) {
+                endSetUp      = Double.parseDouble(csvRecord.get(COI_SETUP_LABEL + END_SUFFIX));
+                startTJobExec = Math.min(startTJobExec, Double.parseDouble(csvRecord.get(TJOB_SETUP_LABEL + START_SUFFIX)));
+                endTJobExec   = Math.max(endTJobExec,   Double.parseDouble(csvRecord.get(TJOB_TEARDOWN_LABEL + END_SUFFIX)));
+                startTearDown = Double.parseDouble(csvRecord.get(COI_TEARDOWN_LABEL + START_SUFFIX));
+                endTearDown   = Double.parseDouble(csvRecord.get(COI_TEARDOWN_LABEL + END_SUFFIX));
+            }
+        } catch (IOException e) {
+            log.error("Error reading avg duration CSV to derive COI lifecycle times: {}", e.getMessage());
+        }
+        return new double[]{startSetUp, endSetUp,
+                startTJobExec == Double.MAX_VALUE ? 0.0 : startTJobExec,
+                endTJobExec, startTearDown, endTearDown};
     }
 }
