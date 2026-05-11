@@ -38,6 +38,9 @@ public class COISerializer {
     }
 
     public List<CloudObjectInstance> deserializeCloudObjectInstances(String systemName) throws IOException {
+        if (systemName == null || systemName.contains("..") || systemName.contains("/") || systemName.contains("\\") || systemName.contains(File.separator)) {
+            throw new IllegalArgumentException("Invalid systemName: path traversal detected (" + systemName + ")");
+        }
         logSerializer.debug("Deserializing the Cloud Object Instances placed in the file:{}{}{}",FOLDER_RESOURCES ,systemName , "CloudObjectInstances.json");
         return deserialize(FOLDER_RESOURCES + systemName + "CloudObjectInstances.json", new  TypeReference<List<CloudObjectInstance>>() {
         });

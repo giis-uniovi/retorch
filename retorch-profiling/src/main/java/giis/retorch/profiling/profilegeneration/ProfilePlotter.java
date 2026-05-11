@@ -6,6 +6,7 @@ import static giis.retorch.profiling.utils.CsvConstants.AGGREGATION_VALUE;
 import static giis.retorch.profiling.utils.CsvConstants.TJOB_HEADER;
 import static giis.retorch.profiling.utils.CsvConstants.CAPACITY_HEADER;
 import static giis.retorch.profiling.utils.CsvConstants.LIFECYCLE_HEADER;
+import static giis.retorch.profiling.utils.CsvConstants.CSV_DELIMITER;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -46,15 +47,13 @@ public class ProfilePlotter {
     private List<CSVRecord> csvProfileRecords;
     private UsageProfile usageProfile;
 
-    public ProfilePlotter(String path) {
+    public ProfilePlotter(String path) throws IOException {
         csvProfileRecords = Collections.emptyList();
         try (FileReader fileReader = new FileReader(path)) {
-            CSVFormat csvFormat = CSVFormat.DEFAULT.builder().setDelimiter(";").setHeader()
+            CSVFormat csvFormat = CSVFormat.DEFAULT.builder().setDelimiter(CSV_DELIMITER).setHeader()
                     .setSkipHeaderRecord(true)
                     .build();
             csvProfileRecords = csvFormat.parse(fileReader).getRecords();
-        } catch (IOException e) {
-            log.error("Error opening the file: {}", e.getMessage());
         }
     }
 
@@ -68,7 +67,7 @@ public class ProfilePlotter {
      * of the {@code ExecutionPlan}. The Maps are populated with the loadCapacitiesData() for then create the superposed
      * Graphs and store it into the 'target/profiles' folder.
      *
-     * @param outputFolder String with the folder where the Profiles will be stored
+     * @param imagesFolder String with the folder where the Profiles will be stored
      * @param planName String with the name of the {@code ExecutionPlan}
      *
      */
@@ -90,8 +89,8 @@ public class ProfilePlotter {
      */
     private void loadCapacitiesData(Map<String, DefaultTableXYDataset> capacitiesData, Map<String, DefaultTableXYDataset> contractedCapacitiesData) {
         for (CSVRecord lifecycleRecord : csvProfileRecords) {
-            if (lifecycleRecord.get(TJOB_HEADER).equals(AGGREGATION_VALUE)) {
-                boolean isContracted = lifecycleRecord.get(LIFECYCLE_HEADER).equals("CONTRACTED");
+            if (AGGREGATION_VALUE.equals(lifecycleRecord.get(TJOB_HEADER))) {
+                boolean isContracted = "CONTRACTED".equals(lifecycleRecord.get(LIFECYCLE_HEADER));
                 String capacityHeader = lifecycleRecord.get(CAPACITY_HEADER);
                 Map<String, DefaultTableXYDataset> targetMap = isContracted ? contractedCapacitiesData : capacitiesData;
 
@@ -166,13 +165,6 @@ public class ProfilePlotter {
         }
     }
 
-    /**
-     * The {@code createAndSaveGraphs} support method generates the Map of Plots of the {@code CloudObjectInstance}
-     * {@code ContractedCapacity}s.
-     *
-     * @param mapCapacitiesCloudObject Map of XYDataset with the data of the different {@code ContractedCapacity} contracted
-     *
-     */
     public Map<String, XYPlot> generateXYCloudObjectPlots(Map<String, DefaultTableXYDataset> mapCapacitiesCloudObject) {
         HashMap<String, XYPlot> mapCapacities = new HashMap<>();
         for (Map.Entry<String, DefaultTableXYDataset> capacity : mapCapacitiesCloudObject.entrySet()) {
@@ -242,7 +234,7 @@ public class ProfilePlotter {
      * The {@code saveChartAsFormat} support method enables the storing of the superposed JFreeChart with {@code ContractedCapacity}
      * against the used {@code Capacity}.
      * @param format String with the format, supports png and svg formats
-     * @param filePath  String with the path where the images will be stored
+     * @param imagesPath  String with the path where the images will be stored
      * @param height Int with the height of the chart
      * @param width Int with the width of the chart
      */
@@ -272,12 +264,16 @@ public class ProfilePlotter {
                     DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
                     Document document = domImpl.createDocument(null, "svg", null);
                     SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-                    svgGenerator.setSVGCanvasSize(new Dimension(width, height));
-                    chart.draw(svgGenerator, new Rectangle(width, height));
-                    try (FileWriter out = new FileWriter(pathGraph + ".svg")) {
-                        svgGenerator.stream(out, true);
-                    } catch (IOException e) {
-                        log.error("Error saving chart as SVG:{} ", e.getMessage());
+                    try {
+                        svgGenerator.setSVGCanvasSize(new Dimension(width, height));
+                        chart.draw(svgGenerator, new Rectangle(width, height));
+                        try (FileWriter out = new FileWriter(pathGraph + ".svg")) {
+                            svgGenerator.stream(out, true);
+                        } catch (IOException e) {
+                            log.error("Error saving chart as SVG:{} ", e.getMessage());
+                        }
+                    } finally {
+                        svgGenerator.dispose();
                     }
 
                 } else {

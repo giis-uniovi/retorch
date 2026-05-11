@@ -31,7 +31,6 @@ public class IntProfilerComponentsTests {
     private final String debugOutBasePath = "target/debug";
     private ProfilerDataGenerationUtils dataGenerationUtils;
     private ProfileGenerator generator;
-    private ProfilePlotter plotter;
     private ProfilerTestUtils utils;
     private final String outputProfilePath = outBasePath + "/profiles/";
 
@@ -55,8 +54,8 @@ public class IntProfilerComponentsTests {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
         plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_vm.csv", 3600, 4);
-        generator.generateCOIContractedCapacities(outBasePath + "/output_profile_vm.csv", outBasePath + "/profileIntegrationCOI_VM.csv", dataGenerationUtils.generateVMCloudObjectInstances());
-        plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_VM.csv");
+        generator.writeCOIContractedCapacitiesCSV(outBasePath + "/output_profile_vm.csv", outBasePath + "/profileIntegrationCOI_VM.csv", dataGenerationUtils.generateVMCloudObjectInstances());
+        ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_VM.csv");
 
         plotter.generateTotalTJobUsageProfileCharts(outputProfilePath, outputProfilePath, plan.getName(), "vm");
 
@@ -69,8 +68,8 @@ public class IntProfilerComponentsTests {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
         plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_container.csv", 3600, 4);
-        generator.generateCOIContractedCapacities(outBasePath + "/output_profile_int_container.csv", outBasePath + "/profileIntegrationCOI_container.csv", dataGenerationUtils.generateContainersCloudObjectInstances());
-        plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_container.csv");
+        generator.writeCOIContractedCapacitiesCSV(outBasePath + "/output_profile_int_container.csv", outBasePath + "/profileIntegrationCOI_container.csv", dataGenerationUtils.generateContainersCloudObjectInstances());
+        ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_container.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", outBasePath + "/profiles", plan.getName(), "containers");
 
         assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-containers-UsageProfile.serialized", plotter.getUsageProfile(), "containers"));
@@ -82,8 +81,8 @@ public class IntProfilerComponentsTests {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
         plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_services.csv", 3600, 4);
-        generator.generateCOIContractedCapacities(outBasePath + "/output_profile_int_services.csv", outBasePath + "/profileIntegrationCOI_services.csv", dataGenerationUtils.generateBrowserServiceCloudObjectInstances());
-        plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_services.csv");
+        generator.writeCOIContractedCapacitiesCSV(outBasePath + "/output_profile_int_services.csv", outBasePath + "/profileIntegrationCOI_services.csv", dataGenerationUtils.generateBrowserServiceCloudObjectInstances());
+        ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_services.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", outBasePath + "/profiles", plan.getName(), "services");
         assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-services-UsageProfile.serialized", plotter.getUsageProfile(),"services"));
 

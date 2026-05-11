@@ -54,19 +54,19 @@ public class ProfileGeneratorTests  {
 
     @Test
     public void testProfileCOIGeneratorVM() throws IOException {
-        generator.generateCOIContractedCapacities(inBasePath + "/imp_tjobusageprofile.csv", outBasePath + "/profiledataCOIVM.csv", utils.generateVMCloudObjectInstances());
+        generator.writeCOIContractedCapacitiesCSV(inBasePath + "/imp_tjobusageprofile.csv", outBasePath + "/profiledataCOIVM.csv", utils.generateVMCloudObjectInstances());
         testFilesForPath(expOutBasePath + "/expected_profiledataCOIVM.csv", outBasePath + "/profiledataCOIVM.csv");
     }
 
     @Test
     public void testProfileCOIGeneratorContainers() throws IOException {
-        generator.generateCOIContractedCapacities(inBasePath + "/imp_tjobusageprofile.csv", outBasePath + "/profiledataCOIContainers.csv", utils.generateContainersCloudObjectInstances());
+        generator.writeCOIContractedCapacitiesCSV(inBasePath + "/imp_tjobusageprofile.csv", outBasePath + "/profiledataCOIContainers.csv", utils.generateContainersCloudObjectInstances());
         testFilesForPath(expOutBasePath + "/expected_profiledataCOIContainers.csv", outBasePath + "/profiledataCOIContainers.csv");
     }
 
     @Test
     public void testProfileCOIGeneratorBrowsers() throws IOException {
-        generator.generateCOIContractedCapacities(inBasePath + "/ìmp_tjobusageprofilewithslots.csv", outBasePath + "/profiledataCOIServices.csv", utils.generateBrowserServiceCloudObjectInstances());
+        generator.writeCOIContractedCapacitiesCSV(inBasePath + "/imp_tjobusageprofilewithslots.csv", outBasePath + "/profiledataCOIServices.csv", utils.generateBrowserServiceCloudObjectInstances());
         testFilesForPath(expOutBasePath + "/expected_profiledataCOIServices.csv", outBasePath + "/profiledataCOIServices.csv");
     }
     public static void testFilesForPath(String expectedOutputPath, String outputPath) throws IOException {

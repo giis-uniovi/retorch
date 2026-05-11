@@ -31,8 +31,8 @@ public class ContractedCapacity extends Capacity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContractedCapacity that = (ContractedCapacity) o;
-        return Objects.equals(this.getName(), that.getName()) && Objects.equals(this.getQuantity(),
-                that.getQuantity()) && Objects.equals(this.granularity, that.getGranularity());
+        return Objects.equals(this.getName(), that.getName()) && Double.compare(this.getQuantity(),
+                that.getQuantity()) == 0 && Double.compare(this.granularity, that.getGranularity()) == 0;
     }
 
 

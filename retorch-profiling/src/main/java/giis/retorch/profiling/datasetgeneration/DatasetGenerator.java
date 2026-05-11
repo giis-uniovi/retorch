@@ -60,7 +60,7 @@ public class DatasetGenerator {
         for (File file : csvFiles) {
             try (FileReader fileReader = new FileReader(file)) {
                 CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-                        .setHeader(tableHeaders).setDelimiter(";")
+                        .setHeader(tableHeaders).setDelimiter(CSV_DELIMITER)
                         .setSkipHeaderRecord(true)
                         .build();
 
@@ -194,7 +194,7 @@ public class DatasetGenerator {
      * @param listTuples The list of {@code DataTuple} containing time data.
      * @param outputPath The path where the generated CSV file will be saved.
      */
-    public void createCSVAvgFromListDataTuplesOrdered(List<DataTuple> listTuples, String outputPath) {
+    public void createCSVAvgFromListDataTuplesOrdered(List<DataTuple> listTuples, String outputPath) throws IOException {
         if (listTuples.isEmpty()) {
             log.error("No data tuples provided for CSV creation");
             return;
@@ -210,7 +210,7 @@ public class DatasetGenerator {
         ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath);
              CSVPrinter printer = new CSVPrinter(out,
-                     CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(";").build())) {
+                     CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(CSV_DELIMITER).build())) {
             for (DataTuple tuple : listTuples) {
                 Map<String, Double> durations = tuple.getLifecycleDuration();
                 Double stageStartTime = startingStages.get(tuple.getStage());
@@ -219,7 +219,7 @@ public class DatasetGenerator {
                 printer.printRecord(
                         tuple.getIdTJob(),
                         tuple.getStage(),
-                        "0.0",
+                        "0.0", // COI setup always starts at time 0
                         String.format(Locale.ENGLISH, "%.1f", durations.get(COI_SETUP_LABEL)),
                         String.format(Locale.ENGLISH, "%.1f", stageStartTime),
                         String.format(Locale.ENGLISH, "%.1f", stageStartTime + durations.get(TJOB_SETUP_LABEL)),
@@ -234,7 +234,7 @@ public class DatasetGenerator {
                         String.format(Locale.ENGLISH, "%.1f", lastJobEndTime + durations.get(COI_TEARDOWN_LABEL)));
             }
         } catch (IOException e) {
-            log.error("Error writing CSV file: {}", e.getMessage());
+            throw new IOException("Error writing CSV file: " + outputPath, e);
         }
     }
 
@@ -247,6 +247,9 @@ public class DatasetGenerator {
      * @return A map containing starting stages for each stage.
      */
     private Map<Integer, Double> calculateStartingStages(List<DataTuple> listTuples) {
+        if (listTuples == null || listTuples.isEmpty()) {
+            throw new IllegalArgumentException("listTuples must not be null or empty");
+        }
         Map<Integer, Double> startingStages = new HashMap<>();
         startingStages.put(0, listTuples.get(0).getLifecycleDuration().get(COI_SETUP_LABEL) + STAGE_GAP_SECONDS);
 

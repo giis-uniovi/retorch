@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -12,29 +13,17 @@ import java.util.stream.Collectors;
  */
 public class CloudObjectInstance {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(CloudObjectInstance.class);
 
     private String name;
     private final Map<String, ContractedCapacity> contractedCapacities;
     private BillingOption billingOption;
-    private double startSetUp;
-    private double endSetUp;
-    private double startTJobExec;
-    private double endTJobExec;
-    private double startTearDown;
-    private double endTearDown;
-
-    public static final String SETUP_NAME = "setup";
-    public static final String TESTEXECUTION_NAME = "testexec";
-    public static final String TEARDOWN_NAME = "teardown";
-
-    protected static final Set<String> LIST_TJOB_LIFECYCLE;
-    static {
-        LIST_TJOB_LIFECYCLE = new HashSet<>();
-        LIST_TJOB_LIFECYCLE.add(SETUP_NAME);
-        LIST_TJOB_LIFECYCLE.add(TESTEXECUTION_NAME);
-        LIST_TJOB_LIFECYCLE.add(TEARDOWN_NAME);
-    }
+    private double startSetUp = Double.NaN;
+    private double endSetUp = Double.NaN;
+    private double startTJobExec = Double.NaN;
+    private double endTJobExec = Double.NaN;
+    private double startTearDown = Double.NaN;
+    private double endTearDown = Double.NaN;
 
     public CloudObjectInstance(@JsonProperty("objectName")String name, @JsonProperty("billingOption")BillingOption option,
                                @JsonProperty("capacitiesContracted")Map<String, ContractedCapacity> contractedCapacities) {
@@ -57,8 +46,6 @@ public class CloudObjectInstance {
                 .collect(Collectors.toList());
     }
     public BillingOption getBillingOption() {return billingOption;}
-    public static Set<String> getTJobLifecycles(){ return LIST_TJOB_LIFECYCLE;}
-
     public void setName(String name) {this.name = name;}
     public void setEndSetUp(double endSetUp) {this.endSetUp = endSetUp;}
     public void setStartSetUp(double startSetUp) {this.startSetUp = startSetUp;}

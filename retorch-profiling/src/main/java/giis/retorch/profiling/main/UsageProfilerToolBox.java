@@ -46,7 +46,7 @@ public class UsageProfilerToolBox {
      * @param inputPath  The path where execution data CSV files are located.
      * @param outputPath The path where the average duration CSV file will be written.
      */
-    public void generateAverageDurationCSVFile(String inputPath, String outputPath) {
+    public void generateAverageDurationCSVFile(String inputPath, String outputPath) throws IOException {
         log.debug("Generating the DataTuples");
         List<DataTuple> listTuples = generator.generateListTuplesAvgTimes(inputPath);
         log.debug("Creating the CSV file from the DataTuples");
@@ -89,7 +89,7 @@ public class UsageProfilerToolBox {
             log.debug("Generating usage profile for COI: {}", coi.getName());
             coi.setLifecycleTimes(times[0], times[1], times[2], times[3], times[4], times[5]);
             String coiProfilePath = outputPath + sep + "profile_" + coi.getName() + ".csv";
-            profileGenerator.generateCOIContractedCapacities(profileCsvPath, coiProfilePath, coi);
+            profileGenerator.writeCOIContractedCapacitiesCSV(profileCsvPath, coiProfilePath, coi);
             ProfilePlotter plotter = new ProfilePlotter(coiProfilePath);
             plotter.generateTotalTJobUsageProfileCharts(imagesPath, profilesPath, planName, coi.getName());
             profiles.add(plotter.getUsageProfile());
@@ -97,7 +97,7 @@ public class UsageProfilerToolBox {
         new UsageProfileReportGenerator().generateReport(profiles, outputPath, planName);
     }
 
-    private double[] readLifecycleTimesFromCsv(String avgCsvPath) {
+    private double[] readLifecycleTimesFromCsv(String avgCsvPath) throws IOException {
         String[] headers = {TJOB_HEADER, STAGE_HEADER,
                 COI_SETUP_LABEL + START_SUFFIX, COI_SETUP_LABEL + END_SUFFIX,
                 TJOB_SETUP_LABEL + START_SUFFIX, TJOB_SETUP_LABEL + END_SUFFIX,
@@ -108,23 +108,21 @@ public class UsageProfilerToolBox {
         double endSetUp = 0.0;
         double startTJobExec = Double.MAX_VALUE;
         double endTJobExec = 0.0;
-        double startTearDown = 0.0;
+        double startTearDown = Double.MAX_VALUE;
         double endTearDown = 0.0;
         try (FileReader reader = new FileReader(avgCsvPath)) {
             CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-                    .setHeader(headers).setDelimiter(";").setSkipHeaderRecord(true).build();
+                    .setHeader(headers).setDelimiter(CSV_DELIMITER).setSkipHeaderRecord(true).build();
             for (CSVRecord csvRecord : csvFormat.parse(reader)) {
-                endSetUp      = Double.parseDouble(csvRecord.get(COI_SETUP_LABEL + END_SUFFIX));
+                endSetUp      = Math.max(endSetUp,   Double.parseDouble(csvRecord.get(COI_SETUP_LABEL + END_SUFFIX)));
                 startTJobExec = Math.min(startTJobExec, Double.parseDouble(csvRecord.get(TJOB_SETUP_LABEL + START_SUFFIX)));
                 endTJobExec   = Math.max(endTJobExec,   Double.parseDouble(csvRecord.get(TJOB_TEARDOWN_LABEL + END_SUFFIX)));
-                startTearDown = Double.parseDouble(csvRecord.get(COI_TEARDOWN_LABEL + START_SUFFIX));
-                endTearDown   = Double.parseDouble(csvRecord.get(COI_TEARDOWN_LABEL + END_SUFFIX));
+                startTearDown = Math.min(startTearDown, Double.parseDouble(csvRecord.get(COI_TEARDOWN_LABEL + START_SUFFIX)));
+                endTearDown   = Math.max(endTearDown,   Double.parseDouble(csvRecord.get(COI_TEARDOWN_LABEL + END_SUFFIX)));
             }
-        } catch (IOException e) {
-            log.error("Error reading avg duration CSV to derive COI lifecycle times: {}", e.getMessage());
         }
         return new double[]{startSetUp, endSetUp,
                 startTJobExec == Double.MAX_VALUE ? 0.0 : startTJobExec,
-                endTJobExec, startTearDown, endTearDown};
+                endTJobExec, startTearDown == Double.MAX_VALUE ? 0.0 : startTearDown, endTearDown};
     }
 }

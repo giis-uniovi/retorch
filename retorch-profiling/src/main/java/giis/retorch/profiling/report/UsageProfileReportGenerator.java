@@ -52,7 +52,10 @@ public class UsageProfileReportGenerator {
      */
     public void generateReport(List<UsageProfile> profiles, String outputPath, String planName) throws IOException {
         String reportPath = outputPath + planName + "-UsageProfile.pdf";
-        new File(outputPath).mkdirs();
+        File outputDir = new File(outputPath);
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();
+        }
         log.info("Generating Usage Profile PDF report: {}", reportPath);
 
         try (PdfDocument pdf = new PdfDocument(new PdfWriter(reportPath));

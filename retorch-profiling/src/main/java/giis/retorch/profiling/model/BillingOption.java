@@ -35,11 +35,4 @@ public class BillingOption {
     public void setCloudProvider(String cloudProvider) {this.cloudProvider = cloudProvider;}
     public void setInvoicedPrices(Map<String, Double> invoicedPrices) {this.invoicedPrices = invoicedPrices;}
     public void setTimePeriod(int timePeriod) {this.timePeriod = timePeriod;}
-
-
-
-
-
-
-
 }

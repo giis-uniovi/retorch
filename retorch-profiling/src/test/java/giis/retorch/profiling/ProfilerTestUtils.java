@@ -34,8 +34,8 @@ import java.util.Map;
  */
 public class ProfilerTestUtils {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
-    private String debugPath= "target/debug/";
+    private static final Logger log = LoggerFactory.getLogger(ProfilerTestUtils.class);
+    private final String debugPath = System.getProperty("profiler.debug.path", "target/debug/");
 
     public static void ensureDirectoryExists(String path, Logger log) {
         File dir = new File(path);

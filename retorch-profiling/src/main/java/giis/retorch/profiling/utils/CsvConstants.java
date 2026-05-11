@@ -24,6 +24,9 @@ public final class CsvConstants {
     public static final String START_SUFFIX = "-start";
     public static final String END_SUFFIX   = "-end";
 
+    /** Delimiter used in CSV files. */
+    public static final String CSV_DELIMITER = ";";
+
     /** Number of fixed header columns (executionplan, tjobname, lifecyclephase, capacity) before time-series data. */
     public static final int CSV_DATA_START_COLUMN = 4;
 }
