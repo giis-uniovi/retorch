@@ -74,12 +74,15 @@ public class UsageProfilerToolBox {
                 new COISerializer().deserializeCloudObjectInstances(systemName);
         ProfileGenerator profileGenerator = new ProfileGenerator();
         List<UsageProfile> profiles = new ArrayList<>();
+        String sep = outputPath.endsWith("/") || outputPath.endsWith(java.io.File.separator) ? "" : "/";
+        String imagesPath = outputPath + sep + "images/";
+        String profilesPath = outputPath + sep + "profiles/";
         for (CloudObjectInstance coi : cloudObjectInstances) {
             log.debug("Generating usage profile for COI: {}", coi.getName());
-            String coiProfilePath = outputPath + "profile_" + coi.getName() + ".csv";
+            String coiProfilePath = outputPath + sep + "profile_" + coi.getName() + ".csv";
             profileGenerator.generateCOIContractedCapacities(profileCsvPath, coiProfilePath, coi);
             ProfilePlotter plotter = new ProfilePlotter(coiProfilePath);
-            plotter.generateTotalTJobUsageProfileCharts(outputPath, planName, coi.getName());
+            plotter.generateTotalTJobUsageProfileCharts(imagesPath, profilesPath, planName, coi.getName());
             profiles.add(plotter.getUsageProfile());
         }
         new UsageProfileReportGenerator().generateReport(profiles, outputPath, planName);

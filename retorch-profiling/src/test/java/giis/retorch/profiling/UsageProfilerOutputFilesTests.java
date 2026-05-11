@@ -22,6 +22,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -65,7 +66,7 @@ public class UsageProfilerOutputFilesTests {
         generator.generateCOIContractedCapacities(
                 OUT_BASE + "/raw_profile.csv", OUT_BASE + "/profile_vm.csv", vm);
         new ProfilePlotter(OUT_BASE + "/profile_vm.csv")
-                .generateTotalTJobUsageProfileCharts(CHARTS_DIR, plan.getName(), "vm");
+                .generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), "vm");
 
         assertValidPng(CHARTS_DIR + "/" + plan.getName() + "-vm-memory.png");
         assertValidPng(CHARTS_DIR + "/" + plan.getName() + "-vm-processor.png");
@@ -79,7 +80,7 @@ public class UsageProfilerOutputFilesTests {
         generator.generateCOIContractedCapacities(
                 OUT_BASE + "/raw_profile.csv", OUT_BASE + "/profile_containers.csv", containers);
         new ProfilePlotter(OUT_BASE + "/profile_containers.csv")
-                .generateTotalTJobUsageProfileCharts(CHARTS_DIR, plan.getName(), "containers");
+                .generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), "containers");
 
         // Slots quantity=0 for containers — no chart expected
         assertValidPng(CHARTS_DIR + "/" + plan.getName() + "-containers-memory.png");
@@ -95,7 +96,7 @@ public class UsageProfilerOutputFilesTests {
         generator.generateCOIContractedCapacities(
                 OUT_BASE + "/raw_profile.csv", OUT_BASE + "/profile_services.csv", services);
         new ProfilePlotter(OUT_BASE + "/profile_services.csv")
-                .generateTotalTJobUsageProfileCharts(CHARTS_DIR, plan.getName(), "services");
+                .generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), "services");
 
         // Selenoid: only slots; memory/processor/storage quantity=0
         assertValidPng(CHARTS_DIR + "/" + plan.getName() + "-services-slots.png");
@@ -107,7 +108,7 @@ public class UsageProfilerOutputFilesTests {
     public void testPdfReportGenerated() throws IOException {
         List<UsageProfile> profiles = new ArrayList<>();
 
-        for (CloudObjectInstance coi : List.of(
+        for (CloudObjectInstance coi : Arrays.asList(
                 dataUtils.generateVMCloudObjectInstances(),
                 dataUtils.generateContainersCloudObjectInstances(),
                 dataUtils.generateBrowserServiceCloudObjectInstances())) {
@@ -115,7 +116,7 @@ public class UsageProfilerOutputFilesTests {
             String coiCsv  = OUT_BASE + "/profile_pdf_" + coiName + ".csv";
             generator.generateCOIContractedCapacities(OUT_BASE + "/raw_profile.csv", coiCsv, coi);
             ProfilePlotter plotter = new ProfilePlotter(coiCsv);
-            plotter.generateTotalTJobUsageProfileCharts(CHARTS_DIR, plan.getName(), coiName);
+            plotter.generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), coiName);
             profiles.add(plotter.getUsageProfile());
         }
 

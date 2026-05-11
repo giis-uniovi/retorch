@@ -45,7 +45,7 @@ public class ProfilePlotterTests {
         plan.setName("unit-"+plan.getName());
         ProfilePlotter plotter = new ProfilePlotter(inBasePath + "/imp_usageprofileplotter.csv");
         dataGenerationUtils.generateVMCloudObjectInstances();
-        plotter.generateTotalTJobUsageProfileCharts(outBasePath,plan.getName(),"exampleCOI");
+        plotter.generateTotalTJobUsageProfileCharts(outBasePath, outBasePath, plan.getName(), "exampleCOI");
         assertEquals(12, plan.gettJobClassList().size());
         assertTrue("The exampleCOI UsageProfile are not equal, check the debugging file located in: /target/debug folder", utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-exampleCOI-UsageProfile.serialized", plotter.getUsageProfile(),"exampleCOI"));
 

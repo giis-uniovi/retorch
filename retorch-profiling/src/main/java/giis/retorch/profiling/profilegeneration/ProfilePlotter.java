@@ -72,14 +72,14 @@ public class ProfilePlotter {
      * @param planName String with the name of the {@code ExecutionPlan}
      *
      */
-    public void generateTotalTJobUsageProfileCharts(String outputFolder, String planName,String coiName) {
+    public void generateTotalTJobUsageProfileCharts(String imagesFolder, String serializedFolder, String planName, String coiName) {
         Map<String, DefaultTableXYDataset> capacitiesData = new HashMap<>();
         Map<String, DefaultTableXYDataset> contractedCapacitiesData = new HashMap<>();
 
         loadCapacitiesData(capacitiesData,contractedCapacitiesData);
         Map<String, XYPlot> mapPlotsUsage = generateXYCloudObjectPlots(contractedCapacitiesData);
         generateUsageProfiles(planName,coiName, capacitiesData, mapPlotsUsage);
-        saveChartsAsFormat(coiName,outputFolder,"png", 1200, 400);
+        saveChartsAsFormat(coiName, imagesFolder, serializedFolder, "png", 1200, 400);
     }
     /**
      * The {@code loadCapacitiesData} load the imported raw Usage Profile into the  two Maps with XYDataset created.
@@ -246,13 +246,16 @@ public class ProfilePlotter {
      * @param height Int with the height of the chart
      * @param width Int with the width of the chart
      */
-    private void saveChartsAsFormat(String coiName,String filePath,String format, int width, int height) {
-        new File(filePath).mkdirs();
+    private void saveChartsAsFormat(String coiName, String imagesPath, String serializedPath, String format, int width, int height) {
+        new File(imagesPath).mkdirs();
+        new File(serializedPath).mkdirs();
         UsageProfile profileToSave=usageProfile;
 
-        String separator = filePath.endsWith("/") || filePath.endsWith(File.separator) ? "" : "/";
-        String filePathBase = filePath + separator + profileToSave.getPlanName() + "-" + coiName + "-";
-        serialize( filePathBase+ "UsageProfile.serialized");
+        String serSep = serializedPath.endsWith("/") || serializedPath.endsWith(File.separator) ? "" : "/";
+        serialize(serializedPath + serSep + profileToSave.getPlanName() + "-" + coiName + "-UsageProfile.serialized");
+
+        String separator = imagesPath.endsWith("/") || imagesPath.endsWith(File.separator) ? "" : "/";
+        String filePathBase = imagesPath + separator + profileToSave.getPlanName() + "-" + coiName + "-";
         for (Map.Entry<String, JFreeChart> entry:profileToSave.getPlots().entrySet()) {
             String pathGraph=filePathBase+entry.getKey();
             JFreeChart chart = entry.getValue();
