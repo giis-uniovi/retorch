@@ -355,7 +355,7 @@ public class ProfileGenerator {
                 String[] splitValues = entry.getKey().split("-");
                 String[] arrayHeader = new String[]{scheduling, AGGREGATION_VALUE, "CONTRACTED", splitValues[2]};
                 printer.printRecord(concatenateArrays(arrayHeader,
-                        entry.getValue().toArray(entry.getValue().toArray(new String[0]))));
+                        entry.getValue().toArray(new String[0])));
             }
         } catch (IOException e) {
             throw new IOException("The file :" + outputPath + "Cannot be opened");}

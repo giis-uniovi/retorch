@@ -113,20 +113,6 @@ flowchart LR
 ```
 
 
-The key entities are:
-
-- **TestCase / AccessMode** — each E2E test case is annotated with one or more `@AccessMode` entries, each
-  referencing a `Resource` by ID.
-- **Resource / Capacity** — a `Resource` describes a service or infrastructure component, with minimal
-  `Capacity` requirements (memory, processor, storage, slots) and an `ElasticityModel` for scheduling.
-- **TJob / ExecutionPlan** — the RETORCH classifier and scheduler group annotated test cases into `TJob`s
-  (units of parallel execution) which are arranged into a `ExecutionPlan`.
-- **CloudObjectInstance / BillingOption / ContractedCapacity** — the cloud infrastructure configuration
-  describing what is provisioned (capacities and granularity), how it is billed, and when each lifecycle
-  phase (setup, execution, teardown) takes place.
-- **UsageProfile** — the profiling output that connects an `ExecutionPlan` with a specific
-  `CloudObjectInstance`, capturing how each contracted capacity is consumed over time.
-
 ## RETORCH Annotations
 
 The RETORCH framework provides a set of custom annotations to define and manage Resources used in end-to-end testing.

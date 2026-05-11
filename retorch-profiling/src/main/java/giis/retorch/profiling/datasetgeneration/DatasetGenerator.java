@@ -178,7 +178,7 @@ public class DatasetGenerator {
         Map<String, Double> durations1 = aggregatedTuple.getLifecycleDuration();
         Map<String, Double> durations2 = tuple.getLifecycleDuration();
 
-        durations1.forEach((key, value) -> durations1.merge(key, durations2.get(key), Double::sum));
+        durations2.forEach((key, value) -> durations1.merge(key, value, Double::sum));
         aggregatedTuple.setLifecycleDuration(durations1);
 
         return aggregatedTuple;
@@ -214,8 +214,7 @@ public class DatasetGenerator {
             for (DataTuple tuple : listTuples) {
                 Map<String, Double> durations = tuple.getLifecycleDuration();
                 Double stageStartTime = startingStages.get(tuple.getStage());
-                Double lastJobEndTime = startingStages.get(Collections.max(startingStages.entrySet(),
-                        Map.Entry.comparingByValue()).getKey());
+                Double lastJobEndTime = Collections.max(startingStages.values());
                 printer.printRecord(
                         tuple.getIdTJob(),
                         tuple.getStage(),
