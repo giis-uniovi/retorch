@@ -21,6 +21,7 @@ suite.
     - [RETORCH Framework Model](#retorch-framework-model)
     - [RETORCH Annotations](#retorch-annotations)
     - [RETORCH Orchestration](#retorch-orchestration)
+    - [RETORCH Profiler](#retorch-usage-profiler)
     - [Contributing](#contributing)
     - [Contact](#contact)
     - [Citing this work](#citing-this-work)
