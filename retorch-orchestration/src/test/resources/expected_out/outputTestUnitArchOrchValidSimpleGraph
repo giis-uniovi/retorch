@@ -75,12 +75,11 @@ pipeline {
         }// EndStagetjobe
       } // End Parallel
     } // End Stage
-stage('TEARDOWN-Infrastructure') {
-      failFast false
+    stage('TEARDOWN-Infrastructure') {
       steps {
           sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'
       } // EndStepsTearDownInf
-} // EndStageTearDown
+    } // EndStageTearDown
 } // EndStagesPipeline
 post {
     always {
