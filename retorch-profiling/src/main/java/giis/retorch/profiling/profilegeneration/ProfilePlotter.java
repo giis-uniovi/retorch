@@ -7,6 +7,8 @@ import static giis.retorch.profiling.utils.CsvConstants.TJOB_HEADER;
 import static giis.retorch.profiling.utils.CsvConstants.CAPACITY_HEADER;
 import static giis.retorch.profiling.utils.CsvConstants.LIFECYCLE_HEADER;
 import static giis.retorch.profiling.utils.CsvConstants.CSV_DELIMITER;
+
+import giis.retorch.profiling.utils.FileUtils;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -20,6 +22,7 @@ import org.jfree.chart.renderer.xy.StackedXYAreaRenderer2;
 import org.jfree.chart.renderer.xy.XYAreaRenderer;
 import org.jfree.data.xy.DefaultTableXYDataset;
 import org.jfree.data.xy.XYSeries;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMImplementation;
@@ -71,7 +74,7 @@ public class ProfilePlotter {
      * @param planName String with the name of the {@code ExecutionPlan}
      *
      */
-    public void generateTotalTJobUsageProfileCharts(String imagesFolder, String serializedFolder, String planName, String coiName) {
+    public void generateTotalTJobUsageProfileCharts(String imagesFolder, String serializedFolder, String planName, String coiName) throws IOException {
         Map<String, DefaultTableXYDataset> capacitiesData = new HashMap<>();
         Map<String, DefaultTableXYDataset> contractedCapacitiesData = new HashMap<>();
 
@@ -134,27 +137,7 @@ public class ProfilePlotter {
             );
             // Remove chart background
             chart.setBackgroundPaint(null);
-            XYPlot plot = chart.getXYPlot();
-            plot.setBackgroundPaint(null);
-            plot.setDomainPannable(true);
-            plot.setRangePannable(true);
-
-            // Customizing the decimal separator
-            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-            symbols.setDecimalSeparator('.'); // Set comma as decimal separator
-            DecimalFormat decimalFormat = new DecimalFormat("0.0", symbols);
-
-            // Set the custom format to the domain axis (X-axis)
-            NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
-            domainAxis.setNumberFormatOverride(decimalFormat);
-
-            // Set the custom format to the range axis (Y-axis)
-            NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-            rangeAxis.setNumberFormatOverride(decimalFormat);
-
-
-            StackedXYAreaRenderer2 renderer = getTJobUsageProfileRenderer();
-            plot.setRenderer(renderer);
+            XYPlot plot = getXyPlot(chart);
             if (mapPlotsUsage.containsKey(capacity.getKey()) ) {
                 XYPlot plot2 = mapPlotsUsage.get(capacity.getKey());
                 plot2.setBackgroundPaint(null);
@@ -163,6 +146,31 @@ public class ProfilePlotter {
                 usageProfile.addPlot(capacity.getKey(),chart);
             }
         }
+    }
+
+    private static @NonNull XYPlot getXyPlot(JFreeChart chart) {
+        XYPlot plot = chart.getXYPlot();
+        plot.setBackgroundPaint(null);
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+
+        // Customizing the decimal separator
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+        symbols.setDecimalSeparator('.'); // Set comma as decimal separator
+        DecimalFormat decimalFormat = new DecimalFormat("0.0", symbols);
+
+        // Set the custom format to the domain axis (X-axis)
+        NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
+        domainAxis.setNumberFormatOverride(decimalFormat);
+
+        // Set the custom format to the range axis (Y-axis)
+        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+        rangeAxis.setNumberFormatOverride(decimalFormat);
+
+
+        StackedXYAreaRenderer2 renderer = getTJobUsageProfileRenderer();
+        plot.setRenderer(renderer);
+        return plot;
     }
 
     public Map<String, XYPlot> generateXYCloudObjectPlots(Map<String, DefaultTableXYDataset> mapCapacitiesCloudObject) {
@@ -238,9 +246,9 @@ public class ProfilePlotter {
      * @param height Int with the height of the chart
      * @param width Int with the width of the chart
      */
-    private void saveChartsAsFormat(String coiName, String imagesPath, String serializedPath, String format, int width, int height) {
-        new File(imagesPath).mkdirs();
-        new File(serializedPath).mkdirs();
+    private void saveChartsAsFormat(String coiName, String imagesPath, String serializedPath, String format, int width, int height) throws IOException {
+        FileUtils.ensureDir(imagesPath);
+        FileUtils.ensureDir(serializedPath);
         UsageProfile profileToSave=usageProfile;
 
         String serSep = serializedPath.endsWith("/") || serializedPath.endsWith(File.separator) ? "" : "/";

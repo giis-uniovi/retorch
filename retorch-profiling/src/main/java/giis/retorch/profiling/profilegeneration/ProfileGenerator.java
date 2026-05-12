@@ -1,6 +1,7 @@
 package giis.retorch.profiling.profilegeneration;
 
 
+import giis.retorch.profiling.utils.FileUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
@@ -170,7 +171,7 @@ public class ProfileGenerator {
         String[] intStringArray = Arrays.stream(IntStream.range(0, windowInt).toArray()).mapToObj(String::valueOf).toArray(String[]::new);
         String[] headers = {PLAN_HEADER, TJOB_HEADER, LIFECYCLE_HEADER, CAPACITY_HEADER};
         headers = concatenateArrays(headers, intStringArray);
-        ensureParentDir(outputPath);
+        FileUtils.ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
                 CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(CSV_DELIMITER).build())) {
             addTJobCapacitiesUsed(tJobList, mapWithCapacitiesTJob, printer, planName);
@@ -343,7 +344,7 @@ public class ProfileGenerator {
     void generateNewProfileDatasetWithCapacitiesUsed(List<CSVRecord> listRecords, String[] headerNames,
                                                             String outputPath,
                                                             Map<String, List<String>> outputMap) throws IOException {
-        ensureParentDir(outputPath);
+        FileUtils.ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
                 CSVFormat.DEFAULT.builder().setHeader(headerNames).setDelimiter(CSV_DELIMITER).build())) {
             String scheduling = "None";
@@ -415,10 +416,4 @@ public class ProfileGenerator {
         return aggregatedList;
     }
 
-    private static void ensureParentDir(String path) {
-        File parent = new File(path).getParentFile();
-        if (parent != null) {
-            parent.mkdirs();
-        }
-    }
 }

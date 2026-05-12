@@ -1,5 +1,6 @@
 package giis.retorch.profiling.datasetgeneration;
 
+import giis.retorch.profiling.utils.FileUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
@@ -10,9 +11,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -205,7 +203,7 @@ public class DatasetGenerator {
         };
         Map<Integer, Double> startingStages = calculateStartingStages(listTuples);
 
-        ensureParentDir(outputPath);
+        FileUtils.ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath);
              CSVPrinter printer = new CSVPrinter(out,
                      CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(CSV_DELIMITER).build())) {
@@ -260,12 +258,5 @@ public class DatasetGenerator {
         }
 
         return startingStages;
-    }
-
-    private static void ensureParentDir(String path) throws IOException {
-        Path parent = Paths.get(path).getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
-        }
     }
 }
