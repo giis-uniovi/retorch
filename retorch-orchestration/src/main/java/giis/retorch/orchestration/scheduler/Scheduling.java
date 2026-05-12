@@ -27,8 +27,9 @@ public class Scheduling {
     }
 
     /**
-     * Main method of the struct, given a {@code TJob}, iterates over a list of moments <0, listTJobs>, <1,listTGJobs>,
-     * <2,listTJobs> in order to allocate the TJob in some struct that has enough {@code Resource} to deploy it.
+     * Main method of the struct, given a {@code TJob}, iterates over a list of moments &lt;0, listTJobs&gt;,
+     * &lt;1, listTGJobs&gt;, &lt;2, listTJobs&gt; in order to allocate the TJob in some struct that has enough
+     * {@code Resource} to deploy it.
      * @param tJob {@code TJob} that would be entered into the struct
      */
     public void addTJob(TJob tJob) {
