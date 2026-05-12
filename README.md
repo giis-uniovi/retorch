@@ -17,15 +17,15 @@ suite.
 ## Contents
 
 - [RETORCH: Resource-aware End-to-End Test Orchestration:]()
-    - [Quick Start](#quick-start)
-    - [RETORCH Framework Model](#retorch-framework-model)
-    - [RETORCH Annotations](#retorch-annotations)
-    - [RETORCH Orchestration](#retorch-orchestration)
-    - [RETORCH Profiler](#retorch-usage-profiler)
-    - [Contributing](#contributing)
-    - [Contact](#contact)
-    - [Citing this work](#citing-this-work)
-    - [Acknowledgments](#acknowledgments)
+  - [Quick Start](#quick-start)
+  - [RETORCH Framework Model](#retorch-framework-model)
+  - [RETORCH Annotations](#retorch-annotations)
+  - [RETORCH Orchestration](#retorch-orchestration)
+  - [RETORCH Profiler](#retorch-usage-profiler)
+  - [Contributing](#contributing)
+  - [Contact](#contact)
+  - [Citing this work](#citing-this-work)
+  - [Acknowledgments](#acknowledgments)
 
 ## Quick-start
 
@@ -113,7 +113,6 @@ flowchart LR
 
 ```
 
-
 ## RETORCH Annotations
 
 The RETORCH framework provides a set of custom annotations to define and manage Resources used in end-to-end testing.
@@ -144,9 +143,9 @@ corresponding to a different Resource:
 @ParameterizedTest
 @MethodSource("data")
 void forumLoadEntriesTest(String usermail, String password, String role) {
-    this.user = setupBrowser("chrome", TJOB_NAME + "_" + TEST_NAME, usermail, WAIT_SECONDS);
-    driver = user.getDriver();
-    this.slowLogin(user, usermail, password);
+  this.user = setupBrowser("chrome", TJOB_NAME + "_" + TEST_NAME, usermail, WAIT_SECONDS);
+  driver = user.getDriver();
+  this.slowLogin(user, usermail, password);
 }
 ```
 
@@ -187,8 +186,8 @@ in the single module project root. The resulting directory tree might look like 
 - The `📁 .retorch/` directory would contain all the configuration files and scripting snippets that would be used to
   generate the pipelining code and the scripts to set up, deploy, and tear down the different Resources and TJob.
   Contains two subdirectories:
-    - `📁 configurations/`: stores the Resources and CI configuration files.
-    - `📁 customscriptscode/`: stores the different script snippets for the tear down, set up and environment.
+  - `📁 configurations/`: stores the Resources and CI configuration files.
+  - `📁 customscriptscode/`: stores the different script snippets for the tear down, set up and environment.
 - The `docker-compose.yml` in the root of the project.
 - The different project directories and files.
 
@@ -205,13 +204,13 @@ For each Resource the tester needs to specify the following attributes:
 - `replaceable`: A list of Resources that can replace the current one.
 - `hierarchyParent`: A resourceID of the hierarchical parent of the Resource.
 - `elasticityModel`: The elasticity model of the Resource, is composed by the following attributes:
-    - `elasticityID`: A unique identifier for the elasticity model.
-    - `elasticity`: Integer with the available Resources.
-    - `elasticityCost`: Instantiation cost of each Resource.
+  - `elasticityID`: A unique identifier for the elasticity model.
+  - `elasticity`: Integer with the available Resources.
+  - `elasticityCost`: Instantiation cost of each Resource.
 - `resourceType`:  String with the type of the Resource(e.g. LOGICAL, PHYSICAL or COMPUTATIONAL).
 - `minimalCapacities`: List with the Minimal Capacities required by the Resource; each Capacity is composed by:
-    - `name`: String between "memory", "processor" and "storage".
-    - `quantity`: float with the amount of Capacity Required.
+  - `name`: String between "memory", "processor" and "storage".
+  - `quantity`: float with the amount of Capacity Required.
 - `dockerImage`: String with the concatenation of the placeholder name in the docker-compose, using `;` as separator
   between placeholder and the image name.
 
@@ -306,15 +305,15 @@ Examples of the necessary changes in the `docker-compose.yml` can consulted in t
 repositories:
 
 - FullTeaching:
-    - [Original
-      `docker-compose.yml`](https://github.com/elastest/full-teaching/blob/master/application/docker-compose/docker-compose.yml)
-    - [RETORCH
-      `docker-compose.yml`](https://github.com/giis-uniovi/retorch-st-fullteaching/blob/main/docker-compose.yml)
+  - [Original
+    `docker-compose.yml`](https://github.com/elastest/full-teaching/blob/master/application/docker-compose/docker-compose.yml)
+  - [RETORCH
+    `docker-compose.yml`](https://github.com/giis-uniovi/retorch-st-fullteaching/blob/main/docker-compose.yml)
 - EshopContainers:
-    - [Original `docker-compose.yml`](https://github.com/erjain/eShopOnContainers/blob/dev/src/docker-compose.yml) and [
-      `docker-compose.prod.yml`](https://github.com/erjain/eShopOnContainers/blob/dev/src/docker-compose.prod.yml)
-    - [RETORCH
-      `docker-compose.yml`](https://github.com/giis-uniovi/retorch-st-eShopContainers/blob/main/sut/src/docker-compose.yml)
+  - [Original `docker-compose.yml`](https://github.com/erjain/eShopOnContainers/blob/dev/src/docker-compose.yml) and [
+    `docker-compose.prod.yml`](https://github.com/erjain/eShopOnContainers/blob/dev/src/docker-compose.prod.yml)
+  - [RETORCH
+    `docker-compose.yml`](https://github.com/giis-uniovi/retorch-st-eShopContainers/blob/main/sut/src/docker-compose.yml)
 
 #### (Optional) Specify script snippets to include in the set-up tear-down and environment
 
@@ -391,11 +390,11 @@ import java.net.URISyntaxException;
 
 @Disabled("Exclude to execute this class when pushing the SUT")
 class RetorchGenerateJenkinfileTest {
-    @Test
-    void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException, EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
-        OrchestrationGenerator orch = new OrchestrationGenerator();
-        orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./"); // TO-DO adjust the rootPackageNameTests,systemName and jenkinsFilePath parameters 
-    }
+  @Test
+  void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException, EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
+    OrchestrationGenerator orch = new OrchestrationGenerator();
+    orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./"); // TO-DO adjust the rootPackageNameTests,systemName and jenkinsFilePath parameters 
+  }
 }
 ```
 
@@ -427,26 +426,28 @@ the infrastructure(`.retorch/scripts/coilifecycles`) and the different environme
 
 ## RETORCH Usage Profiler
 
-The RETORCH framework provides a tool that generates the Usage Profiles for a given infrastructure. Given the
-execution data produced by each CI run, the Execution Plan from the orchestration tool, and a Cloud Object
-Instance configuration file, the profiler computes how each contracted capacity is used over time and renders
-the result as PNG charts.
+The RETORCH framework provides a tool that generates the Usage Profiles for a given On-premise or Cloud Infrastructure.
+Given the execution data produced by each CI run and saved as artifact, the Execution Plan from the orchestration tool,
+and a Cloud Object Instance configuration file, the Usage Profiler is able to compute how the Contracted Capacities
+are used over time and render them graphically.
 
-The profiler requires the following inputs:
+The RETORCH Usage Profiler requires the following inputs:
 
-- The execution data CSV files generated by the Jenkinsfile scripts (stored in the `artifacts` folder after
+- The execution data CSV file generated by the Jenkinsfile scripts (stored in the `artifacts` folder after
   each run).
 - The `ExecutionPlan` produced by the orchestration generator.
-- A `<SUT_NAME>CloudObjectInstances.json` file in `.retorch/infra/` describing the cloud infrastructure
-  alternatives (capacities, billing model, and lifecycle times).
+- A `{} <SUT_NAME>CloudObjectInstances.json` file in `📁 .retorch/infra/` which describes the different deployment
+  alternatives with their capacities, billing model, and lifecycle times.
 
+To use the RETORCH Usage Profiler, we need to instantiate the `UsageProfilerToolBox`
 Add the `retorch-profiling` dependency to `pom.xml`:
 
 ```xml
+
 <dependency>
-    <groupId>io.github.giis-uniovi</groupId>
-    <artifactId>retorch-profiling</artifactId>
-    <version><!--SET HERE THE DESIRED VERSION--></version>
+  <groupId>io.github.giis-uniovi</groupId>
+  <artifactId>retorch-profiling</artifactId>
+  <version><!--SET HERE THE DESIRED VERSION--></version>
 </dependency>
 ```
 
@@ -483,19 +484,35 @@ The following snippet shows an example with one VM-based Cloud Object Instance:
       "billingName": "As-you-go",
       "provider": "Azure",
       "invoicedPrices": {
-        "memory":    0.5,
+        "memory": 0.5,
         "processor": 0.5,
-        "storage":   0.5,
-        "slots":     1.20
+        "storage": 0.5,
+        "slots": 1.20
       },
       "timePeriod": 3600
     },
     "capacitiesContracted": {
-      "memory":    { "capacityName": "memory",    "quantity": 32.0, "granularity": 32.0 },
-      "processor": { "capacityName": "processor", "quantity": 12.0, "granularity": 12.0 },
-      "storage":   { "capacityName": "storage",   "quantity": 32.0, "granularity": 32.0 },
-      "slots":     { "capacityName": "slots",     "quantity":  8.0, "granularity":  1.0 }
-    },
+      "memory": {
+        "capacityName": "memory",
+        "quantity": 32.0,
+        "granularity": 32.0
+      },
+      "processor": {
+        "capacityName": "processor",
+        "quantity": 12.0,
+        "granularity": 12.0
+      },
+      "storage": {
+        "capacityName": "storage",
+        "quantity": 32.0,
+        "granularity": 32.0
+      },
+      "slots": {
+        "capacityName": "slots",
+        "quantity": 8.0,
+        "granularity": 1.0
+      }
+    }
   }
 ]
 ```
@@ -513,7 +530,9 @@ containing the execution data CSVs (`inputPath`) and the output file path (`outp
 
 ```java
 UsageProfilerToolBox usageProfiler = new UsageProfilerToolBox();
-usageProfiler.generateAverageDurationCSVFile("./executiondata", "./averagedurationfile.csv");
+usageProfiler.
+
+generateAverageDurationCSVFile("./executiondata","./averagedurationfile.csv");
 ```
 
 ### Generate the raw TJob capacity-usage profile
@@ -523,12 +542,14 @@ records how much of each capacity each TJob consumes at every second of the prof
 
 ```java
 ProfileGenerator profileGenerator = new ProfileGenerator();
-profileGenerator.generateExecutionPlanCapacitiesUsage(
+profileGenerator.
+
+generateExecutionPlanCapacitiesUsage(
         plan,                        // ExecutionPlan from OrchestrationGenerator
         "./averagedurationfile.csv", // average duration CSV from previous step
-        "./output/profile.csv",      // output path for the raw profile
-        3600,                        // profiling window in seconds
-        1                            // number of execution plan repetitions
+                "./output/profile.csv",      // output path for the raw profile
+                3600,                        // profiling window in seconds
+                1                            // number of execution plan repetitions
 );
 ```
 
@@ -542,9 +563,9 @@ saves one set of PNG charts per instance:
 ```java
 usageProfiler.generateCOIUsageProfiles(
         "FullTeaching",                  // system name — loads FullTeachingCloudObjectInstances.json
-        "./output/profile.csv",          // raw TJob profile from previous step
-        "./averagedurationfile.csv",     // avg duration CSV — used to derive COI lifecycle times
-        "./output/",                     // output folder for CSV files and chart images
+                "./output/profile.csv",          // raw TJob profile from previous step
+                "./averagedurationfile.csv",     // avg duration CSV — used to derive COI lifecycle times
+                "./output/",                     // output folder for CSV files and chart images
         plan.getName()                   // plan name used to label the charts
 );
 ```
@@ -577,32 +598,30 @@ import java.net.URISyntaxException;
 
 @Disabled("Exclude to execute this class when pushing the SUT")
 class RetorchGenerateJenkinfileTest {
-    @Test
-    void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException,
-            EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
+  @Test
+  void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException,
+          EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
 
-        // Generate the Jenkinsfile (orchestration step)
-        OrchestrationGenerator orch = new OrchestrationGenerator();
-        orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./");
+    // Generate the Jenkinsfile (orchestration step)
+    OrchestrationGenerator orch = new OrchestrationGenerator();
+    orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./");
 
-        // Step 1: average lifecycle durations from Jenkins execution CSV files
-        UsageProfilerToolBox usageProfiler = new UsageProfilerToolBox();
-        usageProfiler.generateAverageDurationCSVFile("executiondata", "./averagedurationfile.csv");
+    // Step 1: average lifecycle durations from Jenkins execution CSV files
+    UsageProfilerToolBox usageProfiler = new UsageProfilerToolBox();
+    usageProfiler.generateAverageDurationCSVFile("executiondata", "./averagedurationfile.csv");
 
-        // Step 2: raw TJob capacity-usage profile over a 3600s window (1 execution)
-        ExecutionPlan plan = orch.getExecutionPlan("com.sutexample.functional.tests", "sutexample");
-        ProfileGenerator profileGenerator = new ProfileGenerator();
-        profileGenerator.generateExecutionPlanCapacitiesUsage(plan, "./averagedurationfile.csv",
-                "./output/profile.csv", 3600, 1);
+    // Step 2: raw TJob capacity-usage profile over a 3600s window (1 execution)
+    ExecutionPlan plan = orch.getExecutionPlan("com.sutexample.functional.tests", "sutexample");
+    ProfileGenerator profileGenerator = new ProfileGenerator();
+    profileGenerator.generateExecutionPlanCapacitiesUsage(plan, "./averagedurationfile.csv",
+            "./output/profile.csv", 3600, 1);
 
-        // Step 3: overlay contracted capacities and generate charts for each configured COI
-        usageProfiler.generateCOIUsageProfiles("sutexample", "./output/profile.csv",
-                "./averagedurationfile.csv", "./output/", plan.getName());
-    }
+    // Step 3: overlay contracted capacities and generate charts for each configured COI
+    usageProfiler.generateCOIUsageProfiles("sutexample", "./output/profile.csv",
+            "./averagedurationfile.csv", "./output/", plan.getName());
+  }
 }
 ```
-
-
 
 ## Contributing
 
