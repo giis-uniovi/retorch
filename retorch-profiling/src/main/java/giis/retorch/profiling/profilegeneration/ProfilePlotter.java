@@ -41,7 +41,7 @@ import java.util.List;
 
 /**
  * The {@code ProfilePlotter} class provides the necessary methods to generate graphical representations of the
- * Usage Profiles of the {@code CloudObjectInstances} for a certain {@code} ExecutionPlan
+ * {@code UsageProfiles} of the {@code CloudObjectInstances} for a certain {@code ExecutionPlan}
  */
 public class ProfilePlotter {
 
@@ -67,10 +67,10 @@ public class ProfilePlotter {
     /**
      * The {@code generateTotalTJobUsageProfileCharts} method  creates two maps of XYDatasets, one with the  {@code ContractedCapacity}
      * contracted in the {@code CloudObjectInstances} and other with the {@code Capacity} used by the {@code ResourceInstances}
-     * of the {@code ExecutionPlan}. The Maps are populated with the loadCapacitiesData() for then create the superposed
-     * Graphs and store it into the 'target/profiles' folder.
+     * of the {@code ExecutionPlan}. The Maps are populated with the {@code loadCapacitiesData()} for then create the superposed
+     * Graphs and store it into the {@code imagesFolder} folder.
      *
-     * @param imagesFolder String with the folder where the Profiles will be stored
+     * @param imagesFolder String with the path where the {@code UsageProfile} will be stored
      * @param planName String with the name of the {@code ExecutionPlan}
      *
      */
@@ -83,11 +83,12 @@ public class ProfilePlotter {
         generateUsageProfiles(planName,coiName, capacitiesData, mapPlotsUsage);
         saveChartsAsFormat(coiName, imagesFolder, serializedFolder, "png", 1200, 400);
     }
+
     /**
      * The {@code loadCapacitiesData} load the imported raw Usage Profile into the  two Maps with XYDataset created.
      *
      * @param capacitiesData Map of XYDataset with the used Capacities.
-     * @param contractedCapacitiesData Map of XYDataset with the contracted capacities (empty)
+     * @param contractedCapacitiesData Map of XYDataset with the {@code ContractedCapacities}(empty)
      *
      */
     private void loadCapacitiesData(Map<String, DefaultTableXYDataset> capacitiesData, Map<String, DefaultTableXYDataset> contractedCapacitiesData) {
@@ -110,7 +111,7 @@ public class ProfilePlotter {
     }
 
     /**
-     * The {@code generateUsageProfiles} method given the Maps with XYDatasets of Capacities used and contracted, generates
+     * The {@code generateUsageProfiles} method given the Maps with XYDatasets of {@code Capacities} and {@code ContractedCpacities}, generates
      * the Usage Profile graphical representations corresponding to the {@code ExecutionPlan} {@code Capacity} usage.
      *
      * @param capacitiesData  Map of XYDataset with the used {@code Capacity} required.
@@ -148,6 +149,12 @@ public class ProfilePlotter {
         }
     }
 
+    /**
+     * Support method to get Resource usage plots from XYChart
+     *
+     * @param chart JFreeChart to plot
+     *
+     */
     private static @NonNull XYPlot getXyPlot(JFreeChart chart) {
         XYPlot plot = chart.getXYPlot();
         plot.setBackgroundPaint(null);
@@ -220,6 +227,7 @@ public class ProfilePlotter {
 
         return renderer;
     }
+
     /**
      * The {@code reorderSeries} support method reorder the series (by lifecycle phase) to have always the same overlapping
      * between the plots.
@@ -241,10 +249,11 @@ public class ProfilePlotter {
     /**
      * The {@code saveChartAsFormat} support method enables the storing of the superposed JFreeChart with {@code ContractedCapacity}
      * against the used {@code Capacity}.
-     * @param format String with the format, supports png and svg formats
-     * @param imagesPath  String with the path where the images will be stored
-     * @param height Int with the height of the chart
-     * @param width Int with the width of the chart
+     *
+     * @param format     String with the format, supports png and svg formats
+     * @param imagesPath String with the path where the images will be stored
+     * @param height     Int with the height of the chart
+     * @param width      Int with the width of the chart
      */
     private void saveChartsAsFormat(String coiName, String imagesPath, String serializedPath, String format, int width, int height) throws IOException {
         FileUtils.ensureDir(imagesPath);
@@ -289,10 +298,11 @@ public class ProfilePlotter {
                 }
         }
     }
+
     /**
      * The {@code serialize} support method enables the serialized storing of the UsageProfile for testing purposes.
      *
-     * @param filePath  String with the path where the serialized image will be stored
+     * @param filePath String with the path where the serialized image will be stored
      */
     public void serialize(String filePath) {
         try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(Paths.get(filePath)))) {

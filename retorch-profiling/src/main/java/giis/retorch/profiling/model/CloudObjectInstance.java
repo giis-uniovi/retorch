@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * The {@code CloudObjectInstance} class represents a Cloud Object Instance with a name,and a set of {@code  Capacities}.
@@ -41,10 +41,7 @@ public class CloudObjectInstance {
     public double getEndTJobExec() {return endTJobExec;}
     public double getStartTearDown() {return startTearDown;}
     public double getEndTearDown() {return endTearDown;}
-    public List<String> getCapacityNames() {
-        return this.getContractedCapacities().keySet().stream()
-                .collect(Collectors.toList());
-    }
+    public List<String> getCapacityNames() {return new ArrayList<>(this.getContractedCapacities().keySet());}
     public BillingOption getBillingOption() {return billingOption;}
     public void setName(String name) {this.name = name;}
     public void setEndSetUp(double endSetUp) {this.endSetUp = endSetUp;}
