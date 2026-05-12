@@ -13,6 +13,7 @@ import giis.retorch.profiling.profilegeneration.ProfileGenerator;
 import giis.retorch.profiling.profilegeneration.ProfilePlotter;
 import giis.retorch.profiling.report.UsageProfileReportGenerator;
 import giis.retorch.profiling.utils.COISerializer;
+import giis.retorch.orchestration.model.ExecutionPlan;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -75,7 +76,7 @@ public class UsageProfilerToolBox {
      * @throws IOException if the configuration file cannot be read or a profile CSV cannot be written.
      */
     public void generateCOIUsageProfiles(String systemName, String profileCsvPath, String avgCsvPath,
-                                          String outputPath, String planName) throws IOException {
+                                           String outputPath, String planName) throws IOException {
         log.debug("Loading Cloud Object Instances for system: {}", systemName);
         List<CloudObjectInstance> cloudObjectInstances =
                 new COISerializer().deserializeCloudObjectInstances(systemName);
@@ -96,6 +97,30 @@ public class UsageProfilerToolBox {
         }
         new UsageProfileReportGenerator().generateReport(profiles, outputPath, planName);
     }
+
+    /**
+     * Generates the raw TJob capacity-usage profile and then overlays contracted capacities
+     * to generate COI usage profiles and charts.
+     *
+     * @param plan           The execution plan.
+     * @param systemName     Name of the system.
+     * @param avgCsvPath     Path to the average duration CSV file.
+     * @param outputPath     Folder where profiles and charts will be written.
+     * @param windowSize     Time window for the profile.
+     * @param executionCount Number of executions to consider.
+     * @throws IOException if an I/O error occurs.
+     */
+    public void generateProfiles(ExecutionPlan plan, String systemName, String avgCsvPath, String outputPath,
+                                 double windowSize, int executionCount) throws IOException {
+        String sep = outputPath.endsWith("/") || outputPath.endsWith(java.io.File.separator) ? "" : "/";
+        String profileCsvPath = outputPath + sep + "profile.csv";
+
+        ProfileGenerator profileGenerator = new ProfileGenerator();
+        profileGenerator.generateExecutionPlanCapacitiesUsage(plan, avgCsvPath, profileCsvPath, windowSize, executionCount);
+
+        generateCOIUsageProfiles(systemName, profileCsvPath, avgCsvPath, outputPath, plan.getName());
+    }
+
 
     private double[] readLifecycleTimesFromCsv(String avgCsvPath) throws IOException {
         String[] headers = {TJOB_HEADER, STAGE_HEADER,
