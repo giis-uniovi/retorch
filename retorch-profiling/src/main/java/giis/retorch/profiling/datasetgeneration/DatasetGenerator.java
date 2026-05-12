@@ -10,6 +10,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -18,7 +21,7 @@ import static giis.retorch.profiling.utils.CsvConstants.*;
 /**
  * The {@code DatasetGenerator} class contains the necessary methods that enable the processing of the execution data
  * files in order to create the  average dataset with duration of each {@code TJob} and {@code CloudObject} lifecycle
- * phase
+ * phases
  */
 public class DatasetGenerator {
 
@@ -34,11 +37,11 @@ public class DatasetGenerator {
             COI_TEARDOWN_LABEL
     );
 
-
     /**
-     * Generates a list of {@code DataTuple} representing average times of several CSV files located in a directory.
+     * Generates a list of {@code DataTuple} representing average times of the CSV files located in the directory
+     * provided as parameter.
      * Each CSV file is expected to have data in the format defined by the provided headers.
-     * @param path The path where CSV files are located.
+     * @param path The path where CSV file is located.
      * @return A list of DataTuples representing average times, sorted first by stage and second by TJob name.
      */
     public List<DataTuple> generateListTuplesAvgTimes(String path) {
@@ -56,7 +59,7 @@ public class DatasetGenerator {
                 TJOB_SETUP_LABEL + END_SUFFIX, TJOB_TEST_EXEC_LABEL + START_SUFFIX, TJOB_TEST_EXEC_LABEL + END_SUFFIX,
                 TJOB_TEARDOWN_LABEL + START_SUFFIX,
                 TJOB_TEARDOWN_LABEL + END_SUFFIX, COI_TEARDOWN_LABEL + START_SUFFIX, COI_TEARDOWN_LABEL + END_SUFFIX};
-        // Parse each .csv file
+        // Parsing of the CSV file
         for (File file : csvFiles) {
             try (FileReader fileReader = new FileReader(file)) {
                 CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
@@ -83,7 +86,7 @@ public class DatasetGenerator {
     }
 
     /**
-     * Finds all CSV files within the specified directory.
+     * Find and retrieve a list of files with all CSV files within the specified directory.
      *
      * @param directoryPath The path to the directory where CSV files are to be found.
      * @return A list of File objects representing the CSV found.
@@ -104,12 +107,11 @@ public class DatasetGenerator {
         return Arrays.stream(files)
                 .filter(File::isFile)
                 .collect(Collectors.toList());
-
     }
 
     /**
-     * Given a csv csvRecord from a file generated in the CI system with the TJob and COI data, generates its
-     * corresponding {@code DataTuple}
+     * Given a csv {@code csvRecord} from a file generated in the CI system with the TJob and COI data, generates its
+     * the different {@code DataTuple}
      *
      * @param csvRecord CSV record belonging to a TJob.
      * @return {@code DataTuple} with the csvRecord data.
@@ -130,8 +132,7 @@ public class DatasetGenerator {
      * using {@link #mergeTuples(DataTuple, DataTuple)} method.
      *
      * @param allDataTuples the list of {@code DataTuple} objects to be aggregated
-     * @return a map where the keys are {@code idTJob} values and the values are the aggregated {@code DataTuple}
-     * objects
+     * @return a map with keys {@code idTJob} values the aggregated {@code DataTuple}
      */
     private Map<String, DataTuple> aggregateTuples(List<DataTuple> allDataTuples) {
         Map<String, DataTuple> aggregatedTuples = new HashMap<>();
@@ -147,8 +148,7 @@ public class DatasetGenerator {
      * calculates the average duration for each lifecycle event by dividing the aggregated duration by
      * the file count.
      *
-     * @param aggregatedTuples a map where the keys are {@code idTJob} values and the values are the aggregated
-     *                         {@code DataTuple} objects
+     * @param aggregatedTuples a map with keys {@code idTJob} and values the aggregated {@code DataTuple}.
      * @param fileCount        the number of files used in the aggregation process
      * @return a list of {@code DataTuple} objects with averaged lifecycle durations
      */
@@ -164,14 +164,12 @@ public class DatasetGenerator {
     }
 
     /**
-     * Merges the lifecycle durations of two {@code DataTuple} objects.
-     * map.
-     * If a key from aggregatedTuple's map does not exist in the tuple's map, it will be added .
-     * The result is stored in back into aggregatedTuple {@code DataTuple} and returned.
+     * Updates aggregatedTuple by merging it with another {@code DataTuple}'s lifecycle durations map. New keys are added,
+     * and the modified aggregatedTuple {@code DataTuple} is returned.
      *
      * @param aggregatedTuple the first {@code DataTuple} whose lifecycle durations will be merged and updated
      * @param tuple           the second {@code DataTuple} whose lifecycle durations will be used to update
-     *                        aggregatedTuple
+     *                        {@code aggregatedTuple}
      * @return aggregatedTuple {@code DataTuple} with merged lifecycle durations
      */
     private DataTuple mergeTuples(DataTuple aggregatedTuple, DataTuple tuple) {
@@ -240,10 +238,10 @@ public class DatasetGenerator {
     /**
      * Calculates the starting relative time for each stage based on the provided list of {@code DataTuple} ordered.
      * This method considers the duration of the longer {@code TJob} of each stage and the extra seconds between the
-     * different stages. Creates a list of starting times for each stage.
+     * different stages, for creating a list of starting times for each stage.
      *
-     * @param listTuples The list of DataTuples containing lifecycle duration data.
-     * @return A map containing starting stages for each stage.
+     * @param listTuples The list of {@code DataTuples} containing lifecycle duration data.
+     * @return A map containing starting times for each stage.
      */
     private Map<Integer, Double> calculateStartingStages(List<DataTuple> listTuples) {
         if (listTuples == null || listTuples.isEmpty()) {
@@ -264,10 +262,10 @@ public class DatasetGenerator {
         return startingStages;
     }
 
-    private static void ensureParentDir(String path) {
-        File parent = new File(path).getParentFile();
+    private static void ensureParentDir(String path) throws IOException {
+        Path parent = Paths.get(path).getParent();
         if (parent != null) {
-            parent.mkdirs();
+            Files.createDirectories(parent);
         }
     }
 }
