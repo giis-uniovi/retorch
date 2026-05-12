@@ -187,8 +187,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                                 currentActivities.size() != 1, currentStage))
                         .append("\n");
             }
-            stringBuilder.append("      } // End Parallel\n");
-            stringBuilder.append("    } // End Stage\n");
+            stringBuilder.append("} // End Parallel\n");
+            stringBuilder.append("} // End Stage\n");
         }
 
         generateInfrastructureTearDown(stringBuilder);
@@ -203,12 +203,11 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
     }
 
     private static void generateInfrastructureTearDown(StringBuilder stringBuilder) {
-        stringBuilder.append("stage('TEARDOWN-Infrastructure') {\n")
-                .append("      failFast false\n")
+        stringBuilder.append("    stage('TEARDOWN-Infrastructure') {\n")
                 .append("      steps {\n")
                 .append("          sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'\n")
                 .append("      } // EndStepsTearDownInf\n")
-                .append("} // EndStageTearDown\n");
+                .append("    } // EndStageTearDown\n");
     }
 
 
@@ -279,7 +278,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
             contentEnvFile.append(readFileContent(".retorch/customscriptscode/custom.env"));
         }
         Path envFilePath = Paths.get(resourcePath + tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT) + ".env");
-        Files.write(envFilePath, Collections.singleton(contentEnvFile.toString()));
+        Files.write(envFilePath, contentEnvFile.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     private static String toEnvVarName(String key) {
@@ -289,9 +288,9 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
     }
 
     private String readFileContent(String filePath) throws IOException {
-        Path path = Paths.get(filePath);
-        byte[] bytes = Files.readAllBytes(path);
-        return new String(bytes);
+        byte[] bytes = Files.readAllBytes(Paths.get(filePath));
+        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8)
+                .replace("\r\n", "\n").replace("\r", "\n");
     }
 
 }

@@ -1,0 +1,49 @@
+package giis.retorch.profiling.utils;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import giis.retorch.profiling.model.CloudObjectInstance;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+/**
+ * {@code COISerializer} class provides utils to deserialize the configuration files, and create them from scratch with the
+ * RETORCH entities that they want to serialize in these files.
+ */
+public class COISerializer {
+
+    private static final Logger logSerializer = LoggerFactory.getLogger(COISerializer.class);
+    private static final String FOLDER_RESOURCES = ".retorch/infra/";//Base path of the resource files
+    final ObjectMapper mapper;
+
+
+    public COISerializer() {
+        mapper = new ObjectMapper();
+    }
+
+    /**
+     * Deserializes the JSON content from the given file into an object of the specified type.
+     *
+     * @param filePath the path of the file to deserialize
+     * @param typeRef  the type of the object to deserialize to
+     * @return the deserialized object
+     * @throws IOException if an I/O error occurs reading from the file or a malformed or unmappable byte sequence is
+     *                     read
+     */
+    public <T> T deserialize(String filePath, TypeReference<T> typeRef) throws IOException {
+        return mapper.readValue(new File(filePath), typeRef);
+    }
+
+    public List<CloudObjectInstance> deserializeCloudObjectInstances(String systemName) throws IOException {
+        if (systemName == null || systemName.contains("..") || systemName.contains("/") || systemName.contains("\\") || systemName.contains(File.separator)) {
+            throw new IllegalArgumentException("Invalid systemName: path traversal detected (" + systemName + ")");
+        }
+        logSerializer.debug("Deserializing the Cloud Object Instances placed in the file:{}{}{}",FOLDER_RESOURCES ,systemName , "CloudObjectInstances.json");
+        return deserialize(FOLDER_RESOURCES + systemName + "CloudObjectInstances.json", new  TypeReference<List<CloudObjectInstance>>() {
+        });
+    }
+
+}

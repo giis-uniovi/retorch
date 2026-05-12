@@ -1,0 +1,57 @@
+package giis.retorch.profiling;
+
+import giis.retorch.profiling.main.UsageProfilerToolBox;
+import org.apache.commons.io.FileUtils;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * The {@code DatasetGeneratorTests} class contains the unitary tests of the generation of average datasets methods
+ */
+public class DatasetGeneratorTests  {
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    private final String outBasePath = "target/test-outputs/profiler";
+    private final String inBasePath = "src/test/java/giis/retorch/profiling/testdata" + "/datasetgenerator";
+    private final String expOutBasePath = "src/test/resources/expected_out";
+    UsageProfilerToolBox helper ;
+
+    @Rule
+    public TestName testName = new TestName();
+
+    @Before
+    public void setUp() {
+        log.info("****** Running test: {} ******", testName.getMethodName());
+        helper = new UsageProfilerToolBox();
+        ProfilerTestUtils.ensureDirectoryExists(outBasePath, log);
+        log.info("****** Set-up for test: {} ended ******", testName.getMethodName());
+    }
+
+    @Test
+    public void testFilesGeneratorForSample() throws IOException {
+        helper.generateAverageDurationCSVFile(inBasePath + "/sample",outBasePath + "/testFileGeneratorOutput.csv");
+        testFilesForPath(expOutBasePath + "/testFileGeneratorOutput.csv", outBasePath + "/testFileGeneratorOutput.csv");
+    }
+
+    @Test
+    public void testFilesGeneratorFor4Parallel() throws IOException {
+        helper.generateAverageDurationCSVFile(inBasePath + "/4parallel",outBasePath + "/testFileGeneratorOutput4parallel.csv");
+        testFilesForPath(expOutBasePath + "/testFileGeneratorOutput4parallel.csv", outBasePath + "/testFileGeneratorOutput4parallel.csv");
+    }
+
+    public static void testFilesForPath(String expectedOutputPath, String outputPath) throws IOException {
+        String expectedOutput = FileUtils.readFileToString(new File(expectedOutputPath), "utf-8").replace("\r\n", "\n");
+        String actualOutput = FileUtils.readFileToString(new File(outputPath), "utf-8").replace("\r\n", "\n");
+        assertEquals("The avg file generated differs from expected", expectedOutput, actualOutput);
+    }
+}
