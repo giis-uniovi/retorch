@@ -37,8 +37,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjoba 0'
           }// EndStepstjoba
         }// EndStagetjoba
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 1') {
       failFast false
       parallel {
@@ -69,15 +69,15 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobd 1'
           }// EndStepstjobd
         }// EndStagetjobd
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 2') {
       failFast false
       parallel {
         echo 'Gateway Activity'
 
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 3') {
       failFast false
       parallel {
@@ -99,8 +99,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobf 3'
           }// EndStepstjobf
         }// EndStagetjobf
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 4') {
       failFast false
       parallel {
@@ -113,8 +113,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobg 4'
           }// EndStepstjobg
         }// EndStagetjobg
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 5') {
       failFast false
       parallel {
@@ -127,8 +127,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobh 5'
           }// EndStepstjobh
         }// EndStagetjobh
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 6') {
       failFast false
       parallel {
@@ -150,8 +150,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobj 6'
           }// EndStepstjobj
         }// EndStagetjobj
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('TEARDOWN-Infrastructure') {
       steps {
           sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'

@@ -55,8 +55,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobc 0'
           }// EndStepstjobc
         }// EndStagetjobc
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 1') {
       failFast false
       parallel {
@@ -78,8 +78,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobe 1'
           }// EndStepstjobe
         }// EndStagetjobe
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 2') {
       failFast false
       parallel {
@@ -92,8 +92,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobf 2'
           }// EndStepstjobf
         }// EndStagetjobf
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('Stage 3') {
       failFast false
       parallel {
@@ -106,8 +106,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobg 3'
           }// EndStepstjobg
         }// EndStagetjobg
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('TEARDOWN-Infrastructure') {
       steps {
           sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'

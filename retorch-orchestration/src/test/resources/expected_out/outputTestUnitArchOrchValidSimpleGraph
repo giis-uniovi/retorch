@@ -73,8 +73,8 @@ pipeline {
             sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh tjobe 0'
           }// EndStepstjobe
         }// EndStagetjobe
-      } // End Parallel
-    } // End Stage
+} // End Parallel
+} // End Stage
     stage('TEARDOWN-Infrastructure') {
       steps {
           sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'

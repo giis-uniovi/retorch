@@ -187,8 +187,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                                 currentActivities.size() != 1, currentStage))
                         .append("\n");
             }
-            stringBuilder.append("      } // End Parallel\n");
-            stringBuilder.append("    } // End Stage\n");
+            stringBuilder.append("} // End Parallel\n");
+            stringBuilder.append("} // End Stage\n");
         }
 
         generateInfrastructureTearDown(stringBuilder);
