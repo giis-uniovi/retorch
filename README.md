@@ -34,7 +34,7 @@ suite.
   to the `pom.xml` of your SUT.
 - Add the annotations to the test classes as indicated below.
 - Configure the E2E test suite as indicated below.
-- Execute the orchestration generator and generate the pipelining-scripting code.
+- Run the orchestration generator standalone JAR to generate the pipelining-scripting code.
 - Commit and push the generated files to Git.
 
 ## RETORCH Annotations
@@ -279,58 +279,46 @@ Once created the different properties and configuration files, the single module
 
 ### Executing the Orchestration generator
 
-Once all the files created and the `docker-compose.yml` is prepared, to execute the generator we only need to
-instantiate the `giis.retorch.orchestration.generator.OrchestrationGenerator` object and call its
-`generateJenkinsfile()` method.
-To instantiate this class, first we need to include the appropriate dependency to the `pom.xml` file by adding:
+Once all the files are created and the `docker-compose.yml` is prepared, follow these steps from the
+**root of the SUT project** (the same directory that contains `.retorch/`).
 
-```yaml
-<dependency>
-<groupId>io.github.giis-uniovi</groupId>
-<artifactId>retorch-orchestration</artifactId>
-<version><!--SET HERE THE DESIRED VERSION--></version>
-</dependency>
+#### Step 1 — Compile the test classes and copy dependencies
+
+The generator loads the annotated test classes at runtime using the Java ClassLoader, so they must be compiled
+and their transitive dependencies must be available before running the JAR.
+Run the following Maven command from the project root:
+
+```bash
+mvn test-compile dependency:copy-dependencies -DincludeScope=test
 ```
 
-The calling of this class must be done in the same package of the annotated E2E test cases, in order to be capable to
-access to the generated java classes through the Java ClassLoader and extract the RETORCH `@AccessMode` annotations. The
-test class can be created using the following template, tuning it as required:
+This compiles the test sources into `target/` and copies all test-scoped dependency JARs into
+`target/dependency/` (or the equivalent subdirectory if your project overrides `outputDirectory`).
 
-```java
-package com.sutexample.functional; // TO-DO Adjust the package name
+#### Step 2 — Run the standalone JAR
 
-import giis.retorch.orchestration.classifier.EmptyInputException;
-import giis.retorch.orchestration.generator.OrchestrationGenerator;
-import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
-import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
-import giis.retorch.orchestration.scheduler.NotValidSystemException;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-
-@Disabled("Exclude to execute this class when pushing the SUT")
-class RetorchGenerateJenkinfileTest {
-    @Test
-    void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException, EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
-        OrchestrationGenerator orch = new OrchestrationGenerator();
-        orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./"); // TO-DO adjust the rootPackageNameTests,systemName and jenkinsFilePath parameters 
-    }
-}
+```bash
+java -jar retorch-orchestration-<version>-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath>
 ```
 
-The call of the `generateJenkinsfile` method must be done with the following 3 parameters as arguments:
+The JAR is available in [Maven Central](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-orchestration)
+with the `standalone` classifier. The three arguments are:
 
-- `rootPackageNameTests`: String that specifies the root package name where tests are located (
-  `com.sutexample.functional.tests` in the snippet).
-- `systemName`: String that specifies the system name, must correspond with the name used in
-  the [Resources JSON file](#create-the-resource-json-file) (`sutexample` in the snippet).
-- `jenkinsFilePath`: String with the location where the `Jenkinsfile` will be created, it must be the project root (`./`
-  in the snippet).
+- `rootPackageNameTests`: root package where the annotated E2E test classes are located
+  (e.g. `com.sutexample.functional.tests`).
+- `systemName`: system name that must match the name used in
+  the [Resources JSON file](#create-the-resource-json-file) (e.g. `sutexample`).
+- `jenkinsFilePath`: directory path where the `Jenkinsfile` will be written (e.g. `./` for the project root).
 
-For example, in the [FullTeaching test suite](https://github.com/giis-uniovi/retorch-st-fullteaching) this test class,
-namely `RetorchGenerateJenkinfileTest.java` is available into the `com.fullteaching.e2e.no_elastest.functional.test`
+For example, for the [FullTeaching test suite](https://github.com/giis-uniovi/retorch-st-fullteaching):
+
+```bash
+mvn test-compile dependency:copy-dependencies -DincludeScope=test
+java -jar retorch-orchestration-<version>-standalone.jar \
+  com.fullteaching.e2e.no_elastest.functional.test \
+  FullTeaching \
+  ./
+```
 
 ### RETORCH Orchestration generator outputs
 
