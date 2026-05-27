@@ -73,6 +73,5 @@ public class ProfileGeneratorTests  {
         String expectedOutput = FileUtils.readFileToString(new File(expectedOutputPath), "utf-8").replace("\r\n", "\n");
         String actualOutput = FileUtils.readFileToString(new File(outputPath), "utf-8").replace("\r\n", "\n");
         assertEquals("The avg file generated differs from expected", expectedOutput, actualOutput);
-
     }
 }

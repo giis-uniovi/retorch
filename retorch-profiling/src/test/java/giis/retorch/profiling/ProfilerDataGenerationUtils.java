@@ -145,5 +145,4 @@ public class ProfilerDataGenerationUtils {
         objectInstance.setLifecycleTimes(0, 3, 4, 661, 3580, 3600);
         return objectInstance;
     }
-
 }

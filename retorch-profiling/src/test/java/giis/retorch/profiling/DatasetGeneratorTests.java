@@ -22,7 +22,7 @@ public class DatasetGeneratorTests  {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final String outBasePath = "target/test-outputs/profiler";
-    private final String inBasePath = "src/test/java/giis/retorch/profiling/testdata" + "/datasetgenerator";
+    private final String inBasePath = "src/test/java/giis/retorch/profiling/testdata/datasetgenerator";
     private final String expOutBasePath = "src/test/resources/expected_out";
     UsageProfilerToolBox helper ;
 
