@@ -26,23 +26,18 @@ public final class LifecycleTimes {
     public double getStartSetUp() {
         return startSetUp;
     }
-
     public double getEndSetUp() {
         return endSetUp;
     }
-
     public double getStartTJobExec() {
         return startTJobExec;
     }
-
     public double getEndTJobExec() {
         return endTJobExec;
     }
-
     public double getStartTearDown() {
         return startTearDown;
     }
-
     public double getEndTearDown() {
         return endTearDown;
     }

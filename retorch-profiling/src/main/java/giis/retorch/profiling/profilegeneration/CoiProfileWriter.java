@@ -6,6 +6,7 @@ import giis.retorch.profiling.utils.FileUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.jspecify.annotations.NonNull;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -27,22 +28,9 @@ import static giis.retorch.profiling.utils.CsvConstants.TJOB_HEADER;
 
 /**
  * Reads a raw TJob usage profile CSV and overlays the {@code ContractedCapacity} per-COI, writing the resulting
- * {@code profile_<COI>.csv}. Extracted from the original 82-line {@code ProfileGenerator.writeCOIContractedCapacitiesCSV}.
+ * {@code profile_<COI>.csv}.
  */
 public final class CoiProfileWriter {
-
-    /** Carries the parsed CSV state — full record list, headers, and the rows aggregated under TOTAL. */
-    private static final class CsvSnapshot {
-        final List<CSVRecord> allRecords;
-        final String[] headerNames;
-        final List<CSVRecord> totalsRecords;
-
-        CsvSnapshot(List<CSVRecord> all, String[] headers, List<CSVRecord> totals) {
-            this.allRecords = all;
-            this.headerNames = headers;
-            this.totalsRecords = totals;
-        }
-    }
 
     /** Reads {@code inputPath}, computes the contracted overlay for {@code coi}, and writes {@code outputPath}. */
     public void write(String inputPath, String outputPath, CloudObjectInstance coi) throws IOException {
@@ -91,19 +79,24 @@ public final class CoiProfileWriter {
             if (capacity == null || capacity.getQuantity() <= 0 || capacity.getGranularity() <= 0) {
                 continue;
             }
-            int slotCount = (int) Math.ceil(capacity.getQuantity() / capacity.getGranularity());
-            CapacityGapTracker tracker = new CapacityGapTracker(slotCount, capacity.getGranularity(), billingTimePeriod);
-            List<String> series = new ArrayList<>(entry.getValue().size());
-            List<String> required = entry.getValue();
-            for (int t = 0; t < required.size(); t++) {
-                double demand = Double.parseDouble(required.get(t));
-                int slotsUsed = (int) Math.ceil(demand / capacity.getGranularity());
-                tracker.recordUsage(t, slotsUsed);
-                series.add(String.format(Locale.ENGLISH, "%.1f", tracker.provisionedQuantity()));
-            }
+            List<String> series = getCapacitiesForBillingPeriod(entry, capacity, billingTimePeriod);
             contracted.put(capacityName, series);
         }
         return contracted;
+    }
+
+    private static @NonNull List<String> getCapacitiesForBillingPeriod(Map.Entry<String, List<String>> entry, ContractedCapacity capacity, int billingTimePeriod) {
+        int slotCount = (int) Math.ceil(capacity.getQuantity() / capacity.getGranularity());
+        CapacityGapTracker tracker = new CapacityGapTracker(slotCount, capacity.getGranularity(), billingTimePeriod);
+        List<String> series = new ArrayList<>(entry.getValue().size());
+        List<String> required = entry.getValue();
+        for (int t = 0; t < required.size(); t++) {
+            double demand = Double.parseDouble(required.get(t));
+            int slotsUsed = (int) Math.ceil(demand / capacity.getGranularity());
+            tracker.recordUsage(t, slotsUsed);
+            series.add(String.format(Locale.ENGLISH, "%.1f", tracker.provisionedQuantity()));
+        }
+        return series;
     }
 
     private void writeOverlay(CsvSnapshot snapshot, String outputPath, Map<String, List<String>> contracted) throws IOException {

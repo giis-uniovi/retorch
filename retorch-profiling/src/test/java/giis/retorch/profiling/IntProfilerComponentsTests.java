@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 /**
  * The {@code IntProfilerComponentsTests} class contains the integration tests between the three components: the average
  * {@code  DatasetGenerator}, {@code ProfileGenerator} and the {@code ProfilePlotter}. The outputs are validated against
- * the serialized expected Plots, and a pdf with the debugging (if it fails) is generated
+ * the serialized expected Plots, and a PDF with the debugging (if it fails) is generated
  */
 public class IntProfilerComponentsTests {
 

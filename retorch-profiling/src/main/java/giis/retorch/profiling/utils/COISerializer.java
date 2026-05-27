@@ -45,5 +45,4 @@ public class COISerializer {
         return deserialize(FOLDER_RESOURCES + systemName + "CloudObjectInstances.json", new  TypeReference<List<CloudObjectInstance>>() {
         });
     }
-
 }

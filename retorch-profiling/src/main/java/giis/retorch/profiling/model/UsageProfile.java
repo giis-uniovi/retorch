@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * The {@code UsageProfile} class represents the usage profile created, with its plots and the Cloud Object Instances used
+ * during the calculation.
+ */
 public class UsageProfile implements Serializable {
 
     private static final long serialVersionUID = 1L;

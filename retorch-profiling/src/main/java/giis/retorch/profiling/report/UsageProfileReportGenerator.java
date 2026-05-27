@@ -27,9 +27,6 @@ import java.util.Map;
 /**
  * The {@code UsageProfileReportGenerator} class generates a PDF report that consolidates the Usage Profile
  * charts for all {@code CloudObjectInstance}s into a single document.
- * <p>
- * <strong>Internal API — call via {@code UsageProfilerToolBox}.</strong> This class is public only for
- * historic reasons; it is not part of the supported public surface.
  */
 public class UsageProfileReportGenerator {
 
@@ -105,9 +102,9 @@ public class UsageProfileReportGenerator {
 
     private Image renderChart(JFreeChart chart) throws IOException {
         BufferedImage bufferedImage = chart.createBufferedImage(CHART_RENDER_WIDTH, CHART_RENDER_HEIGHT);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(bufferedImage, "png", baos);
-        ImageData imageData = ImageDataFactory.create(baos.toByteArray());
+        ByteArrayOutputStream byteOutputDocument = new ByteArrayOutputStream();
+        ImageIO.write(bufferedImage, "png", byteOutputDocument);
+        ImageData imageData = ImageDataFactory.create(byteOutputDocument.toByteArray());
         return new Image(imageData).scaleToFit(CHART_PDF_WIDTH, CHART_PDF_HEIGHT).setMarginBottom(8f);
     }
 }

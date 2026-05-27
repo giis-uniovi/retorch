@@ -43,6 +43,7 @@ public class CloudObjectInstance {
     public double getEndTearDown() {return endTearDown;}
     public List<String> getCapacityNames() {return new ArrayList<>(this.getContractedCapacities().keySet());}
     public BillingOption getBillingOption() {return billingOption;}
+
     public void setName(String name) {this.name = name;}
     public void setEndSetUp(double endSetUp) {this.endSetUp = endSetUp;}
     public void setStartSetUp(double startSetUp) {this.startSetUp = startSetUp;}

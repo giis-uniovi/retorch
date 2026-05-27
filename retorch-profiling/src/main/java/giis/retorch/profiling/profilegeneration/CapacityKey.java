@@ -5,8 +5,7 @@ import java.util.Objects;
 import static giis.retorch.profiling.utils.CsvConstants.AGGREGATION_VALUE;
 
 /**
- * Identifies a (tJobId, lifecycle, capacity) slot in the {@code ProfileGenerator} usage map. Replaces the previous
- * brittle {@code "tjobId-lifecycle-capacity"} string keys that had to be parsed with {@code split("-")}.
+ * Identifies a (tJobId, lifecycle, capacity) slot in the {@code ProfileGenerator} usage map.
  */
 final class CapacityKey implements Comparable<CapacityKey> {
 
@@ -20,7 +19,9 @@ final class CapacityKey implements Comparable<CapacityKey> {
         this.capacity = capacity;
     }
 
-    /** Key for an aggregated (cross-TJob) capacity slot. */
+    /**
+     * Key for an aggregated (cross-TJob) capacity slot.
+     */
     static CapacityKey aggregated(String lifecycle, String capacity) {
         return new CapacityKey(AGGREGATION_VALUE, lifecycle, capacity);
     }

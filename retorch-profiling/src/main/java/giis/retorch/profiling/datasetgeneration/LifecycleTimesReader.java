@@ -45,12 +45,7 @@ public final class LifecycleTimesReader {
                 endTearDown   = Math.max(endTearDown,   Double.parseDouble(row.get(COI_TEARDOWN_LABEL + END_SUFFIX)));
             }
         }
-        return new LifecycleTimes(
-                0.0,
-                endSetUp,
-                startTJobExec == Double.MAX_VALUE ? 0.0 : startTJobExec,
-                endTJobExec,
-                startTearDown == Double.MAX_VALUE ? 0.0 : startTearDown,
-                endTearDown);
+        return new LifecycleTimes(0.0, endSetUp, startTJobExec == Double.MAX_VALUE ? 0.0 : startTJobExec,
+                endTJobExec, startTearDown == Double.MAX_VALUE ? 0.0 : startTearDown, endTearDown);
     }
 }

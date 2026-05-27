@@ -31,9 +31,6 @@ import static giis.retorch.profiling.utils.CsvConstants.*;
  * The {@code ProfileGenerator} class provides the necessary methods to generate the dataset with the use of
  * the {@code ContractedCapacity} by the different {@code ResourceInstances} of an {@code ExecutionPlan}
  * during a certain time window.
- * <p>
- * <strong>Internal API — call via {@code UsageProfilerToolBox}.</strong> This class is public only for
- * historic reasons; it is not part of the supported public surface.
  */
 public class ProfileGenerator {
 
@@ -47,11 +44,11 @@ public class ProfileGenerator {
      * created with the {@code DatasetGenerator} methods, an {@code ExecutionPlan}, the location of the output csv file
      * and the number of executions and the window time that desires to be considered.
      *
-     * @param plan Execution Plan retrieved with the orchestration generator tool.
+     * @param plan                Execution Plan retrieved with the orchestration generator tool.
      * @param pathAvgDurationPlan String with the path of the average duration file.
-     * @param outputPath  String with the path where the output csv file will be placed.
-     * @param windowTime Window of time to be considered.
-     * @param executions  Number of executions to be calculated.
+     * @param outputPath          String with the path where the output csv file will be placed.
+     * @param windowTime          Window of time to be considered.
+     * @param executions          Number of executions to be calculated.
      *
      */
     public void generateExecutionPlanCapacitiesUsage(ExecutionPlan plan, String pathAvgDurationPlan, String outputPath,
@@ -70,12 +67,13 @@ public class ProfileGenerator {
         fulfillMapOfCapacities(mapWithJobsProfile, listTJobs, windowTime, executions);
         generateUsageProfileRawCsvFile(listTJobs, mapWithJobsProfile, outputPath, plan.getName(), windowTime);
     }
+
     /**
      * The {@code loadAvgLifecyclesTimeIntoTJob} method populates the {@code ExecutionPlan} {@code TJob} list with the times
      * calculated in the average file
      *
      * @param listTJobsWithoutTimes List with the TJobs without lifecycle duration.
-     * @param pathAvgDurationPlan  Path where the avg file is placed.
+     * @param pathAvgDurationPlan   Path where the avg file is placed.
      */
     private void loadAvgLifecyclesTimeIntoTJob(List<TJob> listTJobsWithoutTimes, String pathAvgDurationPlan) throws IOException {
         Map<String, TJob> byId = new HashMap<>();
@@ -112,8 +110,8 @@ public class ProfileGenerator {
      * different {@code ContractedCapacity} and {@code TJob} {@code CloudObjectInstances} lifecycles as keys and an
      * empty list of capacities.
      *
-     * @param tJobList List with the TJobs.
-     * @param windowTime  the time Window.
+     * @param tJobList   List with the TJobs.
+     * @param windowTime the time Window.
      */
     private Map<CapacityKey, double[]> generateEmptyMapOfCapacities(List<TJob> tJobList, double windowTime) {
         Map<CapacityKey, double[]> outputMap = new TreeMap<>();
@@ -139,8 +137,8 @@ public class ProfileGenerator {
      * {@code Capacity} requirements, according to the number of Executions specified.
      *
      * @param mapWithCapacitiesTJob Map with the amount of Capacities.
-     * @param tJobList List with the populated {@code TJobs}.
-     * @param nExecutions Number of Executions of the {@code ExecutionPlan}.
+     * @param tJobList              List with the populated {@code TJobs}.
+     * @param nExecutions           Number of Executions of the {@code ExecutionPlan}.
      */
     private void fulfillMapOfCapacities(Map<CapacityKey, double[]> mapWithCapacitiesTJob, List<TJob> tJobList,
                                         double window, int nExecutions) {
@@ -159,15 +157,16 @@ public class ProfileGenerator {
             }
         }
     }
+
     /**
      * The {@code generateUsageProfileRawCsvFile} method generates the raw comma-separated files with the {@code ContractedCapacity}
      * required by the {@code TJob} during the different Executions of the  {@code ExecutionPlan}.
      *
      * @param mapWithCapacitiesTJob Map with the amount of Capacities.
-     * @param tJobList List with the populated {@code TJobs}.
-     * @param outputPath Location where the file would be placed.
-     * @param planName String with the {@code ExecutionPlan} name.
-     * @param window Double with the window time calculated.
+     * @param tJobList              List with the populated {@code TJobs}.
+     * @param outputPath            Location where the file would be placed.
+     * @param planName              String with the {@code ExecutionPlan} name.
+     * @param window                Double with the window time calculated.
      */
     private void generateUsageProfileRawCsvFile(List<TJob> tJobList, Map<CapacityKey, double[]> mapWithCapacitiesTJob,
                                                 String outputPath, String planName, double window) throws IOException {
@@ -188,8 +187,9 @@ public class ProfileGenerator {
 
         return false;
     }
+
     /**
-     {@code getStartingPointExecutions } Calculates where start the different {@code ExecutionPlan } executions
+     * {@code getStartingPointExecutions } calculates when start the different {@code ExecutionPlan } executions
      */
     private double[] getStartingPointExecutions(double testSuiteDuration, int executions) {
         double[] arrayStartPointsExecutions = new double[executions];
@@ -223,12 +223,14 @@ public class ProfileGenerator {
 
         return result;
     }
+
     /**
-     {@code addTJobCapacitiesUsed } aggregates all the {@code Capacity } used into the different TJobs individually
-     @param  tJobList List with all the {@code TJob }
-     @param  mapWithCapacitiesTJob Map with the {@code ContractedCapacity} used by the TJob
-     @param  printer CSV printer for output used
-     @param  planName String with the {@code ExecutionPlan} name
+     * {@code addTJobCapacitiesUsed } aggregates all the {@code Capacity } used into the different TJobs individually
+     *
+     * @param tJobList              List with all the {@code TJob }
+     * @param mapWithCapacitiesTJob Map with the {@code ContractedCapacity} used by the TJob
+     * @param printer               CSV printer for output used
+     * @param planName              String with the {@code ExecutionPlan} name
      */
     private static void addTJobCapacitiesUsed(List<TJob> tJobList, Map<CapacityKey, double[]> mapWithCapacitiesTJob,
                                               CSVPrinter printer, String planName) throws IOException {
@@ -247,13 +249,13 @@ public class ProfileGenerator {
     }
 
     /**
-     {@code addTotalCapacitiesUsed } aggregates to the CSV file the total aggregated {@code ContractedCapacity } used
-     in the different lifecycles during the {@code ExecutionPlan }
-
-     @param  mapWithCapacitiesTJob Map with the {@code ContractedCapacity} used by the TJob
-     @param  planName String with the {@code ExecutionPlan } name
-     @param timeWindow Time window considered
-     @param  printer CSV printer for output used
+     * {@code addTotalCapacitiesUsed } aggregates to the CSV file the total aggregated {@code ContractedCapacity } used
+     * in the different lifecycles during the {@code ExecutionPlan }
+     *
+     * @param mapWithCapacitiesTJob Map with the {@code ContractedCapacity} used by the TJob
+     * @param planName              String with the {@code ExecutionPlan } name
+     * @param timeWindow            Time window considered
+     * @param printer               CSV printer for output used
      */
     private static void addTotalCapacitiesUsed(Map<CapacityKey, double[]> mapWithCapacitiesTJob, String planName,
                                                int timeWindow, CSVPrinter printer) throws IOException {

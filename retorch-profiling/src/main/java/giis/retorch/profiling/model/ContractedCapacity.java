@@ -15,7 +15,7 @@ public class ContractedCapacity extends Capacity {
     private double granularity;
 
     public ContractedCapacity(@JsonProperty("capacityName")String name, @JsonProperty("quantity")double quantity, @JsonProperty("granularity")double granularity) {
-    super(name,quantity);
+        super(name,quantity);
         this.granularity=granularity;
     }
 
@@ -34,5 +34,4 @@ public class ContractedCapacity extends Capacity {
         return Objects.equals(this.getName(), that.getName()) && Double.compare(this.getQuantity(),
                 that.getQuantity()) == 0 && Double.compare(this.granularity, that.getGranularity()) == 0;
     }
-
 }

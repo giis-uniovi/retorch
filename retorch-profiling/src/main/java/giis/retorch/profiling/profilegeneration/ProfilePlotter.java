@@ -42,9 +42,6 @@ import java.util.List;
 /**
  * The {@code ProfilePlotter} class provides the necessary methods to generate graphical representations of the
  * {@code UsageProfiles} of the {@code CloudObjectInstances} for a certain {@code ExecutionPlan}.
- * <p>
- * <strong>Internal API — call via {@code UsageProfilerToolBox}.</strong> This class is public only for
- * historic reasons; it is not part of the supported public surface.
  */
 public class ProfilePlotter {
 
@@ -74,8 +71,7 @@ public class ProfilePlotter {
      * Graphs and store it into the {@code imagesFolder} folder.
      *
      * @param imagesFolder String with the path where the {@code UsageProfile} will be stored
-     * @param planName String with the name of the {@code ExecutionPlan}
-     *
+     * @param planName     String with the name of the {@code ExecutionPlan}
      */
     public void generateTotalTJobUsageProfileCharts(String imagesFolder, String serializedFolder, String planName, String coiName) throws IOException {
         Map<String, DefaultTableXYDataset> capacitiesData = new HashMap<>();
@@ -90,9 +86,8 @@ public class ProfilePlotter {
     /**
      * The {@code loadCapacitiesData} load the imported raw Usage Profile into the  two Maps with XYDataset created.
      *
-     * @param capacitiesData Map of XYDataset with the used Capacities.
+     * @param capacitiesData           Map of XYDataset with the used Capacities.
      * @param contractedCapacitiesData Map of XYDataset with the {@code ContractedCapacities}(empty)
-     *
      */
     private void loadCapacitiesData(Map<String, DefaultTableXYDataset> capacitiesData, Map<String, DefaultTableXYDataset> contractedCapacitiesData) {
         for (CSVRecord lifecycleRecord : csvProfileRecords) {
@@ -117,10 +112,9 @@ public class ProfilePlotter {
      * The {@code generateUsageProfiles} method given the Maps with XYDatasets of {@code Capacities} and {@code ContractedCpacities}, generates
      * the Usage Profile graphical representations corresponding to the {@code ExecutionPlan} {@code Capacity} usage.
      *
-     * @param capacitiesData  Map of XYDataset with the used {@code Capacity} required.
-     * @param mapPlotsUsage Map where the usage will be stored
-     * @param planName String with the {@code ExecutionPlan} name
-     *
+     * @param capacitiesData Map of XYDataset with the used {@code Capacity} required.
+     * @param mapPlotsUsage  Map where the usage will be stored
+     * @param planName       String with the {@code ExecutionPlan} name
      */
     private void generateUsageProfiles( String planName,String coiName, Map<String, DefaultTableXYDataset> capacitiesData, Map<String, XYPlot> mapPlotsUsage) {
 
@@ -153,10 +147,7 @@ public class ProfilePlotter {
     }
 
     /**
-     * Support method to get Resource usage plots from XYChart
-     *
-     * @param chart JFreeChart to plot
-     *
+     * Support method to get Resource usage plots from JFreeChart
      */
     private static @NonNull XYPlot getXyPlot(JFreeChart chart) {
         XYPlot plot = chart.getXYPlot();
@@ -213,7 +204,7 @@ public class ProfilePlotter {
      * the {@code CloudObjectInstance} {@code ContractedCapacity}s plot and the {@code ExecutionPlan} {@code Capacity}s.
      * plot.
      *
-     * @return   The rendered object to be applied to the plot.
+     * @return The rendered object to be applied to the plot.
      */
     private static StackedXYAreaRenderer2 getTJobUsageProfileRenderer() {
         StackedXYAreaRenderer2 renderer = new StackedXYAreaRenderer2();
@@ -302,8 +293,7 @@ public class ProfilePlotter {
 
     /**
      * The {@code serialize} support method enables the serialized storing of the UsageProfile for testing purposes.
-     *
-     * @param filePath String with the path where the serialized image will be stored
+     * in the specified {@code filePath}
      */
     public void serialize(String filePath) {
         try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(Paths.get(filePath)))) {
@@ -313,5 +303,4 @@ public class ProfilePlotter {
             log.error("Error saving chart:  {}", e.getMessage());
         }
     }
-
 }

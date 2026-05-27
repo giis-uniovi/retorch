@@ -39,6 +39,7 @@ public class DatasetGenerator {
      * Generates a list of {@code DataTuple} representing average times of the CSV files located in the directory
      * provided as parameter.
      * Each CSV file is expected to have data in the format defined by the provided headers.
+     *
      * @param path The path where CSV file is located.
      * @return A list of DataTuples representing average times, sorted first by stage and second by TJob name.
      */
@@ -103,10 +104,10 @@ public class DatasetGenerator {
     }
 
     /**
-     * Given a csv {@code csvRecord} from a file generated in the CI system with the TJob and COI data, generates its
-     * the different {@code DataTuple}
+     * Given a csv {@code csvRecord} from a file generated in the CI system with the TJob and COI data, generates it's
+     * corresponding {@code DataTuple}
      *
-     * @param csvRecord CSV record belonging to a TJob.
+     * @param csvRecord {@code csvRecord} belonging to a TJob.
      * @return {@code DataTuple} with the csvRecord data.
      */
     private DataTuple generateDataTupleFromRecord(CSVRecord csvRecord) {
@@ -173,7 +174,7 @@ public class DatasetGenerator {
      * Generates and populates a CSV file with the average relative duration of all the {@code TJob} belonging to a
      * certain plan.
      * <p>Gets as input an ordered list of {@code DataTuple} which have the average duration of each {@code TJob} and
-     * calculates the start of each Execution Plan stage. With the different starting points, intercalate 1 second
+     * calculates the start of each Execution Plan stage. With the different starting points, intercalate {@link #STAGE_GAP_SECONDS} seconds
      * between the {@code TJob} and COI lifecycles in order to ease representation and visualization.
      *
      * @param listTuples The list of {@code DataTuple} containing time data.
@@ -200,7 +201,7 @@ public class DatasetGenerator {
     }
 
     /**
-     * Builds a single row of the avg-duration CSV. The 10 time values are produced by cumulative summation,
+     * Builds a single row of the avg-duration CSV. The 10 time values are produced by aggregating accumulatively and,
      * intercalating {@link #STAGE_GAP_SECONDS} between TJob lifecycle phases for visualization.
      */
     private static List<Object> buildAvgCsvRow(DataTuple tuple, double stageStartTime, double lastJobEndTime) {

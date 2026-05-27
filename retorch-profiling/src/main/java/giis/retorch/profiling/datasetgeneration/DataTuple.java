@@ -24,11 +24,9 @@ public class DataTuple implements Serializable {
     public String getIdTJob() {
         return idTJob;
     }
-
     public int getStage() {
         return stage;
     }
-
     public Map<String, Double> getLifecycleDuration() {
         return lifecycleDuration;
     }

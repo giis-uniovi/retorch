@@ -2,19 +2,17 @@ package giis.retorch.profiling.profilegeneration;
 
 /**
  * Tracks the provisioned-capacity gaps across a fixed number of slots as time advances. Replaces the previous
- * {@code Triplet<Integer,Integer,Integer>[]} state machine used in {@code ProfileGenerator}.
- * <p>
  * For each slot the tracker records three timestamps:
  * <ul>
- *   <li>{@code firstSeen} — when the slot was first occupied (immutable for the lifetime of the slot)</li>
+ *   <li>{@code firstSeen} — when the slot was first allocated (immutable for the lifetime of the slot)</li>
  *   <li>{@code billingPeriodStart} — when the current billing period started</li>
- *   <li>{@code lastSeen} — the most recent tick at which the slot was occupied</li>
+ *   <li>{@code lastSeen} — the most recent tick at which the slot was allocated</li>
  * </ul>
  */
 final class CapacityGapTracker {
 
     private static final class Gap {
-        int firstSeen;
+        final int firstSeen;
         int billingPeriodStart;
         int lastSeen;
 
@@ -36,8 +34,7 @@ final class CapacityGapTracker {
     }
 
     /**
-     * Advances the tracker for a single tick at {@code currentTime}, with {@code slotsUsed} slots required at that
-     * moment. Excess slots (beyond the configured slot count) are clipped silently.
+     * Used to allocate a certain number of slots at a {@code currentTime}.
      */
     void recordUsage(int currentTime, int slotsUsed) {
         int effective = Math.min(slotsUsed, gaps.length);
@@ -59,7 +56,9 @@ final class CapacityGapTracker {
         }
     }
 
-    /** Returns the provisioned quantity (granularity × number of active slots). */
+    /**
+     * Returns the provisioned quantity, calculated as the granularity multiplied by the number of active slots.
+     */
     double provisionedQuantity() {
         int active = 0;
         for (Gap g : gaps) {
