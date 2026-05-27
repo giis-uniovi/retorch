@@ -5,18 +5,23 @@ import giis.retorch.profiling.utils.FileUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
-import org.javatuples.Triplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import giis.retorch.profiling.model.CloudObjectInstance;
-import giis.retorch.profiling.model.ContractedCapacity;
 import giis.retorch.orchestration.model.TJob;
 import giis.retorch.orchestration.model.ExecutionPlan;
 import giis.retorch.orchestration.model.Capacity;
 
-import java.io.*;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.IntStream;
 
 import static giis.retorch.orchestration.model.Capacity.getCapacityNames;
@@ -25,7 +30,10 @@ import static giis.retorch.profiling.utils.CsvConstants.*;
 /**
  * The {@code ProfileGenerator} class provides the necessary methods to generate the dataset with the use of
  * the {@code ContractedCapacity} by the different {@code ResourceInstances} of an {@code ExecutionPlan}
- * during a certain time window
+ * during a certain time window.
+ * <p>
+ * <strong>Internal API — call via {@code UsageProfilerToolBox}.</strong> This class is public only for
+ * historic reasons; it is not part of the supported public surface.
  */
 public class ProfileGenerator {
 
@@ -58,7 +66,7 @@ public class ProfileGenerator {
                     "Required time (%.1f) exceeds window (%.1f): executions=%d, longerTJob=%.1f, gap=%d",
                     requiredTime, windowTime, executions, longerTJob, EXECUTION_GAP_SECONDS));
         }
-        Map<String, double[]> mapWithJobsProfile = generateEmptyMapOfCapacities(listTJobs, windowTime);
+        Map<CapacityKey, double[]> mapWithJobsProfile = generateEmptyMapOfCapacities(listTJobs, windowTime);
         fulfillMapOfCapacities(mapWithJobsProfile, listTJobs, windowTime, executions);
         generateUsageProfileRawCsvFile(listTJobs, mapWithJobsProfile, outputPath, plan.getName(), windowTime);
     }
@@ -70,28 +78,24 @@ public class ProfileGenerator {
      * @param pathAvgDurationPlan  Path where the avg file is placed.
      */
     private void loadAvgLifecyclesTimeIntoTJob(List<TJob> listTJobsWithoutTimes, String pathAvgDurationPlan) throws IOException {
+        Map<String, TJob> byId = new HashMap<>();
+        for (TJob tjob : listTJobsWithoutTimes) {
+            byId.put(tjob.getIdTJob(), tjob);
+        }
         boolean found = false;
-        String[] tableHeaders = {TJOB_HEADER, STAGE_HEADER, COI_SETUP_LABEL + START_SUFFIX,
-                COI_SETUP_LABEL + END_SUFFIX, TJOB_SETUP_LABEL + START_SUFFIX, TJOB_SETUP_LABEL + END_SUFFIX,
-                TJOB_TEST_EXEC_LABEL + START_SUFFIX, TJOB_TEST_EXEC_LABEL + END_SUFFIX,
-                TJOB_TEARDOWN_LABEL + START_SUFFIX, TJOB_TEARDOWN_LABEL + END_SUFFIX, COI_TEARDOWN_LABEL + START_SUFFIX,
-                COI_TEARDOWN_LABEL + END_SUFFIX};
-
         try (FileReader fileReader = new FileReader(pathAvgDurationPlan)) {
-            CSVFormat csvFormat =
-                    CSVFormat.DEFAULT.builder()                    .setHeader(tableHeaders).setDelimiter(CSV_DELIMITER).setSkipHeaderRecord(true).build();
+            CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                    .setHeader(avgCsvHeaders()).setDelimiter(CSV_DELIMITER).setSkipHeaderRecord(true).build();
             for (CSVRecord singleRecord : csvFormat.parse(fileReader)) {
-                String idTJob = singleRecord.get(TJOB_HEADER);
-                for (TJob tjob : listTJobsWithoutTimes) {
-                    if (tjob.getIdTJob().equals(idTJob)) {
-                        tjob.setAvgTime(Double.parseDouble(singleRecord.get(TJOB_SETUP_LABEL + START_SUFFIX)),
-                                Double.parseDouble(singleRecord.get(TJOB_SETUP_LABEL + END_SUFFIX)),
-                                Double.parseDouble(singleRecord.get(TJOB_TEST_EXEC_LABEL + START_SUFFIX)),
-                                Double.parseDouble(singleRecord.get(TJOB_TEST_EXEC_LABEL + END_SUFFIX)),
-                                Double.parseDouble(singleRecord.get(TJOB_TEARDOWN_LABEL + START_SUFFIX)),
-                                Double.parseDouble(singleRecord.get(TJOB_TEARDOWN_LABEL + END_SUFFIX)));
-                        found = true;
-                    }
+                TJob tjob = byId.get(singleRecord.get(TJOB_HEADER));
+                if (tjob != null) {
+                    tjob.setAvgTime(Double.parseDouble(singleRecord.get(TJOB_SETUP_LABEL + START_SUFFIX)),
+                            Double.parseDouble(singleRecord.get(TJOB_SETUP_LABEL + END_SUFFIX)),
+                            Double.parseDouble(singleRecord.get(TJOB_TEST_EXEC_LABEL + START_SUFFIX)),
+                            Double.parseDouble(singleRecord.get(TJOB_TEST_EXEC_LABEL + END_SUFFIX)),
+                            Double.parseDouble(singleRecord.get(TJOB_TEARDOWN_LABEL + START_SUFFIX)),
+                            Double.parseDouble(singleRecord.get(TJOB_TEARDOWN_LABEL + END_SUFFIX)));
+                    found = true;
                 }
             }
         }
@@ -111,18 +115,18 @@ public class ProfileGenerator {
      * @param tJobList List with the TJobs.
      * @param windowTime  the time Window.
      */
-    private Map<String, double[]> generateEmptyMapOfCapacities(List<TJob> tJobList, double windowTime) {
-        HashMap<String, double[]> outputMap = new HashMap<>();
+    private Map<CapacityKey, double[]> generateEmptyMapOfCapacities(List<TJob> tJobList, double windowTime) {
+        Map<CapacityKey, double[]> outputMap = new TreeMap<>();
+        int windowSize = (int) Math.ceil(windowTime);
         for (TJob tjob : tJobList) {
             if (!checkIfContainsTJob(tjob.getIdTJob(), outputMap)) {
-                List<String> listCapacityNames = tjob.getCapacityNames();
-                for (String capacityName : listCapacityNames) {
-                    outputMap.put(tjob.getIdTJob() + "-" + TJob.LIFECYCLE_SETUP_NAME + "-" + capacityName,
-                            new double[(int) Math.ceil(windowTime)]);
-                    outputMap.put(tjob.getIdTJob() + "-" + TJob.LIFECYCLE_TESTEXECUTION_NAME + "-" + capacityName,
-                            new double[(int) Math.ceil(windowTime)]);
-                    outputMap.put(tjob.getIdTJob() + "-" + TJob.LIFECYCLE_TEARDOWN_NAME + "-" + capacityName,
-                            new double[(int) Math.ceil(windowTime)]);
+                for (String capacityName : tjob.getCapacityNames()) {
+                    outputMap.put(new CapacityKey(tjob.getIdTJob(), TJob.LIFECYCLE_SETUP_NAME, capacityName),
+                            new double[windowSize]);
+                    outputMap.put(new CapacityKey(tjob.getIdTJob(), TJob.LIFECYCLE_TESTEXECUTION_NAME, capacityName),
+                            new double[windowSize]);
+                    outputMap.put(new CapacityKey(tjob.getIdTJob(), TJob.LIFECYCLE_TEARDOWN_NAME, capacityName),
+                            new double[windowSize]);
                 }
             }
         }
@@ -138,7 +142,7 @@ public class ProfileGenerator {
      * @param tJobList List with the populated {@code TJobs}.
      * @param nExecutions Number of Executions of the {@code ExecutionPlan}.
      */
-    private void fulfillMapOfCapacities(Map<String, double[]> mapWithCapacitiesTJob, List<TJob> tJobList,
+    private void fulfillMapOfCapacities(Map<CapacityKey, double[]> mapWithCapacitiesTJob, List<TJob> tJobList,
                                         double window, int nExecutions) {
         double longerTJob = findLongerTJob(tJobList);
         double[] startPoint = getStartingPointExecutions(longerTJob, nExecutions);
@@ -148,7 +152,7 @@ public class ProfileGenerator {
                 Map.Entry<String, Set<Capacity>> setCapacitiesGivenTime = tJob.getCapacitiesGivenTime(time,
                         timeInitial);
                 for (Capacity cap : setCapacitiesGivenTime.getValue()) {
-                    String key = tJob.getIdTJob() + "-" + setCapacitiesGivenTime.getKey() + "-" + cap.getName();
+                    CapacityKey key = new CapacityKey(tJob.getIdTJob(), setCapacitiesGivenTime.getKey(), cap.getName());
                     double[] listCapacities = mapWithCapacitiesTJob.get(key);
                     listCapacities[time] = cap.getQuantity();
                 }
@@ -165,12 +169,11 @@ public class ProfileGenerator {
      * @param planName String with the {@code ExecutionPlan} name.
      * @param window Double with the window time calculated.
      */
-    private void generateUsageProfileRawCsvFile(List<TJob> tJobList, Map<String, double[]> mapWithCapacitiesTJob,
+    private void generateUsageProfileRawCsvFile(List<TJob> tJobList, Map<CapacityKey, double[]> mapWithCapacitiesTJob,
                                                 String outputPath, String planName, double window) throws IOException {
         int windowInt = (int) Math.ceil(window);
         String[] intStringArray = Arrays.stream(IntStream.range(0, windowInt).toArray()).mapToObj(String::valueOf).toArray(String[]::new);
-        String[] headers = {PLAN_HEADER, TJOB_HEADER, LIFECYCLE_HEADER, CAPACITY_HEADER};
-        headers = concatenateArrays(headers, intStringArray);
+        String[] headers = concatenateArrays(rawProfileFixedHeaders(), intStringArray);
         FileUtils.ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
                 CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(CSV_DELIMITER).build())) {
@@ -179,9 +182,9 @@ public class ProfileGenerator {
         }
     }
 
-    private boolean checkIfContainsTJob(String tJobName, Map<String, double[]> mapTimes) {
-        for (Map.Entry<String, double[]> entry : mapTimes.entrySet()) {
-            if (entry.getKey().contains(tJobName)) {return true;}}
+    private boolean checkIfContainsTJob(String tJobName, Map<CapacityKey, double[]> mapTimes) {
+        for (CapacityKey key : mapTimes.keySet()) {
+            if (key.getTJobId().equals(tJobName)) {return true;}}
 
         return false;
     }
@@ -227,13 +230,13 @@ public class ProfileGenerator {
      @param  printer CSV printer for output used
      @param  planName String with the {@code ExecutionPlan} name
      */
-    private static void addTJobCapacitiesUsed(List<TJob> tJobList, Map<String, double[]> mapWithCapacitiesTJob,
+    private static void addTJobCapacitiesUsed(List<TJob> tJobList, Map<CapacityKey, double[]> mapWithCapacitiesTJob,
                                               CSVPrinter printer, String planName) throws IOException {
         for (TJob e : tJobList) {
             for (String phase : TJob.getListTJobLifecyclesNames()) {
                 for (String capacity : e.getCapacityNames()) {
                     String[] firstCols = {planName, e.getIdTJob(), phase, capacity};
-                    double[] capacitiesArray = mapWithCapacitiesTJob.get(e.getIdTJob() + "-" + phase + "-" + capacity);
+                    double[] capacitiesArray = mapWithCapacitiesTJob.get(new CapacityKey(e.getIdTJob(), phase, capacity));
                     String[] capacitiesUsedStringArray =
                             Arrays.stream(capacitiesArray).mapToObj(d -> String.format(Locale.ENGLISH, "%.1f", d)).toArray(String[]::new);
                     capacitiesUsedStringArray = concatenateArrays(firstCols, capacitiesUsedStringArray);
@@ -252,14 +255,15 @@ public class ProfileGenerator {
      @param timeWindow Time window considered
      @param  printer CSV printer for output used
      */
-    private static void addTotalCapacitiesUsed(Map<String, double[]> mapWithCapacitiesTJob, String planName,
+    private static void addTotalCapacitiesUsed(Map<CapacityKey, double[]> mapWithCapacitiesTJob, String planName,
                                                int timeWindow, CSVPrinter printer) throws IOException {
         for (String capacity : getCapacityNames()) {
             for (String phase : TJob.getListTJobLifecyclesNames()) {
                 String[] firstCols = {planName, AGGREGATION_VALUE, phase, capacity};
                 double[] capacitiesArray = new double[timeWindow];
-                for (Map.Entry<String, double[]> mapEntry : mapWithCapacitiesTJob.entrySet()) {
-                    if (mapEntry.getKey().contains(phase) && mapEntry.getKey().contains(capacity)) {
+                for (Map.Entry<CapacityKey, double[]> mapEntry : mapWithCapacitiesTJob.entrySet()) {
+                    CapacityKey key = mapEntry.getKey();
+                    if (key.getLifecycle().equals(phase) && key.getCapacity().equals(capacity)) {
                         IntStream.range(0, capacitiesArray.length).forEach(i -> capacitiesArray[i] += mapEntry.getValue()[i]);
                     }
                 }
@@ -269,151 +273,6 @@ public class ProfileGenerator {
                 printer.printRecord(capacitiesUsedStringArray);
             }
         }
-    }
-
-    /**
-     Writes a CSV file with the {@code ContractedCapacities} of the {@code CloudObjectInstance}
-     overlaid on the raw TJob usage profile.
-
-     @param  inputPath String with the path of the input file
-     @param outputPath String where the output file will be placed
-     @param coi   {@code CloudObjectInstance} used
-     */
-    public void writeCOIContractedCapacitiesCSV(String inputPath, String outputPath, CloudObjectInstance coi) throws IOException {
-        Map<String, ContractedCapacity> coiCapacities = coi.getContractedCapacities();
-        List<CSVRecord> listRecords ;
-        String[] headerNames;
-        List<CSVRecord> tuplesToTreatCSV;
-
-        try (FileReader fileReader = new FileReader(inputPath)) {
-            CSVFormat csvFormat =
-                    CSVFormat.DEFAULT.builder().setHeader().setDelimiter(CSV_DELIMITER).setSkipHeaderRecord(true).build();
-            listRecords = csvFormat.parse(fileReader).getRecords();
-            headerNames = listRecords.get(0).getParser().getHeaderNames().toArray(new String[0]);
-            tuplesToTreatCSV =
-                    listRecords.stream()
-                            .filter(csvRecord -> csvRecord.get(TJOB_HEADER).equals(AGGREGATION_VALUE))
-                            .collect(Collectors.toList());
-
-        } catch (IOException e) {
-            throw new IOException("Failed to find the profile file while creating the COI: " + inputPath, e);
-        }
-        HashMap<String, List<String>> mapPriorCalculate = aggregateLifecycleCapacities(tuplesToTreatCSV);
-        HashMap<String, List<String>> outputMap = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : mapPriorCalculate.entrySet()) {
-            String capacityName = entry.getKey();
-            ContractedCapacity currentCapacity = coiCapacities.get(capacityName);
-            if (currentCapacity != null && currentCapacity.getQuantity() > 0 && currentCapacity.getGranularity() > 0) {
-                int amountGaps = (int) Math.ceil(currentCapacity.getQuantity() / currentCapacity.getGranularity());
-                Triplet<Integer, Integer, Integer>[] mapCapacitiesUsed = new Triplet[amountGaps];
-                List<String> currentValuesContracted = new ArrayList<>();
-                for (int i = 0; i < entry.getValue().size(); i++) {
-                    double capacityRequired = Double.parseDouble(entry.getValue().get(i));
-                    currentValuesContracted.add(String.format(Locale.ENGLISH, "%.1f",
-                            getProvisionedCapacityGivenTime(i, currentCapacity, capacityRequired, coi,
-                                    mapCapacitiesUsed)));
-                }
-                String keyMap = "ExecutionPlanEx" + "-" + coi.getName() + "-" + capacityName;
-                outputMap.put(keyMap, currentValuesContracted);
-            }
-        }
-        generateNewProfileDatasetWithCapacitiesUsed(listRecords, headerNames, outputPath, outputMap);
-    }
-
-    private HashMap<String, List<String>> aggregateLifecycleCapacities(List<CSVRecord> tuplesToTreatCSV) {
-        HashMap<String, List<String>> mapPriorCalculate = new HashMap<>();
-        for (CSVRecord tupleCSV : tuplesToTreatCSV) {
-            List<String> values = new ArrayList<>();
-            for (int i = CSV_DATA_START_COLUMN; i < tupleCSV.size(); i++) {
-                values.add(tupleCSV.get(i));
-            }
-            mapPriorCalculate.merge(tupleCSV.get(CAPACITY_HEADER), values, this::aggregateArraylists);
-        }
-
-        return mapPriorCalculate;
-    }
-
-    /**
-     {@code generateNewProfileDatasetWithCapacitiesUsed} support aggregates the {@code CloudObjectInstance}
-
-     @param  listRecords List with the CSV records with the different lifecycle stages and capacities
-     @param headerNames CSV file header names
-     @param outputPath   Path with the output file
-     @param outputMap  Map with the {@code ContractedCapacities}
-     */
-    void generateNewProfileDatasetWithCapacitiesUsed(List<CSVRecord> listRecords, String[] headerNames,
-                                                            String outputPath,
-                                                            Map<String, List<String>> outputMap) throws IOException {
-        FileUtils.ensureParentDir(outputPath);
-        try (FileWriter out = new FileWriter(outputPath); CSVPrinter printer = new CSVPrinter(out,
-                CSVFormat.DEFAULT.builder().setHeader(headerNames).setDelimiter(CSV_DELIMITER).build())) {
-            String scheduling = "None";
-            for (CSVRecord recordCapacity : listRecords) {
-                printer.printRecord(recordCapacity.stream().collect(Collectors.toList()));
-                scheduling = recordCapacity.get(PLAN_HEADER);
-            }
-            for (Map.Entry<String, List<String>> entry : outputMap.entrySet()) {
-                String[] splitValues = entry.getKey().split("-");
-                String[] arrayHeader = new String[]{scheduling, AGGREGATION_VALUE, "CONTRACTED", splitValues[2]};
-                printer.printRecord(concatenateArrays(arrayHeader,
-                        entry.getValue().toArray(new String[0])));
-            }
-        } catch (IOException e) {
-            throw new IOException("The file :" + outputPath + "Cannot be opened");}
-    }
-
-    /**
-     {@code getProvisionedCapacityGivenTime} support method that gets the contracted capacities considering the
-     minimal time period that can be provisioned
-
-     @param  currentTime Time to retrieve the Capacity quantity
-     @param capacity {@code Capacity} to retrieve the granularity (and calculate the gaps)
-     @param capacityValue   Capacity value
-     @param coi {@code CloudObjectInstance} considered
-     */
-    double getProvisionedCapacityGivenTime(int currentTime, ContractedCapacity capacity, double capacityValue,
-                                                  CloudObjectInstance coi,
-                                                  Triplet<Integer, Integer, Integer>[] mapCapacitiesUsed) {
-        int numberOfUsedGaps = (int) Math.ceil(capacityValue / capacity.getGranularity());
-        if (numberOfUsedGaps>=mapCapacitiesUsed.length){
-            numberOfUsedGaps=mapCapacitiesUsed.length;
-        }
-        // Update used gaps
-        for (int i = 0; i < numberOfUsedGaps; i++) {
-            if (mapCapacitiesUsed[i] == null) {
-                mapCapacitiesUsed[i] = new Triplet<>(currentTime, currentTime, currentTime);
-            } else {
-                mapCapacitiesUsed[i] = mapCapacitiesUsed[i].setAt2(currentTime);
-                if (mapCapacitiesUsed[i].getValue1() - mapCapacitiesUsed[i].getValue2() >= coi.getBillingOption().getTimePeriod()) {
-                    mapCapacitiesUsed[i] = mapCapacitiesUsed[i].setAt1(currentTime);
-                }
-            }
-        }
-        // Clear unused gaps
-        for (int i = numberOfUsedGaps; i < mapCapacitiesUsed.length; i++) {
-            if (isUnusedGap(currentTime, mapCapacitiesUsed[i], coi.getBillingOption().getTimePeriod())) {
-                mapCapacitiesUsed[i] = null;
-            }
-        }
-        // Calculate provisioned capacity
-        long numberOfEmptyGaps = Arrays.stream(mapCapacitiesUsed).filter(Objects::isNull).count();
-        return capacity.getGranularity() * (mapCapacitiesUsed.length - numberOfEmptyGaps);
-    }
-
-    private boolean isUnusedGap(int currentTime, Triplet<Integer, Integer, Integer> gap, int timePeriod) {
-        return gap != null && (currentTime - gap.getValue1() >= timePeriod) && (currentTime != gap.getValue2());
-    }
-
-    List<String> aggregateArraylists(List<String> firstRecord, List<String> secondRecord) {
-        if (firstRecord.size() != secondRecord.size()) {
-            throw new IllegalArgumentException("The arrays provided differ in size");
-        }
-        List<String> aggregatedList = new ArrayList<>();
-        for (int i = 0; i < firstRecord.size(); i++) {
-            aggregatedList.add(String.format(Locale.ENGLISH, "%.1f",
-                    Double.parseDouble(firstRecord.get(i)) + Double.parseDouble(secondRecord.get(i))));
-        }
-        return aggregatedList;
     }
 
 }

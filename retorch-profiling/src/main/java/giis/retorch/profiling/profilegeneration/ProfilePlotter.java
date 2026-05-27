@@ -41,7 +41,10 @@ import java.util.List;
 
 /**
  * The {@code ProfilePlotter} class provides the necessary methods to generate graphical representations of the
- * {@code UsageProfiles} of the {@code CloudObjectInstances} for a certain {@code ExecutionPlan}
+ * {@code UsageProfiles} of the {@code CloudObjectInstances} for a certain {@code ExecutionPlan}.
+ * <p>
+ * <strong>Internal API — call via {@code UsageProfilerToolBox}.</strong> This class is public only for
+ * historic reasons; it is not part of the supported public surface.
  */
 public class ProfilePlotter {
 
@@ -260,11 +263,9 @@ public class ProfilePlotter {
         FileUtils.ensureDir(serializedPath);
         UsageProfile profileToSave=usageProfile;
 
-        String serSep = serializedPath.endsWith("/") || serializedPath.endsWith(File.separator) ? "" : "/";
-        serialize(serializedPath + serSep + profileToSave.getPlanName() + "-" + coiName + "-UsageProfile.serialized");
+        serialize(FileUtils.joinPath(serializedPath, profileToSave.getPlanName() + "-" + coiName + "-UsageProfile.serialized"));
 
-        String separator = imagesPath.endsWith("/") || imagesPath.endsWith(File.separator) ? "" : "/";
-        String filePathBase = imagesPath + separator + profileToSave.getPlanName() + "-" + coiName + "-";
+        String filePathBase = FileUtils.joinPath(imagesPath, profileToSave.getPlanName() + "-" + coiName + "-");
         for (Map.Entry<String, JFreeChart> entry:profileToSave.getPlots().entrySet()) {
             String pathGraph=filePathBase+entry.getKey();
             JFreeChart chart = entry.getValue();

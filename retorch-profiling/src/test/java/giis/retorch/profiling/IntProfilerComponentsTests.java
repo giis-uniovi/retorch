@@ -54,7 +54,7 @@ public class IntProfilerComponentsTests {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
         plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_vm.csv", 3600, 4);
-        generator.writeCOIContractedCapacitiesCSV(outBasePath + "/output_profile_vm.csv", outBasePath + "/profileIntegrationCOI_VM.csv", dataGenerationUtils.generateVMCloudObjectInstances());
+        new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(outBasePath + "/output_profile_vm.csv", outBasePath + "/profileIntegrationCOI_VM.csv", dataGenerationUtils.generateVMCloudObjectInstances());
         ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_VM.csv");
 
         plotter.generateTotalTJobUsageProfileCharts(outputProfilePath, outputProfilePath, plan.getName(), "vm");
@@ -68,7 +68,7 @@ public class IntProfilerComponentsTests {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
         plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_container.csv", 3600, 4);
-        generator.writeCOIContractedCapacitiesCSV(outBasePath + "/output_profile_int_container.csv", outBasePath + "/profileIntegrationCOI_container.csv", dataGenerationUtils.generateContainersCloudObjectInstances());
+        new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(outBasePath + "/output_profile_int_container.csv", outBasePath + "/profileIntegrationCOI_container.csv", dataGenerationUtils.generateContainersCloudObjectInstances());
         ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_container.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", outBasePath + "/profiles", plan.getName(), "containers");
 
@@ -81,7 +81,7 @@ public class IntProfilerComponentsTests {
         ExecutionPlan plan = dataGenerationUtils.generateExecutionPlan();
         plan.setName("int"+plan.getName());
         generator.generateExecutionPlanCapacitiesUsage(plan, inBasePath + "/imp_avg_dataset.csv", outBasePath + "/output_profile_int_services.csv", 3600, 4);
-        generator.writeCOIContractedCapacitiesCSV(outBasePath + "/output_profile_int_services.csv", outBasePath + "/profileIntegrationCOI_services.csv", dataGenerationUtils.generateBrowserServiceCloudObjectInstances());
+        new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(outBasePath + "/output_profile_int_services.csv", outBasePath + "/profileIntegrationCOI_services.csv", dataGenerationUtils.generateBrowserServiceCloudObjectInstances());
         ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_services.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", outBasePath + "/profiles", plan.getName(), "services");
         assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-services-UsageProfile.serialized", plotter.getUsageProfile(),"services"));

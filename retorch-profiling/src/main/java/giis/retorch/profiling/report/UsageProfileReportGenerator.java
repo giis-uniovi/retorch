@@ -27,6 +27,9 @@ import java.util.Map;
 /**
  * The {@code UsageProfileReportGenerator} class generates a PDF report that consolidates the Usage Profile
  * charts for all {@code CloudObjectInstance}s into a single document.
+ * <p>
+ * <strong>Internal API — call via {@code UsageProfilerToolBox}.</strong> This class is public only for
+ * historic reasons; it is not part of the supported public surface.
  */
 public class UsageProfileReportGenerator {
 

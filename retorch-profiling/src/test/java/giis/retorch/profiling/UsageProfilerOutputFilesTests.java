@@ -63,7 +63,7 @@ public class UsageProfilerOutputFilesTests {
     @Test
     public void testVMPngFilesGenerated() throws IOException {
         CloudObjectInstance vm = dataUtils.generateVMCloudObjectInstances();
-        generator.writeCOIContractedCapacitiesCSV(
+        new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(
                 OUT_BASE + "/raw_profile.csv", OUT_BASE + "/profile_vm.csv", vm);
         new ProfilePlotter(OUT_BASE + "/profile_vm.csv")
                 .generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), "vm");
@@ -77,7 +77,7 @@ public class UsageProfilerOutputFilesTests {
     @Test
     public void testContainerPngFilesGenerated() throws IOException {
         CloudObjectInstance containers = dataUtils.generateContainersCloudObjectInstances();
-        generator.writeCOIContractedCapacitiesCSV(
+        new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(
                 OUT_BASE + "/raw_profile.csv", OUT_BASE + "/profile_containers.csv", containers);
         new ProfilePlotter(OUT_BASE + "/profile_containers.csv")
                 .generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), "containers");
@@ -93,7 +93,7 @@ public class UsageProfilerOutputFilesTests {
     @Test
     public void testServicesPngFilesGenerated() throws IOException {
         CloudObjectInstance services = dataUtils.generateBrowserServiceCloudObjectInstances();
-        generator.writeCOIContractedCapacitiesCSV(
+        new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(
                 OUT_BASE + "/raw_profile.csv", OUT_BASE + "/profile_services.csv", services);
         new ProfilePlotter(OUT_BASE + "/profile_services.csv")
                 .generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), "services");
@@ -114,7 +114,7 @@ public class UsageProfilerOutputFilesTests {
                 dataUtils.generateBrowserServiceCloudObjectInstances())) {
             String coiName = coi.getName().replace(" ", "_");
             String coiCsv  = OUT_BASE + "/profile_pdf_" + coiName + ".csv";
-            generator.writeCOIContractedCapacitiesCSV(OUT_BASE + "/raw_profile.csv", coiCsv, coi);
+            new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(OUT_BASE + "/raw_profile.csv", coiCsv, coi);
             ProfilePlotter plotter = new ProfilePlotter(coiCsv);
             plotter.generateTotalTJobUsageProfileCharts(CHARTS_DIR, CHARTS_DIR, plan.getName(), coiName);
             profiles.add(plotter.getUsageProfile());

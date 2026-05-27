@@ -52,16 +52,11 @@ public class DatasetGenerator {
         }
 
         List<DataTuple> allDataTuples = new ArrayList<>();
-        String[] tableHeaders = {TJOB_HEADER, STAGE_HEADER, COI_SETUP_LABEL + START_SUFFIX,
-                COI_SETUP_LABEL + END_SUFFIX, TJOB_SETUP_LABEL + START_SUFFIX,
-                TJOB_SETUP_LABEL + END_SUFFIX, TJOB_TEST_EXEC_LABEL + START_SUFFIX, TJOB_TEST_EXEC_LABEL + END_SUFFIX,
-                TJOB_TEARDOWN_LABEL + START_SUFFIX,
-                TJOB_TEARDOWN_LABEL + END_SUFFIX, COI_TEARDOWN_LABEL + START_SUFFIX, COI_TEARDOWN_LABEL + END_SUFFIX};
         // Parsing of the CSV file
         for (File file : csvFiles) {
             try (FileReader fileReader = new FileReader(file)) {
                 CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-                        .setHeader(tableHeaders).setDelimiter(CSV_DELIMITER)
+                        .setHeader(avgCsvHeaders()).setDelimiter(CSV_DELIMITER)
                         .setSkipHeaderRecord(true)
                         .build();
 
@@ -153,9 +148,7 @@ public class DatasetGenerator {
     private List<DataTuple> calculateAverageDurations(Map<String, DataTuple> aggregatedTuples, int fileCount) {
         List<DataTuple> resultList = new ArrayList<>();
         aggregatedTuples.values().forEach(tuple -> {
-            Map<String, Double> lifecycleDurations = tuple.getLifecycleDuration();
-            lifecycleDurations.replaceAll((key, value) -> value / fileCount);
-            tuple.setLifecycleDuration(lifecycleDurations);
+            tuple.getLifecycleDuration().replaceAll((key, value) -> value / fileCount);
             resultList.add(tuple);
         });
         return resultList;
@@ -172,11 +165,7 @@ public class DatasetGenerator {
      */
     private DataTuple mergeTuples(DataTuple aggregatedTuple, DataTuple tuple) {
         Map<String, Double> durations1 = aggregatedTuple.getLifecycleDuration();
-        Map<String, Double> durations2 = tuple.getLifecycleDuration();
-
-        durations2.forEach((key, value) -> durations1.merge(key, value, Double::sum));
-        aggregatedTuple.setLifecycleDuration(durations1);
-
+        tuple.getLifecycleDuration().forEach((key, value) -> durations1.merge(key, value, Double::sum));
         return aggregatedTuple;
     }
 
@@ -195,42 +184,46 @@ public class DatasetGenerator {
             log.error("No data tuples provided for CSV creation");
             return;
         }
-        String[] headers = {
-                TJOB_HEADER, STAGE_HEADER, COI_SETUP_LABEL + START_SUFFIX, COI_SETUP_LABEL + END_SUFFIX,
-                TJOB_SETUP_LABEL + START_SUFFIX, TJOB_SETUP_LABEL + END_SUFFIX, TJOB_TEST_EXEC_LABEL + START_SUFFIX,
-                TJOB_TEST_EXEC_LABEL + END_SUFFIX, TJOB_TEARDOWN_LABEL + START_SUFFIX, TJOB_TEARDOWN_LABEL + END_SUFFIX,
-                COI_TEARDOWN_LABEL + START_SUFFIX, COI_TEARDOWN_LABEL + END_SUFFIX
-        };
         Map<Integer, Double> startingStages = calculateStartingStages(listTuples);
+        double lastJobEndTime = Collections.max(startingStages.values());
 
         FileUtils.ensureParentDir(outputPath);
         try (FileWriter out = new FileWriter(outputPath);
              CSVPrinter printer = new CSVPrinter(out,
-                     CSVFormat.DEFAULT.builder().setHeader(headers).setDelimiter(CSV_DELIMITER).build())) {
+                     CSVFormat.DEFAULT.builder().setHeader(avgCsvHeaders()).setDelimiter(CSV_DELIMITER).build())) {
             for (DataTuple tuple : listTuples) {
-                Map<String, Double> durations = tuple.getLifecycleDuration();
-                Double stageStartTime = startingStages.get(tuple.getStage());
-                Double lastJobEndTime = Collections.max(startingStages.values());
-                printer.printRecord(
-                        tuple.getIdTJob(),
-                        tuple.getStage(),
-                        "0.0", // COI setup always starts at time 0
-                        String.format(Locale.ENGLISH, "%.1f", durations.get(COI_SETUP_LABEL)),
-                        String.format(Locale.ENGLISH, "%.1f", stageStartTime),
-                        String.format(Locale.ENGLISH, "%.1f", stageStartTime + durations.get(TJOB_SETUP_LABEL)),
-                        String.format(Locale.ENGLISH, "%.1f", stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS),
-                        String.format(Locale.ENGLISH, "%.1f",
-                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEST_EXEC_LABEL)),
-                        String.format(Locale.ENGLISH, "%.1f",
-                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEST_EXEC_LABEL) + STAGE_GAP_SECONDS),
-                        String.format(Locale.ENGLISH, "%.1f",
-                                stageStartTime + durations.get(TJOB_SETUP_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEST_EXEC_LABEL) + STAGE_GAP_SECONDS + durations.get(TJOB_TEARDOWN_LABEL)),
-                        String.format(Locale.ENGLISH, "%.1f", lastJobEndTime),
-                        String.format(Locale.ENGLISH, "%.1f", lastJobEndTime + durations.get(COI_TEARDOWN_LABEL)));
+                printer.printRecord(buildAvgCsvRow(tuple, startingStages.get(tuple.getStage()), lastJobEndTime));
             }
         } catch (IOException e) {
             throw new IOException("Error writing CSV file: " + outputPath, e);
         }
+    }
+
+    /**
+     * Builds a single row of the avg-duration CSV. The 10 time values are produced by cumulative summation,
+     * intercalating {@link #STAGE_GAP_SECONDS} between TJob lifecycle phases for visualization.
+     */
+    private static List<Object> buildAvgCsvRow(DataTuple tuple, double stageStartTime, double lastJobEndTime) {
+        Map<String, Double> durations = tuple.getLifecycleDuration();
+        double[] timeline = new double[10];
+        timeline[0] = 0.0;                                                   // COI setup start
+        timeline[1] = durations.get(COI_SETUP_LABEL);                        // COI setup end
+        timeline[2] = stageStartTime;                                        // TJob setup start
+        timeline[3] = timeline[2] + durations.get(TJOB_SETUP_LABEL);         // TJob setup end
+        timeline[4] = timeline[3] + STAGE_GAP_SECONDS;                       // TJob test-exec start
+        timeline[5] = timeline[4] + durations.get(TJOB_TEST_EXEC_LABEL);     // TJob test-exec end
+        timeline[6] = timeline[5] + STAGE_GAP_SECONDS;                       // TJob teardown start
+        timeline[7] = timeline[6] + durations.get(TJOB_TEARDOWN_LABEL);      // TJob teardown end
+        timeline[8] = lastJobEndTime;                                        // COI teardown start
+        timeline[9] = timeline[8] + durations.get(COI_TEARDOWN_LABEL);       // COI teardown end
+
+        List<Object> row = new ArrayList<>(2 + timeline.length);
+        row.add(tuple.getIdTJob());
+        row.add(tuple.getStage());
+        for (double t : timeline) {
+            row.add(String.format(Locale.ENGLISH, "%.1f", t));
+        }
+        return row;
     }
 
     /**
