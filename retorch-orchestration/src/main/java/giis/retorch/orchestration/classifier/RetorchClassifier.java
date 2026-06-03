@@ -80,7 +80,8 @@ public class RetorchClassifier {
                 if (file.isDirectory()) {
                     classes.addAll(findClasses(file, packageName + "." + file.getName()));
                 } else if (file.getName().endsWith(".class") && !file.getName().contains("$")) {
-                    classes.add(Class.forName(packageName + '.' + file.getName().replace(".class", "")));
+                    String className = packageName + '.' + file.getName().replace(".class", "");
+                    classes.add(Class.forName(className, false, Thread.currentThread().getContextClassLoader()));
                 }
             }
         } else {
@@ -257,6 +258,7 @@ public class RetorchClassifier {
     public List<Method> getClassMethods(Class<?> testClass) {
         List<Method> methods = Arrays.stream(testClass.getDeclaredMethods())
                 .sorted(Comparator.comparing(Method::toString)) // Sort methods
+                .filter(meth -> !meth.isSynthetic()) // Filter out compiler-generated lambdas and bridge methods
                 .filter(meth -> !meth.getName().equals(JACOCO_INIT_METHOD)) // Filter out JaCoCo instrumentation methods
                 .collect(Collectors.toList());// Collect results to a list
         methods.forEach(meth -> log.info("The method name its : {}", meth.getName()));
