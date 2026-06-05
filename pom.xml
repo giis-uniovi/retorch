@@ -57,7 +57,7 @@
 
         <itext.version>9.0.0</itext.version>
 
-        <batik.version>1.18</batik.version>
+        <batik.version>1.19</batik.version>
 
     </properties>
 
