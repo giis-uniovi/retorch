@@ -51,7 +51,7 @@
 
         <commons-csv.version>1.12.0</commons-csv.version>
 
-        <jchart.version>1.5.5</jchart.version>
+        <jchart.version>1.5.6</jchart.version>
 
         <jcommon.version>1.0.24</jcommon.version>
 
