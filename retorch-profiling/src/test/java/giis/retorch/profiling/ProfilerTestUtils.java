@@ -27,8 +27,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -37,6 +35,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 
 /**
  * The {@code JChartTestUtils} class provides the necessary support methods to compare different Charts and deserialize
@@ -83,11 +82,7 @@ public class ProfilerTestUtils {
                 && dataEquals(actualData, expectedProfile.data);
 
         if (!matches) {
-            // Define format
-            LocalDateTime now = LocalDateTime.now(); // Get current timestamp
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss"); // Define format
-            String formattedTimestamp = now.format(formatter); // Format the timestamp
-            String filename = debugPath + "/" + coiName + "-" + formattedTimestamp + "_debug.pdf";
+            String filename = debugPath + "/" + coiName + "-" + UUID.randomUUID() + "_debug.pdf";
             createTestFailPNGReport(expectedProfile, actualProfile, actualData, filename);
             return false;
         }
