@@ -44,7 +44,7 @@ public class ProfilePlotterTests {
         plan.setName("unit-"+plan.getName());
         ProfilePlotter plotter = new ProfilePlotter(inBasePath + "/imp_usageprofileplotter.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath, outBasePath, plan.getName(), "exampleCOI");
-        assertTrue("The exampleCOI UsageProfile are not equal, check the debugging file located in: /target/debug folder", utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-exampleCOI-UsageProfile.serialized", plotter.getUsageProfile(),"exampleCOI"));
+        assertTrue("The exampleCOI UsageProfile are not equal, check the debugging file located in: /target/debug folder", utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-exampleCOI-UsageProfile.properties", plotter.getUsageProfile(),"exampleCOI"));
 
     }
 }
