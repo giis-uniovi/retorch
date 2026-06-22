@@ -59,7 +59,7 @@ public class IntProfilerComponentsTests {
 
         plotter.generateTotalTJobUsageProfileCharts(outputProfilePath, outputProfilePath, plan.getName(), "vm");
 
-        assertTrue("The VM UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-vm-UsageProfile.serialized", plotter.getUsageProfile(), "vm"));
+        assertTrue("The VM UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-vm-UsageProfile.properties", plotter.getUsageProfile(), "vm"));
 
     }
 
@@ -72,7 +72,7 @@ public class IntProfilerComponentsTests {
         ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_container.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", outBasePath + "/profiles", plan.getName(), "containers");
 
-        assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-containers-UsageProfile.serialized", plotter.getUsageProfile(), "containers"));
+        assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-containers-UsageProfile.properties", plotter.getUsageProfile(), "containers"));
 
     }
 
@@ -84,7 +84,7 @@ public class IntProfilerComponentsTests {
         new giis.retorch.profiling.profilegeneration.CoiProfileWriter().write(outBasePath + "/output_profile_int_services.csv", outBasePath + "/profileIntegrationCOI_services.csv", dataGenerationUtils.generateBrowserServiceCloudObjectInstances());
         ProfilePlotter plotter = new ProfilePlotter(outBasePath + "/profileIntegrationCOI_services.csv");
         plotter.generateTotalTJobUsageProfileCharts(outBasePath + "/profiles", outBasePath + "/profiles", plan.getName(), "services");
-        assertTrue("The Containers UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-services-UsageProfile.serialized", plotter.getUsageProfile(),"services"));
+        assertTrue("The Services UsageProfile are not equal, check the debugging file located in: "+debugOutBasePath, utils.profileComparator(expOutBasePath + "/" + plan.getName() + "-services-UsageProfile.properties", plotter.getUsageProfile(),"services"));
 
     }
 }
