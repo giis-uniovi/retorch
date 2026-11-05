@@ -106,7 +106,7 @@ public class ExecutionPlan {
     }
     public void addTJob(Activity activity, int timeMoment) {
         activity.getTJob().setStage(timeMoment);
-        activity.getTJob().setIdTJob(!activity.getTJob().getListTestCases().isEmpty()?"TJob" + getIdentifier(tJobEntityList.size()):"GatewayActivity");
+        activity.getTJob().setIdTJob(activity.getTJob().getListTestCases().isEmpty() ? "GatewayActivity" : "TJob" + getIdentifier(tJobEntityList.size()));
         if (!activity.getTJob().getListTestCases().isEmpty()) {tJobEntityList.add(activity.getTJob());}
     }
     /**
