@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.orchestration.testdata.synteticpackage;
 
 import giis.retorch.annotations.AccessMode;

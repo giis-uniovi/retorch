@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.orchestration.orchestrator;
 
 import giis.retorch.orchestration.classifier.EmptyInputException;
@@ -45,6 +49,11 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
             ciConfiguration.load(input);
         } catch (IOException e) {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
+        }
+        // The command line (--profiling / --no-profiling) takes precedence over retorchCI.properties
+        String profilingOverride = java.lang.System.getProperty("retorch.profiling");
+        if (profilingOverride != null) {
+            ciConfiguration.setProperty(ScriptGenerator.PROFILING_PROPERTY, profilingOverride);
         }
     }
 
@@ -144,6 +153,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         if (Files.exists(Paths.get(".retorch/scripts"))) {
             FileUtils.deleteDirectory(new File(".retorch/scripts"));
         }
+        Files.deleteIfExists(Paths.get(ExecutionPlanWriter.FILE)); // never keep the plan of a previous generation
         ScriptGenerator scriptler = new ScriptGenerator(this.ciConfiguration);
         stringBuilder.append("pipeline {\n")
                 .append("  agent {label '").append(this.ciConfiguration.getProperty("agentCIName")).append("'}\n")
@@ -192,14 +202,34 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         }
 
         generateInfrastructureTearDown(stringBuilder);
+        if (ScriptGenerator.isProfilingEnabled(ciConfiguration)) {
+            generateUsageProfile(stringBuilder);
+        }
         stringBuilder.append("} // EndStagesPipeline\n")
                 .append(this.generateDisposingDirective())
                 .append("} // EndPipeline\n");
 
         scriptler.generateScriptsTJob();
         scriptler.generateScriptsCOI();
+        if (ScriptGenerator.isProfilingEnabled(ciConfiguration)) {
+            new ExecutionPlanWriter().write(listActivities);
+        }
 
         return stringBuilder.toString();
+    }
+
+    /**
+     * Stage that builds the usage profile (usage and cost) from the measured resources. A failure here marks the stage as
+     * unstable but never fails the build.
+     */
+    private static void generateUsageProfile(StringBuilder stringBuilder) {
+        stringBuilder.append("    stage('Usage-Profile') {\n")
+                .append("      steps {\n")
+                .append("          catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {\n")
+                .append("              sh '$SCRIPTS_FOLDER/generateusageprofile.sh'\n")
+                .append("          }\n")
+                .append("      } // EndStepsUsageProfile\n")
+                .append("    } // EndStageUsageProfile\n");
     }
 
     private static void generateInfrastructureTearDown(StringBuilder stringBuilder) {
@@ -215,15 +245,36 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
      * Method that generates the disposing commands required to check that all the {@code Resource}s are released and the
      * storage is cleaned
      */
-    private String generateDisposingDirective() {
+    private String generateDisposingDirective() throws IOException {
         log.debug("Executing the disposing directive");
+        String usageProfilePublication = ScriptGenerator.isProfilingEnabled(ciConfiguration)
+                ? "        archiveArtifacts artifacts: 'artifacts/usageprofile/*.html', allowEmptyArchive: true\n"
+                + "        publishHTML(target: [reportDir: 'artifacts/usageprofile', reportFiles: 'usageprofile.html', "
+                + "reportName: 'RETORCH Usage Profile', keepAll: true, alwaysLinkToLastBuild: true, "
+                + "allowMissing: true])\n"
+                : "";
         return "post {\n"
                 + "    always {\n"
                 + "        archiveArtifacts artifacts: 'artifacts/*.csv', onlyIfSuccessful: true\n"
+                + usageProfilePublication
+                + customJenkinsPostSteps()
                 + "        archiveArtifacts artifacts: 'target/testlogs/**/*.*', onlyIfSuccessful: false\n"
                 + "        archiveArtifacts artifacts: 'target/containerlogs/**/*.*', onlyIfSuccessful: false\n"
                 + "    }// EndAlways\n"
                 + "} // EndPostActions\n";
+    }
+
+    /**
+     * Steps provided by the user in {@code .retorch/customscriptscode/custom-jenkins-post}, inserted verbatim in the
+     * {@code post { always { } }} block (e.g. to publish a coverage report); empty if the file does not exist.
+     */
+    private String customJenkinsPostSteps() throws IOException {
+        String path = ".retorch/customscriptscode/custom-jenkins-post";
+        if (!Files.exists(Paths.get(path))) {
+            return "";
+        }
+        String content = readFileContent(path).replace("\r\n", "\n");
+        return content.isEmpty() || content.endsWith("\n") ? content : content + "\n";
     }
 
     /**

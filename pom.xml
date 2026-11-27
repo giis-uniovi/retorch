@@ -1,3 +1,7 @@
+<!--
+  Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+  All intellectual property rights on this file belong to GIIS.
+-->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -47,17 +51,7 @@
 
         <commons-io.version>2.22.0</commons-io.version>
 
-        <javatuples.version>1.2</javatuples.version>
-
         <commons-csv.version>1.14.1</commons-csv.version>
-
-        <jchart.version>1.5.6</jchart.version>
-
-        <jcommon.version>1.0.24</jcommon.version>
-
-        <itext.version>9.8.1</itext.version>
-
-        <batik.version>1.20</batik.version>
 
     </properties>
 
@@ -98,11 +92,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.javatuples</groupId>
-                <artifactId>javatuples</artifactId>
-                <version>${javatuples.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
                 <version>${commons-csv.version}</version>
@@ -123,43 +112,6 @@
                 <version>${commons-io.version}</version>
             </dependency>
             <!-- Dependencies for the ProfileGraphs -->
-            <dependency>
-                <groupId>org.jfree</groupId>
-                <artifactId>jfreechart</artifactId>
-                <version>${jchart.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jfree</groupId>
-                <artifactId>jcommon</artifactId>
-                <version>${jcommon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xmlgraphics</groupId>
-                <artifactId>batik-svggen</artifactId>
-                <version>${batik.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xmlgraphics</groupId>
-                <artifactId>batik-dom</artifactId>
-                <version>${batik.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xmlgraphics</groupId>
-                <artifactId>batik-transcoder</artifactId>
-                <version>${batik.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xmlgraphics</groupId>
-                <artifactId>batik-xml</artifactId>
-                <version>${batik.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.itextpdf</groupId> <!-- type annotation overwrites the default (jar) allowing inheritance in the children pom-->
-                <artifactId>itext7-core</artifactId>
-                <version>${itext.version}</version>
-                <type>pom</type>
-                <scope>test</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 

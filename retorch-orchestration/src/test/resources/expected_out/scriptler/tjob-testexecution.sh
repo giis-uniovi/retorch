@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 # The testexecution.sh script executes the test cases, providing them with the URL and port where the SUT is available.
 # It also measures the execution time and marks the pipeline as failed if any test case fails.
 

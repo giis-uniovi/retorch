@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 
 # Check if the correct number of parameters is provided
 if [ "$#" -ne 2 ]; then

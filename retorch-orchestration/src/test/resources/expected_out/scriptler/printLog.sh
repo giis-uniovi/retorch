@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 # The printlog.sh script provides a template for outputting formatted messages during the setup, execution
 # and teardown of TJobs and COI.
 if [ "$#" -ne 3 ]; then

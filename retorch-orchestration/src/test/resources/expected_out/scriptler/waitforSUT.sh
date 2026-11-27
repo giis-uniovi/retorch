@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 # The waitforSUT.sh script waits until a given container reaches the 'healthy' state. It polls every 5 seconds
 # for up to 200 seconds. If the container is not healthy after this period, all containers are torn down.
 

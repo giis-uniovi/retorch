@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 # The coi-teardown.sh script provides all the necessary commands to tear-down the infrastructure after executing
 # the TJobs. It performs cleaning actions, like remove all the containers and docker volumes, but also ends, collects
 # and creates file with the different TJob and COI lifecycles using the savetjoblifecycledata.sh script.
@@ -46,12 +48,19 @@ if [ -n "$container_ids" ]; then
 else
     "$SCRIPTS_FOLDER/printLog.sh" "INFO" "COI-tear-down" "No containers with names starting with 'tjob' found to stop and remove."
 fi
+# START Custom COI tear-down commands
+"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "Start executing custom commands"
+
+"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "End executing custom commands"
+# END Custom COI tear-down commands
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "Teardown process completed successfully."
+
+COITEARDOWNEND="$(date +%s%3N)"
+OUTPUTDIRCOI="$WORKSPACE/retorchcostestimationdata/exec$BUILD_NUMBER/COI.data"
+# The COI tear-down timestamps must be written BEFORE savetjoblifecycledata.sh, which reads them from this file
+echo -n ";$COITEARDOWNSTART;$COITEARDOWNEND" >> "$OUTPUTDIRCOI"
 
 # Run saveTJobLifecycledata.sh script
 echo "Running saveTJobLifecycledata.sh script..."
 sh "$SCRIPTS_FOLDER/savetjoblifecycledata.sh"
-COITEARDOWNEND="$(date +%s%3N)"
-OUTPUTDIRCOI="$WORKSPACE/retorchcostestimationdata/exec$BUILD_NUMBER/COI.data"
-echo -n ";$COITEARDOWNSTART;$COITEARDOWNEND" >> "$OUTPUTDIRCOI"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "Script completed successfully."

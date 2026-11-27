@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.orchestration;
 
 import giis.retorch.orchestration.classifier.EmptyInputException;
@@ -31,6 +35,32 @@ public class JenkinsOrchestratorTests {
     @Before
     public void setUp() {
         utils = new OrchestratorUtils();
+    }
+
+    @Test
+    public void testUnitArchOrchExecutionPlanGraphHasValidDependencies() throws EmptyInputException,
+            NoFinalActivitiesException, IOException {
+        jenkinsOrchestrator = new JenkinsOrchestrator(utils.getListComplexActivities(), SYSTEM_NAME);
+        Map<Integer, LinkedList<Activity>> activities = jenkinsOrchestrator.getExecutionPlan().getSortedActivities();
+
+        giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.PlanFile plan =
+                new giis.retorch.orchestration.orchestrator.ExecutionPlanWriter().toPlanFile(activities);
+
+        java.util.Map<String, Integer> stageById = new java.util.HashMap<>();
+        for (giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.Node node : plan.tjobs) {
+            stageById.put(node.id, node.stage);
+        }
+        org.junit.Assert.assertEquals(activities.values().stream().mapToInt(List::size).sum(), plan.tjobs.size());
+        for (giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.Node node : plan.tjobs) {
+            org.junit.Assert.assertEquals(node.id, node.id.toLowerCase(java.util.Locale.ROOT));
+            org.junit.Assert.assertEquals("each dependency appears once", node.predecessors.size(),
+                    new java.util.HashSet<>(node.predecessors).size());
+            for (String predecessor : node.predecessors) {
+                org.junit.Assert.assertTrue("unknown predecessor " + predecessor, stageById.containsKey(predecessor));
+                org.junit.Assert.assertTrue("a predecessor must run in an earlier stage",
+                        stageById.get(predecessor) < node.stage);
+            }
+        }
     }
 
     @Test
@@ -88,6 +118,96 @@ public class JenkinsOrchestratorTests {
         utils.compareFiles(expOutputFolder + "storeContainerLogs.sh", actualOutputFolder + "storeContainerLogs.sh");
         utils.compareFiles(expOutputFolder + "printLog.sh", actualOutputFolder + "printLog.sh");
 
+    }
+
+    @Test
+    public void testUnitArchOrchProfilingOptionAddsMeasurementAndUsageProfile() throws EmptyInputException,
+            NoFinalActivitiesException, IOException {
+        java.lang.System.setProperty("retorch.profiling", "true");
+        try {
+            List<Activity> listSimpleActivities = utils.getListSimpleActivities();
+            jenkinsOrchestrator = new JenkinsOrchestrator(listSimpleActivities, SYSTEM_NAME);
+            String executionPipeline = jenkinsOrchestrator.generatePipeline(
+                    jenkinsOrchestrator.getExecutionPlan().getSortedActivities());
+
+            String expFolder = EXPECTED_OUTPUT_PATH + "/profiling/";
+            String actualFolder = ".retorch/scripts/";
+            utils.compareOutputToFile(expFolder + "outputTestUnitArchOrchValidSimpleGraph", executionPipeline);
+            utils.compareFiles(expFolder + "tjob-setup.sh", actualFolder + "tjoblifecycles/tjob-setup.sh");
+            utils.compareFiles(expFolder + "tjob-teardown.sh", actualFolder + "tjoblifecycles/tjob-teardown.sh");
+            utils.compareFiles(expFolder + "savetjoblifecycledata.sh", actualFolder + "savetjoblifecycledata.sh");
+            utils.compareFiles(expFolder + "resourcemonitor.sh", actualFolder + "resourcemonitor.sh");
+            utils.compareFiles(expFolder + "generateusageprofile.sh", actualFolder + "generateusageprofile.sh");
+            utils.compareFiles(expFolder + "executionplan.json", ".retorch/executionplan.json");
+        } finally {
+            java.lang.System.clearProperty("retorch.profiling");
+        }
+    }
+
+    @Test
+    public void testUnitArchOrchWithoutProfilingGeneratesNoMeasurementNorUsageProfile() throws EmptyInputException,
+            NoFinalActivitiesException, IOException {
+        jenkinsOrchestrator = new JenkinsOrchestrator(utils.getListSimpleActivities(), SYSTEM_NAME);
+        String executionPipeline = jenkinsOrchestrator.generatePipeline(
+                jenkinsOrchestrator.getExecutionPlan().getSortedActivities());
+        org.junit.Assert.assertFalse(executionPipeline.contains("Usage-Profile"));
+        org.junit.Assert.assertFalse(executionPipeline.contains("publishHTML"));
+        org.junit.Assert.assertFalse(java.nio.file.Files.exists(java.nio.file.Paths.get(".retorch/scripts/resourcemonitor.sh")));
+        org.junit.Assert.assertFalse(java.nio.file.Files.exists(java.nio.file.Paths.get(".retorch/scripts/generateusageprofile.sh")));
+        org.junit.Assert.assertFalse(java.nio.file.Files.exists(java.nio.file.Paths.get(".retorch/executionplan.json")));
+    }
+
+    @Test
+    public void testUnitArchOrchCustomCoiTearDownAndJenkinsPostHooks() throws EmptyInputException,
+            NoFinalActivitiesException, IOException {
+        java.nio.file.Path coiTearDown = java.nio.file.Paths.get(".retorch/customscriptscode/custom-coi-teardown");
+        java.nio.file.Path jenkinsPost = java.nio.file.Paths.get(".retorch/customscriptscode/custom-jenkins-post");
+        java.nio.file.Files.write(coiTearDown, "echo coverage-report".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        java.nio.file.Files.write(jenkinsPost, "        archiveArtifacts artifacts: 'coverage/*.xml'"
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        try {
+            jenkinsOrchestrator = new JenkinsOrchestrator(utils.getListSimpleActivities(), SYSTEM_NAME);
+            String pipeline = jenkinsOrchestrator.generatePipeline(
+                    jenkinsOrchestrator.getExecutionPlan().getSortedActivities());
+
+            String coiScript = new String(java.nio.file.Files.readAllBytes(
+                    java.nio.file.Paths.get(".retorch/scripts/coilifecycles/coi-teardown.sh")), java.nio.charset.StandardCharsets.UTF_8);
+            org.junit.Assert.assertTrue(coiScript.contains("echo coverage-report"));
+            org.junit.Assert.assertTrue(pipeline.contains("        archiveArtifacts artifacts: 'coverage/*.xml'\n        archiveArtifacts artifacts: 'target/testlogs"));
+        } finally {
+            java.nio.file.Files.deleteIfExists(coiTearDown);
+            java.nio.file.Files.deleteIfExists(jenkinsPost);
+        }
+    }
+
+    @Test
+    public void testUnitArchOrchCustomTjobTearDownRunsBeforeTheContainersAreRemoved() throws EmptyInputException,
+            NoFinalActivitiesException, IOException {
+        jenkinsOrchestrator = new JenkinsOrchestrator(utils.getListSimpleActivities(), SYSTEM_NAME);
+        jenkinsOrchestrator.generatePipeline(jenkinsOrchestrator.getExecutionPlan().getSortedActivities());
+        String script = new String(java.nio.file.Files.readAllBytes(
+                java.nio.file.Paths.get(".retorch/scripts/tjoblifecycles/tjob-teardown.sh")), java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.Assert.assertTrue(script.indexOf("Start executing custom commands") < script.indexOf("down --volumes"));
+    }
+
+    @Test
+    public void testUnitArchOrchCustomUsageProfileHookIsInsertedInTheScript() throws EmptyInputException,
+            NoFinalActivitiesException, IOException {
+        java.nio.file.Path hook = java.nio.file.Paths.get(".retorch/customscriptscode/custom-usageprofile");
+        java.nio.file.Files.write(hook, "echo preparing-the-profiling-jar".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        java.lang.System.setProperty("retorch.profiling", "true");
+        try {
+            jenkinsOrchestrator = new JenkinsOrchestrator(utils.getListSimpleActivities(), SYSTEM_NAME);
+            jenkinsOrchestrator.generatePipeline(jenkinsOrchestrator.getExecutionPlan().getSortedActivities());
+            String script = new String(java.nio.file.Files.readAllBytes(
+                    java.nio.file.Paths.get(".retorch/scripts/generateusageprofile.sh")), java.nio.charset.StandardCharsets.UTF_8);
+            org.junit.Assert.assertTrue(script.contains("echo preparing-the-profiling-jar"));
+            org.junit.Assert.assertTrue("the hook runs before the jar is looked for",
+                    script.indexOf("preparing-the-profiling-jar") < script.indexOf("Downloading the profiling tool"));
+        } finally {
+            java.lang.System.clearProperty("retorch.profiling");
+            java.nio.file.Files.deleteIfExists(hook);
+        }
     }
 
     @Test(expected = EmptyInputException.class)

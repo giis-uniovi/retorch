@@ -10,4 +10,5 @@ org.sonarlint.eclipse.core.prefs
 # Files created by the orchestration generator
 /retorch-orchestration/.retorch/envfiles/
 /retorch-orchestration/.retorch/scripts/
+/retorch-orchestration/.retorch/executionplan.json
 /retorch-orchestration/dependency-reduced-pom.xml

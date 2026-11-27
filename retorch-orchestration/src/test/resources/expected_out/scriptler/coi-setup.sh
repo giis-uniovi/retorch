@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 # The coi-setup.sh script provides all the necessary commands to set up the infrastructure before executing
 # the TJobs. It performs debugging actions, such as outputting the kernel, library, and Docker versions.
 # Additionally, it prunes old videos and execution data, and verifies that the required Selenium containers are running.

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 # The tjob-setup.sh script provides all the necessary commands to set up each TJob's resources before executing
 # the TJobs. It includes a placeholder {CUSTOM_SETUP_COMMANDS} where the commands from the custom-tjob-setup file
 # are inserted. The script deploys the required test Resources using Docker Compose and waits for the SUT to be ready
@@ -11,6 +13,7 @@ fi
 
 # Execute the script to write timestamp
 "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
+${PROFILING_START_COMMAND}
 
 # START Custom Set-up commands
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"

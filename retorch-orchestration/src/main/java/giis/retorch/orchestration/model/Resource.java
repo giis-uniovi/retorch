@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.orchestration.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,7 +46,8 @@ public class Resource {
      * @param replaceable     List with the ids of those resources that could replace the resource
      * @param resourceType    type of the resource (LOGICAL, PHYSICAL or COMPUTATIONAL)
      * @param hierarchyParent String with the  resource hierarchical parent
-     * @param minimalCapacities List with the minimal {@link Capacity}  required by the resource
+     * @param minimalCapacities Optional (may be null or absent in the JSON): the minimal {@link Capacity} required by
+     *                          the resource, only an estimate; the real usage is measured when the pipeline runs
      * @param dockerImage String with the Resource docker image name
      */
     public Resource(@JsonProperty("resourceId") String resourceID,
@@ -57,7 +62,7 @@ public class Resource {
         this.replaceable = replaceable;
         this.elasticityModel = elasticityModel;
         this.resourceType = resourceType;
-        this.minimalCapacities = minimalCapacities;
+        this.minimalCapacities = minimalCapacities == null ? new java.util.ArrayList<>() : minimalCapacities;
         this.dockerImage=dockerImage;
     }
 

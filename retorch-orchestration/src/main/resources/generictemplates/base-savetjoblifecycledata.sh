@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+# All intellectual property rights on this file belong to GIIS.
 # The savetjoblifecycledata.sh script generates a CSV file containing the durations of different TJob lifecycles.
 # It collects the previously generated files using the base-writetime.sh script and combines them into a single file
 # with all the durations, which can later be processed.
@@ -30,3 +32,4 @@ for csvfile in $PATH_FILES; do
     exit 1
   fi
 done
+${PROFILING_EXPORT_COMMAND}

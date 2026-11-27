@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.orchestration;
 
 import org.junit.Before;
@@ -86,5 +90,22 @@ public class TJobsEntityTests {
         output = tjob.getCapacitiesGivenTime(21, 0);
         assertEquals("noexec", output.getKey());
         assertTrue(output.getValue().isEmpty());
+    }
+
+    @Test
+    public void testResourceWithoutMinimalCapacitiesIsValid() throws java.io.IOException {
+        // The capacities are measured when the pipeline runs, so the resources JSON does not have to declare them
+        String json = "{\"resourceID\":\"webserver\",\"hierarchyParent\":[],\"replaceable\":[],"
+                + "\"resourceType\":\"LOGICAL\",\"dockerImage\":\"img\"}";
+        Resource resource = new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Resource.class);
+        assertNotNull(resource.getMinimalCapacities());
+        assertTrue(resource.getMinimalCapacities().isEmpty());
+
+        LinkedList<Resource> resources = new LinkedList<>();
+        resources.add(resource);
+        TJob withoutCapacities = new TJob("tjobx", 0, resources);
+        for (Capacity capacity : withoutCapacities.getTotalCapacities()) {
+            assertEquals(0, capacity.getQuantity(), 0);
+        }
     }
 }

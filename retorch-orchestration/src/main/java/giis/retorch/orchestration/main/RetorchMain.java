@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.orchestration.main;
 
 import giis.retorch.orchestration.generator.OrchestrationGenerator;
@@ -17,28 +21,38 @@ import java.util.List;
 /**
  * CLI entry point for the RETORCH orchestration uber JAR.
  * Usage:
- *   java -jar retorch-orchestration-&lt;version&gt;-standalone.jar &lt;rootPackageNameTests&gt; &lt;systemName&gt; &lt;jenkinsFilePath&gt;
+ *   java -jar retorch-orchestration-&lt;version&gt;-standalone.jar &lt;rootPackageNameTests&gt; &lt;systemName&gt; &lt;jenkinsFilePath&gt; [--profiling|--no-profiling]
  * Arguments:
  *   rootPackageNameTests  Root package containing the annotated test classes
  *   systemName            System name matching the &lt;systemName&gt;SystemResources.json file
  *   jenkinsFilePath       Directory path where the Jenkinsfile will be written
+ *   --profiling           Optional. Measures the resource usage in the pipeline and publishes the usage profile
+ *   --no-profiling        Optional. Generates the pipeline without profiling. Without any of the two flags, the
+ *                         {@code profiling} property of retorchCI.properties is used (false by default)
  */
 public class RetorchMain {
 
     private static final Logger log = LoggerFactory.getLogger(RetorchMain.class);
 
     public static void main(String[] args) {
-        if (args.length != 3) {
-            log.error("Usage: java -jar retorch-orchestration-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath>");
+        boolean validFlag = args.length == 3
+                || (args.length == 4 && ("--profiling".equals(args[3]) || "--no-profiling".equals(args[3])));
+        if (!validFlag) {
+            log.error("Usage: java -jar retorch-orchestration-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath> [--profiling|--no-profiling]");
             log.error("  rootPackageNameTests : root package containing the annotated test classes");
             log.error("  systemName           : system name matching the <systemName>SystemResources.json file");
             log.error("  jenkinsFilePath      : directory path where the Jenkinsfile will be written");
+            log.error("  --profiling          : (optional) add the resource measurement and the usage profile");
+            log.error("  --no-profiling       : (optional) do not add them, overriding retorchCI.properties");
             java.lang.System.exit(1);
         }
 
         String rootPackageNameTests = args[0];
         String systemName = args[1];
         String jenkinsFilePath = args[2];
+        if (args.length == 4) {
+            java.lang.System.setProperty("retorch.profiling", String.valueOf("--profiling".equals(args[3])));
+        }
 
         try {
             extendClasspathFromCwd();

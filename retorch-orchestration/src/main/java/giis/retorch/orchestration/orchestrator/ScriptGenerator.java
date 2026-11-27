@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.orchestration.orchestrator;
 
 import org.slf4j.Logger;
@@ -32,6 +36,8 @@ public class ScriptGenerator {
     private static final String INPUT_FILE_TJOB_TEARDOWN_TEMPLATE = DIRECTORY_TEMPLATES + "basetjob-teardown.sh";
     private static final String INPUT_FILE_WAITER_TEMPLATE = DIRECTORY_TEMPLATES + "base-waitforSUT.sh";
     private static final String INPUT_FILE_WRITE_TIME_TEMPLATE = DIRECTORY_TEMPLATES + "base-writetime.sh";
+    private static final String INPUT_FILE_RESOURCE_MONITOR = DIRECTORY_TEMPLATES + "base-resourcemonitor.sh";
+    private static final String INPUT_FILE_USAGE_PROFILE = DIRECTORY_TEMPLATES + "base-generateusageprofile.sh";
     private static final String INPUT_FILE_SAVE_CONTAINER_LOGS = DIRECTORY_TEMPLATES + "base-storeContainerLogs.sh";
     private static final String INPUT_FILE_LOGGING = DIRECTORY_TEMPLATES + "base-printLog.sh";
     private static final String INPUT_FILE_COI_SETUP_TEMPLATE = DIRECTORY_TEMPLATES + "basecoi-setup.sh";
@@ -42,6 +48,8 @@ public class ScriptGenerator {
     private static final String OUTPUT_FILE_TJOB_TESTEXECUTION = DIRECTORY_TJOBS_NAME + "tjob-testexecution.sh";
     private static final String OUTPUT_FILE_TJOB_TEARDOWN = DIRECTORY_TJOBS_NAME + "tjob-teardown.sh";
     private static final String OUTPUT_FILE_WAITER = ".retorch/scripts/waitforSUT.sh";
+    private static final String OUTPUT_FILE_RESOURCE_MONITOR = ".retorch/scripts/resourcemonitor.sh";
+    private static final String OUTPUT_FILE_USAGE_PROFILE = ".retorch/scripts/generateusageprofile.sh";
     private static final String OUTPUT_FILE_CONTAINER_LOGS = ".retorch/scripts/storeContainerLogs.sh";
     private static final String OUTPUT_FILE_LOGGING = ".retorch/scripts/printLog.sh";
     private static final String OUTPUT_FILE_WRITE_TIME = ".retorch/scripts/writetime.sh";
@@ -49,8 +57,19 @@ public class ScriptGenerator {
     private static final String OUTPUT_FILE_COI_TEARDOWN = DIRECTORY_COI_NAME + "coi-teardown.sh";
     private static final String OUTPUT_FILE_SAVE_ALL_TJOBS = ".retorch/scripts/savetjoblifecycledata.sh";
 
+    /** Where the profiling jar is downloaded from when the project does not prepare it (e.g. a released jar). */
+    private static final String DEFAULT_PROFILING_JAR_URL =
+            "https://github.com/giis-uniovi/retorch/releases/latest/download/retorch-profiling-cli.jar";
+
     private static final Logger log = LoggerFactory.getLogger(ScriptGenerator.class);
     private final Properties ciConfiguration;
+
+    /** Property of retorchCI.properties that enables the resource measurement and the usage profile. */
+    public static final String PROFILING_PROPERTY = "profiling";
+
+    public static boolean isProfilingEnabled(Properties ciConfiguration) {
+        return Boolean.parseBoolean(ciConfiguration.getProperty(PROFILING_PROPERTY, "false").trim());
+    }
 
     public ScriptGenerator(Properties ciConfiguration) {
         this.ciConfiguration = ciConfiguration;
@@ -77,15 +96,26 @@ public class ScriptGenerator {
     public void generateScriptsTJob() throws IOException {
         checkFolderExists(DIRECTORY_TJOBS_NAME);
         Map<String, String> mapValues = new HashMap<>();
-        mapValues.put("${SUT_CONTAINER_NAME}", ciConfiguration.getProperty("sut-container-name"));
         mapValues.put("${SUT-WAIT-HTML}", ciConfiguration.getProperty("sut-wait-html"));
+        mapValues.put("${PROFILING_JAR_URL_PLACEHOLDER}",
+                ciConfiguration.getProperty("profiling-jar-url", DEFAULT_PROFILING_JAR_URL));
+        mapValues.put("${CUSTOM_USAGEPROFILE_COMMANDS}", getCustomContent("usageprofile"));
+        mapValues.put("${AZURE_REGION_PLACEHOLDER}", ciConfiguration.getProperty("azure-region", "westeurope"));
+        mapValues.put("${AWS_REGION_PLACEHOLDER}", ciConfiguration.getProperty("aws-region", "eu-west-1"));
         mapValues.put("${CUSTOM_SETUP_TJOB_COMMANDS}", getCustomContent("tjob-setup"));
         mapValues.put("${CUSTOM_TEARDOWN_TJOB_COMMANDS}", getCustomContent("tjob-teardown"));
+        boolean profiling = isProfilingEnabled(ciConfiguration);
+        mapValues.put("${PROFILING_START_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" start \"$1\"" : "");
+        mapValues.put("${PROFILING_STOP_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" stop \"$1\"" : "");
         replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_SETUP_TEMPLATE, OUTPUT_FILE_TJOB_SETUP);
         replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TESTEXECUTION_TEMPLATE, OUTPUT_FILE_TJOB_TESTEXECUTION);
         replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TEARDOWN_TEMPLATE, OUTPUT_FILE_TJOB_TEARDOWN);
         replacePlaceholderTemplate(mapValues, INPUT_FILE_WAITER_TEMPLATE, OUTPUT_FILE_WAITER);
         replacePlaceholderTemplate(mapValues, INPUT_FILE_WRITE_TIME_TEMPLATE, OUTPUT_FILE_WRITE_TIME);
+        if (profiling) {
+            replacePlaceholderTemplate(mapValues, INPUT_FILE_RESOURCE_MONITOR, OUTPUT_FILE_RESOURCE_MONITOR);
+            replacePlaceholderTemplate(mapValues, INPUT_FILE_USAGE_PROFILE, OUTPUT_FILE_USAGE_PROFILE);
+        }
         replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_CONTAINER_LOGS, OUTPUT_FILE_CONTAINER_LOGS);
         replacePlaceholderTemplate(mapValues, INPUT_FILE_LOGGING, OUTPUT_FILE_LOGGING);
     }
@@ -121,6 +151,12 @@ public class ScriptGenerator {
             case "coi-setup":
                 urlFile = ".retorch/customscriptscode/custom-coi-setup";
                 break;
+            case "coi-teardown":
+                urlFile = ".retorch/customscriptscode/custom-coi-teardown";
+                break;
+            case "usageprofile":
+                urlFile = ".retorch/customscriptscode/custom-usageprofile";
+                break;
             default:
                 urlFile = ".retorch/customscriptscode/custom.env";  // Default provides the env
                 break;
@@ -149,6 +185,9 @@ public class ScriptGenerator {
             String line;
             while ((line = br.readLine()) != null) {
                 StringBuilder sb = getStringBuilder(values, line);
+                if (line.trim().startsWith("${PROFILING_") && sb.length() == 0) {
+                    continue; // a profiling command that is disabled leaves no trace in the script
+                }
                 bw.write(sb.toString());
                 bw.write("\n");
             }
@@ -184,6 +223,9 @@ public class ScriptGenerator {
         checkFolderExists(DIRECTORY_COI_NAME);
         Map<String, String> mapValues = new HashMap<>();
         mapValues.put("${CUSTOM_SETUP_COI_COMMANDS}", getCustomContent("coi-setup"));
+        mapValues.put("${CUSTOM_TEARDOWN_COI_COMMANDS}", getCustomContent("coi-teardown"));
+        mapValues.put("${PROFILING_EXPORT_COMMAND}", isProfilingEnabled(ciConfiguration)
+                ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" export" : "");
         replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_SETUP_TEMPLATE, OUTPUT_FILE_COI_SETUP);
         replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_TEARDOWN_TEMPLATE, OUTPUT_FILE_COI_TEARDOWN);
         replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE, OUTPUT_FILE_SAVE_ALL_TJOBS);

@@ -21,7 +21,7 @@ suite.
   - [RETORCH Framework Model](#retorch-framework-model)
   - [RETORCH Annotations](#retorch-annotations)
   - [RETORCH Orchestration](#retorch-orchestration)
-  - [RETORCH Profiler](#retorch-usage-profiler)
+  - [RETORCH Usage Profile](#retorch-usage-profile)
   - [Contributing](#contributing)
   - [Contact](#contact)
   - [Citing this work](#citing-this-work)
@@ -37,26 +37,27 @@ suite.
 - Add the annotations to the test classes as indicated below.
 - Configure the E2E test suite as indicated below.
 - Run the orchestration generator standalone JAR to generate the pipelining-scripting code.
+- (Optional) Enable the [usage profile](#retorch-usage-profile) to measure the resources used by the execution and
+  compare what it would cost in different clouds.
 - Commit and push the generated files to Git.
 
 ## RETORCH Framework Model
 
-The diagram below shows the RETORCH data model across its four layers: the test annotation layer, the
-orchestration model, the cloud infrastructure configuration, and the usage profiling artefacts.
+The diagram below shows the RETORCH data flow: the test annotations, the orchestration model, and the usage
+profile obtained from the measurements of an execution.
 
 ```mermaid
 flowchart LR
   %% Classifiers
   classDef blue fill:#1e497c,stroke:#000000,color:#ffffff;
   classDef green fill:#234723,stroke:#000000,color:#ffffff;
-  classDef red fill:#911111,stroke:#000000,color:#ffffff;
   classDef yellow fill:#ffff00,stroke:#000000,color:#000000;
   classDef orange fill:#f79646,stroke:#000000,color:#ffffff;
   classDef lightBlue fill:#4f81bd,stroke:#000000,color:#ffffff;
   classDef lightGreen fill:#548235,stroke:#000000,color:#ffffff;
 
   %% Nodes
-  A[E2E TEST SUITE]:::purple --> B[Custom Annotations]:::orange
+  A[E2E TEST SUITE] --> B[Custom Annotations]:::orange
   B --> C[RETORCH Classifier]:::lightBlue
 
   %% Retorch Section
@@ -77,39 +78,19 @@ flowchart LR
     C --> K[Resource]:::lightBlue
     K --> L[Access Mode]:::lightBlue
     K --> M[Resource Instance]:::lightBlue
-    M --> N[Minimal Capacities]:::lightBlue
-    N --> O[Capacity]:::lightBlue
-    J --> P[Capacity]:::lightBlue
   end
 
-  %% Cloud Section
-  subgraph Cloud
+  %% Usage profile
+  subgraph UsageProfile[Usage Profile]
     direction TB
-    Q[COI Selection]:::yellow --> R[Cloud Object Instance]:::lightGreen
-    R --> S[Cloud Object]:::lightGreen
-    R --> T[Contracted Capacities]:::lightGreen
-    T --> U[Billing Option]:::lightGreen
-    T --> V[Cloud Configuration]:::lightGreen
-    V --> W[Profile Generator]:::green
-    W --> X[RAW Usage Profile]:::green
-    W --> Y[AVG Dataset]:::green
-    X --> Z[Profile Plotter]:::green
-    Z --> AA[Usage Profile]:::green
-    W --> BB[RETORCH DataTuple]:::green
-    Y --> CC[Dataset Generator]:::green
+    I --> S[Pipeline scripts: phase times + resource monitor]:::green
+    S --> U[Usage file CSV]:::yellow
+    J --> V[Execution graph JSON]:::yellow
+    W[Cloud price lists: Azure, AWS]:::lightGreen --> X[Usage Profiler]:::green
+    U --> X
+    V --> X
+    X --> Y[Usage Profile: interactive HTML]:::green
   end
-
-  %% Estimation Section
-  subgraph Estimation
-    direction TB
-    CC --> DD[Estimator]:::red
-    DD --> EE[Costs]:::orange
-  end
-
-  %% Execution Data
-  J --> FF[Exec. Plan. Dataset]:::yellow
-  FF --> Y
-  FF --> W
 
 ```
 
@@ -208,11 +189,12 @@ For each Resource the tester needs to specify the following attributes:
   - `elasticity`: Integer with the available Resources.
   - `elasticityCost`: Instantiation cost of each Resource.
 - `resourceType`:  String with the type of the Resource(e.g. LOGICAL, PHYSICAL or COMPUTATIONAL).
-- `minimalCapacities`: List with the Minimal Capacities required by the Resource; each Capacity is composed by:
-  - `name`: String between "memory", "processor" and "storage".
-  - `quantity`: float with the amount of Capacity Required.
 - `dockerImage`: String with the concatenation of the placeholder name in the docker-compose, using `;` as separator
   between placeholder and the image name.
+
+The Resources do not need to declare the capacities (memory, processor, storage) they require: the usage of each
+execution is measured by the pipeline (see [RETORCH Usage Profile](#retorch-usage-profile)). Files that still declare
+`minimalCapacities` keep working, the value is ignored.
 
 The following snippet shows an example of two Resources declared in the JSON file:
 
@@ -230,20 +212,6 @@ The following snippet shows an example of two Resources declared in the JSON fil
     },
     "resourceType": "LOGICAL",
     "resourceID": "userservice",
-    "minimalCapacities": [
-      {
-        "name": "memory",
-        "quantity": 0.2929
-      },
-      {
-        "name": "processor",
-        "quantity": 0.2
-      },
-      {
-        "name": "storage",
-        "quantity": 0.5
-      }
-    ],
     "dockerImage": "userservice;wigo4it/identityserver4:latest"
   },
   "frontend": {
@@ -256,20 +224,6 @@ The following snippet shows an example of two Resources declared in the JSON fil
     },
     "resourceType": "LOGICAL",
     "resourceID": "frontend",
-    "minimalCapacities": [
-      {
-        "name": "memory",
-        "quantity": 2
-      },
-      {
-        "name": "processor",
-        "quantity": 1
-      },
-      {
-        "name": "storage",
-        "quantity": 0.88
-      }
-    ],
     "dockerImage": "frontend;nginx:latest"
   }
 }
@@ -286,6 +240,17 @@ parameters related to the SUT and the Continuous Integration Infrastructure, the
 - `app-url`: the URL where the frontend of the web application is made available.
 - `testsBasePath`: Path to the Java project root.
 
+The following parameters are optional and only matter for the [usage profile](#retorch-usage-profile):
+
+- `profiling`: `true` adds the measurement of the resources and the usage profile to the pipeline (default `false`).
+  The `--profiling` / `--no-profiling` option of the generator overrides it.
+- `azure-region`, `aws-region`: cloud regions whose prices are compared, as comma separated lists (e.g.
+  `westeurope,northeurope`); defaults `westeurope` and `eu-west-1`; an empty value disables that provider. The
+  pipeline can override them with the `AZURE_REGIONS` / `AWS_REGIONS` environment variables.
+- `profiling-jar-url`: where the pipeline downloads the profiling tool (`retorch-profiling-cli.jar`) from the first time
+  (default: the latest GitHub release).  A project can prepare the jar itself in the optional
+  `custom-usageprofile` snippet (see below).
+
 The following snippet provides an example of how this file looks like:
 
 ```properties
@@ -294,6 +259,9 @@ sut-wait-html=<title>Hello World</title>
 sut-location=$WORKSPACE
 app-url=https://full-teaching-$TJOB_NAME:5000
 testsBasePath=./
+profiling=true
+azure-region=westeurope
+aws-region=eu-west-1
 ```
 
 #### Preparing the docker-compose.yml file
@@ -319,19 +287,23 @@ repositories:
 
 The RETORCH orchestration generator allows to specify scripting code/commands to be included in the generated set up,
 tear down, and the environment declaration of each TJob. To include it, the tester must create the following files in
-`retorch/customscriptscode`:
+`.retorch/customscriptscode`:
 
-- `custom-tjob-setup`: Contains the custom set up code (e.g. declare some environment variable specific for each TJob)or
-  custom logging systems.
-- `custom-tjob-teardown`: Contains the custom tear down code (e.g. save some generated outputs).
+- `custom-tjob-setup`: Contains the custom set up code (e.g. declare some environment variable specific for each TJob)
+  or custom logging systems. It runs before the containers of the TJob are deployed.
+- `custom-tjob-teardown`: Contains the custom tear down code (e.g. dump the coverage of the SUT or save some generated
+  outputs). It runs **before** the containers of the TJob are removed, so they are still running.
 - `custom.env`: Contains configurations and environment variables common to all TJobs.
 - `custom-coi-setup`: Contains the custom set up code for the cloud or on-premise infrastructure (e.g. clone a
   repository and made it available for all TJobs).
-- `custom-coi-teardown`: Contains the custom tear-down code for the cloud or on-premise infrastructure (e.g. retrieve
-  and
-  calculate the coverage data or clean certain aspects of the environment).
+- `custom-coi-teardown`: Contains the custom tear-down code for the cloud or on-premise infrastructure (e.g. calculate
+  the coverage report or clean certain aspects of the environment). It is inserted in a script, so it must not `exit`.
+- `custom-jenkins-post`: Contains Jenkins steps that are inserted verbatim in the `post { always { } }` block of the
+  `Jenkinsfile` (e.g. `publishHTML` or `archiveArtifacts` of the coverage report).
+- `custom-usageprofile`: Only with the usage profile: shell code run by `generateusageprofile.sh` before it looks for the
+  profiling jar, to prepare the jar by other means (e.g. build it from source while no release publishes it).
 
-Examples of the three snippets files can be consulted
+Examples of the snippets files can be consulted
 in [FullTeaching Test Suite](https://github.com/giis-uniovi/retorch-st-fullteaching)
 and [eShopOnContainers](https://github.com/giis-uniovi/retorch-st-eShopContainers).
 
@@ -343,14 +315,14 @@ Once created the different properties and configuration files, the single module
 │   ├── 📁 configurations/
 │   │   ├── {} <SUT_NAME>SystemResource.json
 │   │   └── ⚙️ retorchCI.properties
-│   ├── 📁 customscriptscode/
-│   │   ├── 📄 custom-tjob-setup
-│   │   ├── 📄 custom-tjob-teardown
-│   │   ├── 📄 custom-coi-setup
-│   │   ├── 📄 custom-coi-teardown
-│   │   └── 🔐 custom.env
-│   └── 📁 infra/
-│       └── {} <SUT_NAME>CloudObjectInstances.json
+│   └── 📁 customscriptscode/
+│       ├── 📄 custom-tjob-setup
+│       ├── 📄 custom-tjob-teardown
+│       ├── 📄 custom-coi-setup
+│       ├── 📄 custom-coi-teardown
+│       ├── 📄 custom-jenkins-post
+│       ├── 📄 custom-usageprofile
+│       └── 🔐 custom.env
 ├── 📦 src
 ├── 🐳 docker-compose.yml
 ```
@@ -376,17 +348,19 @@ This compiles the test sources into `target/` and copies all test-scoped depende
 #### Step 2 — Run the standalone JAR
 
 ```bash
-java -jar retorch-orchestration-<version>-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath>
+java -jar retorch-orchestration-<version>-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath> [--profiling|--no-profiling]
 ```
 
 The JAR is available in [Maven Central](https://central.sonatype.com/artifact/io.github.giis-uniovi/retorch-orchestration)
-with the `standalone` classifier. The three arguments are:
+with the `standalone` classifier. The arguments are:
 
 - `rootPackageNameTests`: root package where the annotated E2E test classes are located
   (e.g. `com.sutexample.functional.tests`).
 - `systemName`: system name that must match the name used in
   the [Resources JSON file](#create-the-resource-json-file) (e.g. `sutexample`).
 - `jenkinsFilePath`: directory path where the `Jenkinsfile` will be written (e.g. `./` for the project root).
+- `--profiling` / `--no-profiling` (optional): add or not the measurement of the resources and the usage profile to the
+  pipeline, overriding the `profiling` property of `retorchCI.properties`.
 
 For example, for the [FullTeaching test suite](https://github.com/giis-uniovi/retorch-st-fullteaching):
 
@@ -412,204 +386,80 @@ the infrastructure(`.retorch/scripts/coilifecycles`) and the different environme
   tear down scripts for the TJobs and infrastructure
 - `📁 .retorch/envfiles`: contains the generated custom environment of each TJob.
 
-## RETORCH Usage Profiler
+With the [usage profile](#retorch-usage-profile) enabled it also generates the `Usage-Profile` stage of the
+`Jenkinsfile`, the scripts `.retorch/scripts/resourcemonitor.sh` and `.retorch/scripts/generateusageprofile.sh`, and
+`.retorch/executionplan.json` with the execution graph (TJobs, stages, dependencies and tests of each TJob).
 
-The RETORCH framework provides a tool that generates the Usage Profiles for a given On-premise or Cloud Infrastructure.
-Given the execution data produced by each CI run and saved as artifact, the Execution Plan from the orchestration tool,
-and a Cloud Object Instance configuration file, the Usage Profiler is able to compute how the Contracted Capacities
-are used over time and render them graphically.
+## RETORCH Usage Profile
 
-The RETORCH Usage Profiler requires the following inputs:
+The usage profile shows how many resources an execution of the E2E test suite really used and what it would cost in
+different cloud deployments. It is a **single self-contained HTML file** (data, scripts, styles, charts and logos are
+inlined, no external requests) that is published by the pipeline and can be opened anywhere.
 
-- The execution data CSV file generated by the Jenkinsfile scripts (stored in the `artifacts` folder after
-  each run).
-- The `ExecutionPlan` produced by the orchestration generator.
-- A `{} <SUT_NAME>CloudObjectInstances.json` file in `📁 .retorch/infra/` which describes the different deployment
-  alternatives with their capacities, billing model, and lifecycle times.
+It is enabled with `profiling=true` in `retorchCI.properties` or with the `--profiling` option of the generator.
+Without it the pipeline does not measure anything and has no `Usage-Profile` stage.
 
-To use the RETORCH Usage Profiler, we need to instantiate the `UsageProfilerToolBox`
-Add the `retorch-profiling` dependency to `pom.xml`:
+### What the pipeline does
 
-```xml
+1. When a TJob is set up, `resourcemonitor.sh` starts sampling (every 5 s, `RETORCH_MONITOR_INTERVAL`) the CPU, memory
+   and disk of the containers of that TJob; it stops when the TJob is torn down. The start and end of every lifecycle
+   phase (set-up, test execution, tear-down) are timestamped as before.
+2. When the infrastructure is torn down, `resourcemonitor.sh export` writes the **single usage file**
+   `artifacts/usageprofile-<branch>-<build>.csv`, with the columns
+   `kind;tjobname;stage;item;start;end;cpu_percent;mem_bytes;disk_bytes;image;image_bytes;volume_bytes`. A `phase` row
+   gives the start and end of a lifecycle phase of a TJob (the infrastructure phases belong to the TJob named `COI`); a
+   `sample` row gives the CPU (percentage of one core), memory and writable-layer size (bytes) of a container at an
+   instant; a `container` row, written the first time the container is seen, gives its image, the size of that image and
+   the size of the volumes it mounts. The storage used therefore counts the images and the volumes, not only the
+   writable layers.
+3. The `Usage-Profile` stage runs `generateusageprofile.sh`, which builds the usage profile from that file and from
+   `.retorch/executionplan.json`, and the `post` block publishes `artifacts/usageprofile/usageprofile.html` as the
+   "RETORCH Usage Profile" report. A failure of this stage marks it unstable but never fails the build.
 
-<dependency>
-  <groupId>io.github.giis-uniovi</groupId>
-  <artifactId>retorch-profiling</artifactId>
-  <version><!--SET HERE THE DESIRED VERSION--></version>
-</dependency>
+> **Temporary:** until a release publishes the profiling tool, the example projects prepare the jar in their
+> `.retorch/customscriptscode/custom-usageprofile` snippet: it clones this repository, builds the profiling module with
+> Maven (only when the branch has new commits) and leaves the jar where the script looks for it. The agent needs `git`,
+> `mvn` and `java`. When a release exists, delete that file and the script downloads the released jar.
+
+### What the profile shows
+
+- The measured CPU, memory and disk of the execution over time (with zoom).
+- **Alternatives and cost.** For every provider and region the cheapest virtual machines (up to three of different
+  size) that fit the measured peak, and the managed container services (AWS Fargate, Azure Container Instances). A VM is
+  billed while it is up: the cost of the capacity that is paid but not used is shown as **oversubscription**. Container
+  services are pay-per-use, so they have none.
+- **Cost breakdown** of the selected alternative by TJob, lifecycle phase and cloud object (compute and storage).
+- **Scenario explorer.** Filter by provider, type and region; select several alternatives and compare them side by side
+  by phase or by TJob; show or hide the oversubscription, switch between USD and percentage of the cheapest, and sort.
+- **Execution graph.** Every TJob is a bar whose length is proportional to its duration, painted in three parts
+  proportional to its set-up, test execution and tear-down time, with arrows for the dependencies. Clicking a bar shows
+  the tests executed by that TJob, its resources, durations, peak CPU and memory, and its cost in the selected
+  alternative.
+- Spanish, English, French and German; light, dark or automatic theme; links such as
+  `usageprofile.html#lang=es&theme=dark&node=tjobg` open the page in a given state.
+
+Prices are fetched from the public price lists (Azure Retail Prices API and AWS Price List) and cached for 24 hours in
+`$HOME/.retorch/prices.json`; the first download of the AWS EC2 list is large (hundreds of MB per region) and is parsed
+in streaming. Google Cloud is not supported yet.
+
+### Requirements in Jenkins
+
+- The *HTML Publisher* plugin.
+- The page uses JavaScript, which the default Content Security Policy of Jenkins blocks. To get the interactive page,
+  relax it (`hudson.model.DirectoryBrowserSupport.CSP`) or download the HTML artifact and open it locally.
+
+### Generate it by hand
+
+The `retorch-profiling` module builds an executable JAR (`mvn package`, classifier `cli`):
+
+```bash
+java -jar retorch-profiling-<version>-cli.jar <planName> <usageCsv> <outputHtml> <azureRegions> <awsRegions> <priceCacheFile> [executionPlanJson]
 ```
 
-### Create the Cloud Object Instances configuration file
-
-The Cloud Object Instances file must be placed in `.retorch/infra/` and named
-`<SUT_NAME>CloudObjectInstances.json`. It is a **JSON array** where each element describes one Cloud Object
-Instance (one infrastructure deployment alternative). Multiple entries allow comparing usage profiles across
-different providers or instance types.
-
-For each Cloud Object Instance the tester must specify:
-
-- `objectName`: A unique identifier for the Cloud Object Instance.
-- `billingOption`: The billing model applied by the cloud provider, with:
-  - `billingName`: Name of the billing plan (e.g. `"As-you-go"`).
-  - `provider`: Cloud provider name (e.g. `"Azure"`).
-  - `invoicedPrices`: A map of capacity name to price per unit (e.g. `{ "memory": 0.5, "slots": 1.20 }`).
-  - `timePeriod`: Minimum billing period in seconds (e.g. `3600` for hourly, `1` for per-second).
-- `capacitiesContracted`: A map of capacity name to a `ContractedCapacity` object with:
-  - `capacityName`: One of `memory`, `processor`, `storage`, `slots`.
-  - `quantity`: Total contracted amount.
-  - `granularity`: Smallest provisionable unit (e.g. `32` for a full VM, `0.1` for containers, `1` for slots).
-
-The COI lifecycle times (setup, execution, and teardown start/end) are derived automatically from the average
-lifecycle duration CSV produced in the next step — they do not need to be specified in the JSON file.
-
-The following snippet shows an example with one VM-based Cloud Object Instance:
-
-```json
-[
-  {
-    "objectName": "AzureVM",
-    "billingOption": {
-      "billingName": "As-you-go",
-      "provider": "Azure",
-      "invoicedPrices": {
-        "memory": 0.5,
-        "processor": 0.5,
-        "storage": 0.5,
-        "slots": 1.20
-      },
-      "timePeriod": 3600
-    },
-    "capacitiesContracted": {
-      "memory": {
-        "capacityName": "memory",
-        "quantity": 32.0,
-        "granularity": 32.0
-      },
-      "processor": {
-        "capacityName": "processor",
-        "quantity": 12.0,
-        "granularity": 12.0
-      },
-      "storage": {
-        "capacityName": "storage",
-        "quantity": 32.0,
-        "granularity": 32.0
-      },
-      "slots": {
-        "capacityName": "slots",
-        "quantity": 8.0,
-        "granularity": 1.0
-      }
-    }
-  }
-]
-```
-
-An example of this file for the FullTeaching test suite can be found at
-[FullTeachingCloudObjectInstances.json](https://github.com/giis-uniovi/retorch-st-fullteaching/blob/main/.retorch/infra/FullTeachingCloudObjectInstances.json).
-
-### Generate the average lifecycle duration file from the CI execution data
-
-Each execution of the RETORCH Execution Plan produces a CSV file stored in the `artifacts` folder. Collect one
-or more of these files into an `executiondata` folder; the tool computes the average durations across all runs.
-
-Instantiate `UsageProfilerToolBox` and call `generateAverageDurationCSVFile()`, specifying the folder
-containing the execution data CSVs (`inputPath`) and the output file path (`outputPath`):
-
-```java
-UsageProfilerToolBox usageProfiler = new UsageProfilerToolBox();
-usageProfiler.
-
-generateAverageDurationCSVFile("./executiondata","./averagedurationfile.csv");
-```
-
-### Generate the raw TJob capacity-usage profile
-
-Using the average duration file and the `ExecutionPlan`, generate a raw capacity-usage profile CSV that
-records how much of each capacity each TJob consumes at every second of the profiling window:
-
-```java
-ProfileGenerator profileGenerator = new ProfileGenerator();
-profileGenerator.
-
-generateExecutionPlanCapacitiesUsage(
-        plan,                        // ExecutionPlan from OrchestrationGenerator
-        "./averagedurationfile.csv", // average duration CSV from previous step
-                "./output/profile.csv",      // output path for the raw profile
-                3600,                        // profiling window in seconds
-                1                            // number of execution plan repetitions
-);
-```
-
-### Generate the COI Usage Profile charts
-
-Pass the system name (used to locate the JSON config), the raw profile CSV, an output folder, and the plan
-name to `generateCOIUsageProfiles()`. The method reads every Cloud Object Instance from
-`.retorch/infra/<systemName>CloudObjectInstances.json`, computes the contracted-capacity overlay for each, and
-saves one set of PNG charts per instance:
-
-```java
-usageProfiler.generateCOIUsageProfiles(
-        "FullTeaching",                  // system name — loads FullTeachingCloudObjectInstances.json
-                "./output/profile.csv",          // raw TJob profile from previous step
-                "./averagedurationfile.csv",     // avg duration CSV — used to derive COI lifecycle times
-                "./output/",                     // output folder for CSV files and chart images
-        plan.getName()                   // plan name used to label the charts
-);
-```
-
-For each Cloud Object Instance defined in the JSON file the profiler writes:
-
-- `<outputPath>profile_<objectName>.csv` — the profile with contracted-capacity rows added.
-- `<outputPath><planName>-<objectName>-<capacityName>.png` — one PNG chart per capacity.
-
-### Full example
-
-The following template, used in the same test class as the orchestration generator, shows all steps together:
-
-```java
-package com.sutexample.functional; // TO-DO Adjust the package name
-
-import giis.retorch.orchestration.classifier.EmptyInputException;
-import giis.retorch.orchestration.generator.OrchestrationGenerator;
-import giis.retorch.orchestration.model.ExecutionPlan;
-import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
-import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
-import giis.retorch.orchestration.scheduler.NotValidSystemException;
-import giis.retorch.profiling.main.UsageProfilerToolBox;
-import giis.retorch.profiling.profilegeneration.ProfileGenerator;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-
-@Disabled("Exclude to execute this class when pushing the SUT")
-class RetorchGenerateJenkinfileTest {
-  @Test
-  void testGenerateJenkinsfile() throws NoFinalActivitiesException, NoTGroupsInTheSchedulerException,
-          EmptyInputException, IOException, URISyntaxException, NotValidSystemException, ClassNotFoundException {
-
-    // Generate the Jenkinsfile (orchestration step)
-    OrchestrationGenerator orch = new OrchestrationGenerator();
-    orch.generateJenkinsfile("com.sutexample.functional.tests", "sutexample", "./");
-
-    // Step 1: average lifecycle durations from Jenkins execution CSV files
-    UsageProfilerToolBox usageProfiler = new UsageProfilerToolBox();
-    usageProfiler.generateAverageDurationCSVFile("executiondata", "./averagedurationfile.csv");
-
-    // Step 2: raw TJob capacity-usage profile over a 3600s window (1 execution)
-    ExecutionPlan plan = orch.getExecutionPlan("com.sutexample.functional.tests", "sutexample");
-    ProfileGenerator profileGenerator = new ProfileGenerator();
-    profileGenerator.generateExecutionPlanCapacitiesUsage(plan, "./averagedurationfile.csv",
-            "./output/profile.csv", 3600, 1);
-
-    // Step 3: overlay contracted capacities and generate charts for each configured COI
-    usageProfiler.generateCOIUsageProfiles("sutexample", "./output/profile.csv",
-            "./averagedurationfile.csv", "./output/", plan.getName());
-  }
-}
-```
+- `usageCsv`: the usage file described above.
+- `azureRegions`, `awsRegions`: comma separated regions (an empty string disables the provider).
+- `priceCacheFile`: JSON file where the prices are cached.
+- `executionPlanJson` (optional): `.retorch/executionplan.json`; without it the execution graph is not shown.
 
 ## Contributing
 
@@ -644,3 +494,8 @@ RETORCH*: A Cost and Resource aware Model for E2E Testing in the Cloud:
 This work has been developed under the TestBUS (PID2019-105455GB-C32) and project supported
 by the [Ministry of Science and Innovation (SPAIN)](https://www.ciencia.gob.es/)
 
+---
+
+<p align="center">
+  <a href="https://giis.uniovi.es/"><img src="img/giis-footer.svg" alt="GIIS - Software Engineering Research Group, University of Oviedo" height="28"/></a>
+</p>
