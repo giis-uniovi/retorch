@@ -74,7 +74,11 @@ pipeline {
     stage('Stage 2') {
       failFast false
       parallel {
-        echo 'Gateway Activity'
+        stage('Gateway Activity') {
+          steps {
+            echo 'Gateway Activity'
+          }
+        }
       } // End Parallel
     } // End Stage
     stage('Stage 3') {

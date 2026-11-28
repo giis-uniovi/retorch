@@ -52,7 +52,8 @@ properties without regenerating.
 The pipeline lives in `generictemplates/Jenkinsfile.tmpl` (skeleton), `Jenkinsfile-stage.tmpl` (one `Stage N` with its
 `parallel` block), `Jenkinsfile-tjob.tmpl`, `Jenkinsfile-gateway.tmpl`, `Jenkinsfile-usageprofile.tmpl` and
 `Jenkinsfile-publish.tmpl`; the leading `//` copyright lines of these templates are removed on load and never reach the
-Jenkinsfile. The scripts and the Jenkinsfile share one engine (`TemplateEngine`): `${KEY}` tokens replaced line by line;
+Jenkinsfile. A gateway activity is rendered as a real declarative stage (`stage('Gateway Activity') { steps { echo ... } }`), because only
+`stage` is valid inside `parallel {}`. The scripts and the Jenkinsfile share one engine (`TemplateEngine`): `${KEY}` tokens replaced line by line;
 a line that only holds a `${PROFILING_*}` or `${OPTIONAL_*}` token disappears when its value is empty; a token alone
 on an indented line gives its indentation to every line of a multi-line value (fragments are written once, with relative
 indentation), while a token at column 0 inserts the value verbatim (used for the user hooks).
