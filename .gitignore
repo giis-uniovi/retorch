@@ -12,3 +12,4 @@ org.sonarlint.eclipse.core.prefs
 /retorch-orchestration/.retorch/scripts/
 /retorch-orchestration/.retorch/executionplan.json
 /retorch-orchestration/dependency-reduced-pom.xml
+retorch-profiling/src/test/js/node_modules/

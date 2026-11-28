@@ -34,10 +34,11 @@ public class UsageProfileGenerator {
     private static final String DIR = "usageprofile/";
     private static final String SCRIPT_END = "</script";
     private static final String SCRIPT_END_ESCAPED = "<\\/script";
-    /** The page scripts, concatenated in this order into one script (one global scope). */
-    static final List<String> APP_SCRIPTS = Collections.unmodifiableList(Arrays.asList(
-            DIR + "js/i18n.js", DIR + "js/format.js", DIR + "js/theme.js", DIR + "js/charts.js", DIR + "js/graph.js",
-            DIR + "js/simulator.js", DIR + "js/app.js"));
+    /** The list of the page scripts, one file of {@code js/} per line, in the order they are concatenated (blank lines and # comments ignored). */
+    static final String SCRIPT_LIST = DIR + "js/scripts.txt";
+
+    /** The languages of the page: one {@code i18n/<language>.json} each, with the same keys as English (a test checks it). */
+    static final List<String> LANGUAGES = Collections.unmodifiableList(Arrays.asList("es", "en", "fr", "de"));
 
     /**
      * @param planName name shown in the usage profile title
@@ -63,7 +64,8 @@ public class UsageProfileGenerator {
                 .replace("<!--FOOTER_SVG-->", resource(DIR + "giis-footer.svg"))
                 .replace("/*FAVICON*/", favicon())
                 .replace("/*ECHARTS*/", inlineScript(resource(DIR + "echarts.min.js")))
-                .replace("/*APP*/", inlineScript(appScripts()))
+                .replace("/*APP*/", inlineScript(appScript()))
+                .replace("/*I18N*/", translations().replace("</", "<\\/"))
                 .replace("/*DATA*/", toJson(data).replace("</", "<\\/"));
         if (output.getParent() != null) {
             Files.createDirectories(output.getParent());
@@ -75,12 +77,36 @@ public class UsageProfileGenerator {
         return script.replace(SCRIPT_END, SCRIPT_END_ESCAPED);
     }
 
-    private static String appScripts() throws IOException {
+    /** The page scripts listed in {@code js/scripts.txt}, as classpath resource names, in order (one script, one global scope). */
+    static List<String> appScripts() throws IOException {
+        List<String> names = new ArrayList<>();
+        for (String line : resource(SCRIPT_LIST).split("\\R")) {
+            String name = line.trim();
+            if (!name.isEmpty() && !name.startsWith("#")) {
+                names.add(DIR + "js/" + name);
+            }
+        }
+        return names;
+    }
+
+    private static String appScript() throws IOException {
         StringBuilder all = new StringBuilder();
-        for (String name : APP_SCRIPTS) {
+        for (String name : appScripts()) {
             all.append(resource(name)).append('\n');
         }
         return all.toString();
+    }
+
+    /** The translations of every language in one JSON object {@code {"es":{...},"en":{...},...}}, read by the page from #i18n. */
+    static String translations() throws IOException {
+        StringBuilder json = new StringBuilder("{");
+        for (String language : LANGUAGES) {
+            if (json.length() > 1) {
+                json.append(',');
+            }
+            json.append('"').append(language).append("\":").append(resource(DIR + "i18n/" + language + ".json").trim());
+        }
+        return json.append('}').toString();
     }
 
     static String toJson(UsageProfileData data) throws IOException {

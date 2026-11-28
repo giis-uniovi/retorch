@@ -461,6 +461,19 @@ java -jar retorch-profiling-<version>-cli.jar <planName> <usageCsv> <outputHtml>
 - `priceCacheFile`: JSON file where the prices are cached.
 - `executionPlanJson` (optional): `.retorch/executionplan.json`; without it the execution graph is not shown.
 
+### Test the dashboard
+
+The page is plain JavaScript (no build step). Its logic and its look are checked by tests that need Node 22 or later and a
+Chrome or Edge, and are therefore **not** part of the default build (which only needs Java 8 and Maven):
+
+```bash
+mvn test -pl retorch-profiling -am -Pjs-tests
+```
+
+The profile `js-tests` runs `npm install` (axe-core), the unit tests (`node --test`, `retorch-profiling/src/test/js/*.test.mjs`)
+and the headless-browser smoke test (`smoke.mjs`) on the page generated from the test fixtures. To run them by hand:
+`cd retorch-profiling/src/test/js && npm install && npm test && node smoke.mjs ../../../target/usageprofile-smoke/usageprofile.html [--full] [--shots <dir>]`.
+
 ## Contributing
 
 See the general contribution policies and guidelines for *giis-uniovi* at

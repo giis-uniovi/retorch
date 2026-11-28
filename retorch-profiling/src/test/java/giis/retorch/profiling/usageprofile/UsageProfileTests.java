@@ -464,7 +464,6 @@ public class UsageProfileTests {
         assertTrue(PricingFetcher.split(null).isEmpty());
     }
 
-    private static final String[] SCRIPTS = {"i18n", "format", "theme", "charts", "graph", "simulator", "app"};
 
     private static String html(Path out) throws IOException {
         return new String(Files.readAllBytes(out), StandardCharsets.UTF_8);
@@ -615,7 +614,7 @@ public class UsageProfileTests {
         new UsageProfilerToolBox().generateUsageProfile("MyPlan", DATA + "usage.csv", out, smallCatalog(),
                 DATA + "executionplan.json");
         String content = html(Paths.get(out));
-        for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "<!--HEADER_LOGO_SVG-->",
+        for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "/*I18N*/", "<!--HEADER_LOGO_SVG-->",
                 "<!--FOOTER_SVG-->"}) {
             assertFalse(placeholder, content.contains(placeholder));
         }
@@ -625,17 +624,17 @@ public class UsageProfileTests {
         assertFalse(content.contains("src=\"http"));
         assertTrue(embeddedJson(content).get("graph").get("nodes").size() == 3);
         int previous = -1;
-        for (String script : SCRIPTS) {
-            String source = new String(Files.readAllBytes(Paths.get("src/main/resources/usageprofile/js/" + script + ".js")),
+        for (String script : UsageProfileGenerator.appScripts()) {
+            String source = new String(Files.readAllBytes(Paths.get("src/main/resources/" + script)),
                     StandardCharsets.UTF_8).trim().replace("</script", "<\\/script");
             int at = content.indexOf(source);
-            assertTrue(script + ".js is not inlined", at > previous);
+            assertTrue(script + " is not inlined", at > previous);
             previous = at;
         }
-        assertEquals(SCRIPTS.length, UsageProfileGenerator.APP_SCRIPTS.size());
-        assertTrue(UsageProfileGenerator.APP_SCRIPTS.get(0).endsWith("js/i18n.js"));
-        assertTrue(UsageProfileGenerator.APP_SCRIPTS.get(SCRIPTS.length - 1).endsWith("js/app.js"));
-        assertTrue(UsageProfileGenerator.APP_SCRIPTS.get(5).endsWith("js/simulator.js"));
+        List<String> scripts = UsageProfileGenerator.appScripts();
+        assertTrue(scripts.get(0).endsWith("js/i18n.js"));
+        assertTrue(scripts.get(scripts.size() - 1).endsWith("js/app.js"));
+        assertTrue(scripts.contains("usageprofile/js/views/simulator.js"));
     }
 
     @Test
