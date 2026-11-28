@@ -47,6 +47,11 @@ public final class AwsPrices implements PriceProvider {
     }
 
     @Override
+    public String id() {
+        return "aws";
+    }
+
+    @Override
     public String name() {
         return PROVIDER;
     }

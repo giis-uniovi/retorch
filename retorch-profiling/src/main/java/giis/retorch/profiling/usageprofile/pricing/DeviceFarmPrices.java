@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,8 +33,25 @@ public final class DeviceFarmPrices implements PriceProvider {
     }
 
     @Override
+    public String id() {
+        return "aws-devicefarm";
+    }
+
+    @Override
     public String name() {
         return SERVICE;
+    }
+
+    /** Follows the AWS regions setting: it is enabled when AWS is. */
+    @Override
+    public String configId() {
+        return "aws";
+    }
+
+    /** Global: one fetch, whatever the regions, and only when AWS has regions. */
+    @Override
+    public List<String> regionsFor(ProviderRegions config) {
+        return config.regions(configId()).isEmpty() ? Collections.<String>emptyList() : Collections.singletonList("global");
     }
 
     @Override

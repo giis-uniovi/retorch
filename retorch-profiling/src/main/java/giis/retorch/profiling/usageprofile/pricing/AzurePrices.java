@@ -51,6 +51,11 @@ public final class AzurePrices implements PriceProvider {
     }
 
     @Override
+    public String id() {
+        return "azure";
+    }
+
+    @Override
     public String name() {
         return PROVIDER;
     }

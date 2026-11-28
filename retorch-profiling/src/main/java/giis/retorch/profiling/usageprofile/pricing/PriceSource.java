@@ -15,10 +15,10 @@ public class PriceSource {
 
     private static final long MILLIS_PER_HOUR = 3600_000L;
 
-    private final String azureRegions;
-    private final String awsRegions;
+    private final ProviderRegions regions;
     private final File cacheFile;
     private final int maxAgeHours;
+    private final PriceProviderRegistry registry;
 
     /**
      * @param azureRegions Azure regions, comma separated; blank = no Azure
@@ -27,14 +27,58 @@ public class PriceSource {
      * @param maxAgeHours  hours before the cached prices are downloaded again
      */
     public PriceSource(String azureRegions, String awsRegions, String cacheFile, int maxAgeHours) {
-        this.azureRegions = azureRegions;
-        this.awsRegions = awsRegions;
-        this.cacheFile = new File(cacheFile);
+        this(ProviderRegions.of(azureRegions, awsRegions), new File(cacheFile), maxAgeHours, null);
+    }
+
+    private PriceSource(ProviderRegions regions, File cacheFile, int maxAgeHours, PriceProviderRegistry registry) {
+        this.regions = regions;
+        this.cacheFile = cacheFile;
         this.maxAgeHours = maxAgeHours;
+        this.registry = registry;
+    }
+
+    /** A generic source: {@code PriceSource.builder().regions("azure", "westeurope").regions("gcp", "...").build()}. */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /** The prices of the configured regions, from the cache when it is fresh and was built for the same regions. */
     public PriceCatalog load() throws IOException {
-        return new PricingFetcher().fetchOrLoad(azureRegions, awsRegions, cacheFile, maxAgeHours * MILLIS_PER_HOUR);
+        PricingFetcher fetcher = registry == null ? new PricingFetcher() : new PricingFetcher(registry);
+        return fetcher.fetchOrLoad(regions, cacheFile, maxAgeHours * MILLIS_PER_HOUR);
+    }
+
+    /** Builder of a {@link PriceSource} for any set of providers. */
+    public static final class Builder {
+        private ProviderRegions regions = ProviderRegions.none();
+        private File cacheFile = new File("prices-cache.json");
+        private int maxAgeHours = 24;
+        private PriceProviderRegistry registry;
+
+        /** The regions (comma separated; blank = disabled) of provider {@code providerId}. */
+        public Builder regions(String providerId, String commaSeparatedRegions) {
+            regions = regions.with(providerId, commaSeparatedRegions);
+            return this;
+        }
+
+        public Builder cacheFile(String path) {
+            this.cacheFile = new File(path);
+            return this;
+        }
+
+        public Builder maxAgeHours(int hours) {
+            this.maxAgeHours = hours;
+            return this;
+        }
+
+        /** The providers to use instead of {@link PriceProviderRegistry#standard(HttpGet)}. */
+        public Builder providers(PriceProviderRegistry providers) {
+            this.registry = providers;
+            return this;
+        }
+
+        public PriceSource build() {
+            return new PriceSource(regions, cacheFile, maxAgeHours, registry);
+        }
     }
 }
