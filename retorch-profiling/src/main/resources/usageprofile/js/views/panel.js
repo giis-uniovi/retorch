@@ -6,7 +6,7 @@
    the chart per container, measurements, containers and the cost of the TJob in the selected alternative. It is hidden until a TJob
    is selected. Three renders, so that a change only rewrites what it affects: render (the whole panel), renderCost (another
    alternative selected: the cost section only, the open containers stay open) and renderChart (another resource for the chart).
-   vm: {node: graph node or null, label: label of the selected alternative, items: its cost items of this TJob, phases: phase names in
+   vm: {node: graph node or null, label: label of the selected alternative, provider and kind: its icons, items: its cost items of this TJob, phases: phase names in
    display order, contMetric: 'storage'|'mem'|'cpu'}. */
 const PanelView = (function () {
   /* What the chart below the containers can show, chosen by the user: id, label key, stacked?, unit, series [label key, field, colour index]. */
@@ -43,7 +43,7 @@ const PanelView = (function () {
   }
 
   function costSection(vm) {
-    return Html.t`<h4>${I18n.t('graph.cost', {alt: vm.label || ''})}</h4>${costRows(vm)}`;
+    return Html.t`<h4>${Icons.both(vm.provider, vm.kind)}${I18n.t('graph.cost', {alt: vm.label || ''})}</h4>${costRows(vm)}`;
   }
 
   function measures(n) {

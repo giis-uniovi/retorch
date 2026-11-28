@@ -300,6 +300,37 @@ async function main() {
       'a hashchange applies the new link and resets what it does not say');
     check(b.problems.length === 0, 'no JavaScript errors after a hashchange ' + JSON.stringify(b.problems));
 
+    // provider icons: next to every name of a provider, decorative, and the chart labels draw them in both themes
+    for (const theme of ['light', 'dark']) {
+      await b.open(`${base}#lang=en&theme=${theme}&node=tjoba&cmp=all`);
+      const icons = JSON.parse(await b.ev(`JSON.stringify({
+        known: Object.keys(JSON.parse(document.getElementById('icons').textContent).providers), kinds: Object.keys(JSON.parse(document.getElementById('icons').textContent).kinds),
+        rowKinds: [].map.call(document.querySelectorAll('#table tbody tr'), function (r) { return [r.querySelectorAll('th img.prov-icon').length, r.querySelectorAll('td[data-label] img.prov-icon').length, r.getAttribute('data-id')]; }),
+        kindOf: JSON.parse(document.getElementById('data').textContent).alternatives.reduce(function (m, a) { m[a.id] = a.kind; return m; }, {}),
+        providers: [].map.call(document.querySelectorAll('#providerBoxes label'), function (l) { return l.querySelectorAll('img.prov-icon').length; }),
+        boxes: document.querySelectorAll('#providerBoxes input').length,
+        rows: document.querySelectorAll('#table tbody tr').length, rowIcons: document.querySelectorAll('#table tbody tr th button > img.prov-icon:first-child').length,
+        title: document.querySelectorAll('#detailTitle img.prov-icon').length, panel: document.querySelectorAll('#graphCost img.prov-icon, #graphPanel h4 img.prov-icon').length,
+        alt: [].every.call(document.querySelectorAll('img.prov-icon'), function (i) { return i.getAttribute('alt') === '' && i.naturalWidth > 0; }),
+        rowLabel: document.querySelector('#table tbody tr input[data-cmp]').getAttribute('aria-label'),
+        labelRich: ['compare', 'cmpChart'].map(function (id) {
+          var o = echarts.getInstanceByDom(document.getElementById(id)).getOption();
+          var l = (o.yAxis[0].axisLabel || {});
+          return Object.keys(l.rich || {}).length + ':' + (typeof l.formatter === 'function' ? String(l.formatter('x', 0)).indexOf('{i_') : 'none');
+        })})`));
+      check(icons.known.length > 0 && icons.known.indexOf('GCP') < 0, `the page embeds only the icons of its providers (${theme}): ${icons.known}`);
+      check(icons.kinds.indexOf('VM') >= 0 && icons.kinds.indexOf('BROWSER_SERVICE') < 0, `the page embeds only the kind icons that exist and are used (${theme}): ${icons.kinds}`);
+      check(icons.rowKinds.every((r) => { const k = icons.kindOf[r[2]]; const has = icons.kinds.indexOf(k) >= 0; return r[0] === (has ? 2 : 1) && r[1] === (has ? 1 : 0); }), `every table row has its provider icon, and its kind icon in the name and the Type cell when the kind has one (${theme})`);
+      check(icons.boxes > 0 && icons.providers.every((n) => n === 1), `every provider filter has an icon (${theme})`);
+      check(icons.rows > 0 && icons.rowIcons === icons.rows, `every alternative of the table has an icon (${theme}): ${icons.rowIcons}/${icons.rows}`);
+      check(icons.title >= 1 && icons.panel >= 1, `the title of the selected alternative and the cost heading of the TJob have an icon (${theme})`);
+      check(icons.alt, `the icons are decorative (alt="") and load (${theme})`);
+      check(/^Select /.test(icons.rowLabel) || icons.rowLabel.length > 0, `the checkbox keeps its text label (${theme}): ${icons.rowLabel}`);
+      check(icons.labelRich.every((x) => /^[1-9][0-9]*:0$/.test(x)), `the labels of the Alternatives and Compare charts carry the icons (${theme}): ${icons.labelRich}`);
+      await sleep(400);
+      check(b.problems.length === 0, `no JavaScript errors drawing the icons (${theme}) ` + JSON.stringify(b.problems));
+    }
+
     // accessibility
     const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
     if (axe) {

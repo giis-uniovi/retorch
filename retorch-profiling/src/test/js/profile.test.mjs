@@ -68,7 +68,7 @@ test('cheapest and sorted', () => {
 test('chart rows in USD or as a percentage of the cheapest shown, with or without oversubscription', () => {
   const p = Profile.create(data);
   const usd = p.chartRows([A, B], {showOver: true, metric: 'usd'});
-  assert.deepEqual(plain(usd), [{label: 'Azure · a', used: 3.5, over: 1}, {label: 'AWS · b', used: 3, over: 0}]);
+  assert.deepEqual(plain(usd), [{label: 'Azure · a', provider: 'Azure', kind: 'VM', used: 3.5, over: 1}, {label: 'AWS · b', provider: 'AWS', kind: 'CONTAINER', used: 3, over: 0}]);
   const pct = p.chartRows([A, B], {showOver: false, metric: 'pct'});
   assert.equal(pct[0].used, 100 * 3.5 / 3);
   assert.equal(pct[0].over, 0);

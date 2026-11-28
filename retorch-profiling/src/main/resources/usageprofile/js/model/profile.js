@@ -50,12 +50,12 @@ const Profile = (function () {
     return alts.slice().sort(function (a, b) { return a.total - b.total; }).slice(0, n === undefined ? CHEAPEST_COUNT : n);
   }
 
-  /* Rows of the alternatives chart: {label, used, over} in USD or in % of the cheapest shown (opts: {showOver, metric: 'usd'|'pct'}). */
+  /* Rows of the alternatives chart: {label, provider, kind, used, over} in USD or in % of the cheapest shown (opts: {showOver, metric: 'usd'|'pct'}). */
   function chartRows(alts, labelOf, opts) {
     const shown = function (a) { return opts.showOver ? a.total : a.total - idle(a); };
     const base = Math.min.apply(null, alts.map(shown).concat([Infinity]));
     const scale = function (v) { return opts.metric === 'pct' && base > 0 ? 100 * v / base : v; };
-    return alts.map(function (a) { return {label: labelOf(a), used: scale(a.total - idle(a)), over: opts.showOver ? scale(idle(a)) : 0}; });
+    return alts.map(function (a) { return {label: labelOf(a), provider: a.provider, kind: a.kind, used: scale(a.total - idle(a)), over: opts.showOver ? scale(idle(a)) : 0}; });
   }
 
   /* ---- execution graph ---- */

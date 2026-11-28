@@ -208,6 +208,9 @@
   .link:hover { text-decoration-color: currentColor; }
   .link[aria-current] { text-decoration: none; }
 
+  /* icon of a cloud provider, always next to its name (decorative); it has no box of its own */
+  .prov-icon { inline-size: 1.1em; block-size: 1.1em; vertical-align: middle; margin-inline-end: .35em; flex-shrink: 0; background: none; border: 0; padding: 0; }
+
   /* side panel of a TJob */
   .graph-hint { margin: .125rem 0 .5rem; }
   .graph-hint[hidden], .panel[hidden] { display: none; }
@@ -362,5 +365,7 @@
     .rt tr.best > * { background: transparent; outline: 2px solid Highlight; outline-offset: -2px; }
     .opt:has(input:checked) { outline: 2px solid Highlight; }
     .skip-link { background: Canvas; color: LinkText; border: 2px solid LinkText; }
+    /* the logos keep their colours: a white tile keeps the dark ones legible on a dark system background */
+    .prov-icon { forced-color-adjust: none; background: #fff; border-radius: .2em; }
   }
 }
