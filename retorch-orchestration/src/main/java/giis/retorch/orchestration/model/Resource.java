@@ -11,6 +11,7 @@ import org.slf4j.MarkerFactory;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The {@code Resource} class represents a Resource required by one or more {@code TestCases}. Provides the different
@@ -59,7 +60,7 @@ public class Resource {
                     @JsonProperty("dockerImage") String dockerImage) {
         this.resourceID = resourceID;
         this.hierarchyParent = hierarchyParent;
-        this.replaceable = replaceable;
+        this.replaceable = sortedIds(replaceable);
         this.elasticityModel = elasticityModel;
         this.resourceType = resourceType;
         this.minimalCapacities = minimalCapacities == null ? new java.util.ArrayList<>() : minimalCapacities;
@@ -81,7 +82,7 @@ public class Resource {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(resourceID, resourceType);
     }
 
     @Override
@@ -94,13 +95,13 @@ public class Resource {
     public boolean equals(Object obj) {
         if (obj == null || !obj.getClass().equals(this.getClass())) return false;
         Resource resClass = (Resource) obj;
-        if (!this.elasticityModel.equals(resClass.elasticityModel)) {
+        if (!Objects.equals(this.elasticityModel, resClass.elasticityModel)) {
             return false;
         }
         if ((!containsAllReplaceableElements(this.replaceable, resClass.getReplaceable())) ||
-                (!this.hierarchyParent.equals(resClass.hierarchyParent)) ||
-                (!this.getResourceType().equals(resClass.getResourceType()))) return false;
-        return this.getResourceID().equals(resClass.getResourceID());
+                (!Objects.equals(this.hierarchyParent, resClass.hierarchyParent)) ||
+                (!Objects.equals(this.getResourceType(), resClass.getResourceType()))) return false;
+        return Objects.equals(this.getResourceID(), resClass.getResourceID());
     }
 
     public String getDockerImage() {return dockerImage;}
@@ -109,19 +110,15 @@ public class Resource {
     public List<Capacity> getMinimalCapacities() {return minimalCapacities;}
     public String getResourceID() {return resourceID;}
     public type getResourceType() {return resourceType;}
-    public List<String> getReplaceable() {
-        this.replaceable.sort(String::compareToIgnoreCase);
-        return replaceable;
-    }
+    public List<String> getReplaceable() {return replaceable;}
 
     public void setDockerImage(String dockerImage) {this.dockerImage = dockerImage;}
     public void setElasticityModel(ElasticityModel elasticityModel) {this.elasticityModel = elasticityModel;}
     public void setHierarchyParent(List<String> hierarchyParent) {this.hierarchyParent = hierarchyParent;}
     public void setMinimalCapacities(List<Capacity> minimalCapacities) {
-        minimalCapacities.sort(Comparator.comparing(Capacity::getName));
-        this.minimalCapacities = minimalCapacities;
+        this.minimalCapacities = sortedCapacities(minimalCapacities);
     }
-    public void setReplaceable(List<String> replaceable) {this.replaceable = replaceable;}
+    public void setReplaceable(List<String> replaceable) {this.replaceable = sortedIds(replaceable);}
     public void setResourceID(String resourceID) {this.resourceID = resourceID;}
     public void setResourceType(type resourceType) {this.resourceType = resourceType;}
 
@@ -131,6 +128,21 @@ public class Resource {
 
     public void addReplaceableResource(String resourceID) {
         this.replaceable.add(resourceID);
+        this.replaceable.sort(String::compareToIgnoreCase);
+    }
+
+    /** Sorted copy (case insensitive), so the getters never mutate; null stays null. */
+    private static List<String> sortedIds(List<String> ids) {
+        if (ids == null) return null;
+        List<String> copy = new LinkedList<>(ids);
+        copy.sort(String::compareToIgnoreCase);
+        return copy;
+    }
+
+    private static List<Capacity> sortedCapacities(List<Capacity> capacities) {
+        List<Capacity> copy = new java.util.ArrayList<>(capacities);
+        copy.sort(Comparator.comparing(Capacity::getName));
+        return copy;
     }
 
     public boolean containsAllReplaceableElements(List<String> listOne, List<String> listTwo) {

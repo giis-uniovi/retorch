@@ -95,7 +95,7 @@ public class TJob {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(new HashSet<>(listTestCases), new HashSet<>(listResourceEntities), intraTJobSchedule);
     }
 
     @Override
@@ -103,10 +103,8 @@ public class TJob {
         if ((obj == null) || (!obj.getClass().equals(this.getClass())))  return false;
 
         TJob objectToCompare = ((TJob) obj);
-        for (TestCase tc : objectToCompare.getListTestCases()) {
-            if (!this.getListTestCases().contains(tc)) {return false;}
-        }
-        return this.getListResourceClasses().equals(objectToCompare.getListResourceClasses()) &&
+        return new HashSet<>(this.getListTestCases()).equals(new HashSet<>(objectToCompare.getListTestCases())) &&
+                new HashSet<>(this.getListResourceClasses()).equals(new HashSet<>(objectToCompare.getListResourceClasses())) &&
                 this.getIntraTJobSchedule().equals(objectToCompare.getIntraTJobSchedule());
     }
 

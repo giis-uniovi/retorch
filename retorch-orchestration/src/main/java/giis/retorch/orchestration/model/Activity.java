@@ -6,6 +6,9 @@ package giis.retorch.orchestration.model;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The {@code Activity} class represents a {@code TJob} with a sequence of {@code Activity} that preceeds them.
@@ -62,7 +65,7 @@ public class Activity {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(tJob);
     }
 
     @Override
@@ -70,8 +73,16 @@ public class Activity {
         if (obj == null) return false;
         if (!obj.getClass().equals(this.getClass())) return false;
         Activity objectToCompare = ((Activity) obj);
-        return this.listPredecessors.containsAll(objectToCompare.getListPredecessors()) && this.tJob.equals(objectToCompare.getTJob());
+        return predecessorTJobs(this).equals(predecessorTJobs(objectToCompare))
+                && Objects.equals(this.tJob, objectToCompare.getTJob());
     }
+    /** Predecessors are compared by their TJob only, so cyclic (invalid) graphs cannot recurse forever. */
+    private static Set<TJob> predecessorTJobs(Activity activity) {
+        Set<TJob> result = new HashSet<>();
+        for (Activity predecessor : activity.listPredecessors) result.add(predecessor.tJob);
+        return result;
+    }
+
     public List<Activity> getListPredecessors() {
         return listPredecessors;
     }

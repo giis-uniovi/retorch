@@ -20,11 +20,14 @@ to the default), `AccessMode`/`AccessModeTypes`, `TestCase`, `TGroup` (test case
 - Serialized property names (`@JsonProperty`) are part of the JSON configuration format: renaming them breaks users'
   `*SystemResources.json` files.
 
-## Current behavior (known issues, to be fixed by the refactoring plan)
-- `hashCode()` of the entities returns the identity hash (`super.hashCode()`) while `equals` compares values, so
-  hash-based collections work by identity only.
-- `equals` of `TJob`, `Activity`, `TGroup` and `System` is asymmetric (one-way `containsAll`).
-- `Resource.getReplaceable()` and `setMinimalCapacities` sort their list in place.
+## Equality
+- `equals`/`hashCode` are value based, consistent and symmetric: collections of test cases, resources and
+  predecessors are compared as sets (order is irrelevant). `Activity` compares its TJob and the TJobs of its
+  predecessors (shallow, so cyclic graphs cannot recurse). The identity `Resource` hash used to make
+  `CollectionUtils.subtract` in the scheduler work by identity; it now works by value, so a TJob only depends on
+  predecessors for resources that are really unavailable (e.g. elastic resources with free instances).
+- Getters never mutate: `Resource` sorts `replaceable` (case insensitive) and `minimalCapacities` (by name) on a copy
+  when they are set.
 
 ## Tests
-`TJobsEntityTests` (including a resource without capacities), plus every test that builds entities (`SchedulerTests`, `JenkinsOrchestratorTests`).
+`ModelEqualityTests` (reflexive, symmetric, hash consistent, HashSet), `TJobsEntityTests` (including a resource without capacities), plus every test that builds entities (`SchedulerTests`, `JenkinsOrchestratorTests`).

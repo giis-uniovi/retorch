@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The {@code System} class represents the whole RETORCH System composed by the Lists of {@code Resources} and {@code TestCase}
@@ -39,16 +40,16 @@ public class System {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(name, new HashSet<>(resources), new HashSet<>(testCases));
     }
 
     @Override
     public boolean equals(Object obj) {
         if ((obj == null)||(!obj.getClass().equals(this.getClass()))) return false;
         System objectToCompare = ((System) obj);
-        if (!objectToCompare.getName().equals(this.name)) return false;
-        boolean containAllResources = new HashSet<>(objectToCompare.getResources()).containsAll(this.getResources());
-        boolean containsAllTestCases = new HashSet<>(objectToCompare.getTestCases()).containsAll(this.getTestCases());
+        if (!Objects.equals(objectToCompare.getName(), this.name)) return false;
+        boolean containAllResources = new HashSet<>(objectToCompare.getResources()).equals(new HashSet<>(this.getResources()));
+        boolean containsAllTestCases = new HashSet<>(objectToCompare.getTestCases()).equals(new HashSet<>(this.getTestCases()));
         return containAllResources && containsAllTestCases;
     }
     @Override

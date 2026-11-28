@@ -132,18 +132,16 @@ public class SchedulerUtils extends GenericUtils {
                 Arrays.asList(listAvailableResources.get(MEDIUM_INELASTIC_ID), listAvailableResources.get(LIGHT_ELASTIC_ID)));
         TGroup tGroupFour = new TGroup(Arrays.asList(tOneAgg, tSevenAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MOCK_ELASTIC_ID)));
-        TGroup tGroupFive = new TGroup(Arrays.asList(tThreeAgg, tFiveAgg, tSevenAgg),
+        TGroup tGroupFive = new TGroup(Collections.singletonList(tSevenAgg),
                 Arrays.asList(listAvailableResources.get(MEDIUM_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
         TGroup tGroupSix = new TGroup(Collections.singletonList(tTwoAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MOCK_ELASTIC_ID)));
-        List<TestCase> listTGroupSeven = Stream.concat(Stream.of(tOneAgg),
-                listTestCases.subList(2, 7).stream()).collect(Collectors.toList());
+        List<TestCase> listTGroupSeven = Arrays.asList(tOneAgg, listTestCases.get(3), tSevenAgg);
         TGroup tGroupSeven = new TGroup(listTGroupSeven,
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
         TGroup tGroupEight = new TGroup(Collections.singletonList(tTwoAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
-        List<TestCase> listTGroupNine = Stream.concat(Stream.of(tOneAgg), listTestCases.subList(2, 7).stream()
-        ).collect(Collectors.toList());
+        List<TestCase> listTGroupNine = Arrays.asList(tOneAgg, tThreeAgg, tFiveAgg, listTestCases.get(5), tSevenAgg);
         TGroup tGroupNine = new TGroup(listTGroupNine, Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID),
                 listAvailableResources.get(LIGHT_ELASTIC_ID)));
 
@@ -325,7 +323,6 @@ public class SchedulerUtils extends GenericUtils {
         tJobFive.addResource(this.getMediumSchedulerElasticResource());
         Activity activityFive = new Activity(tJobFive);
         activityFive.addPredecessor(activityFour);
-        activityFive.addPredecessor(activityOne);
         currentActivities.add(activityFive);
         TJob tJobTwo = new TJob();
         tJobTwo.addTestCase(testCases.get(4));
@@ -370,7 +367,6 @@ public class SchedulerUtils extends GenericUtils {
         tJobFour.addResource(this.getHeavyInelasticResource());
         tJobFour.addResource(this.getMediumSchedulerElasticResource());
         Activity activityFour = new Activity(tJobFour);
-        activityFour.addPredecessor(activityOne);
         activityFour.addPredecessor(activityTwo);
         currentActivities.add(activityTwo);
         currentActivities.add(activityOne);
