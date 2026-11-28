@@ -21,6 +21,8 @@ import java.util.Map;
 public final class SutInfo {
     private static final String REMOTE_ORIGIN = "[remote \"origin\"]";
     private static final String HEAD_PREFIX = "ref: refs/heads/";
+    private static final String HTTPS = "https://";
+    private static final String[] SCHEMES = {"ssh://", "git://", "http://", HTTPS};
 
     public final String name;
     public final String url;
@@ -68,19 +70,72 @@ public final class SutInfo {
             return "";
         }
         String u = raw.trim();
-        if (u.matches("^[\\w.-]+@[\\w.-]+:.+")) {
-            u = "https://" + u.substring(u.indexOf('@') + 1).replaceFirst(":", "/");
+        if (isScpLike(u)) {
+            u = HTTPS + u.substring(u.indexOf('@') + 1).replaceFirst(":", "/");
         }
-        u = u.replaceFirst("^(ssh|git|http|https)://", "https://");
-        if (!u.startsWith("https://")) {
+        u = withHttps(u);
+        if (u == null) {
             return "";
         }
-        String rest = u.substring("https://".length());
+        String rest = u.substring(HTTPS.length());
         int slash = rest.indexOf('/');
         String host = slash < 0 ? rest : rest.substring(0, slash);
         String path = slash < 0 ? "" : rest.substring(slash);
-        host = host.substring(host.lastIndexOf('@') + 1).replaceFirst(":\\d+$", "");
-        return "https://" + host + path.replaceFirst("(\\.git)?/*$", "");
+        host = stripPort(host.substring(host.lastIndexOf('@') + 1));
+        return HTTPS + host + stripGitSuffix(path);
+    }
+
+    /** {@code user@host:path}: word characters, dots and dashes around the {@code @}, then a colon and something else. */
+    private static boolean isScpLike(String u) {
+        int at = u.indexOf('@');
+        int colon = at < 0 ? -1 : u.indexOf(':', at + 1);
+        return at > 0 && colon > at + 1 && colon < u.length() - 1
+                && isWordDotDash(u, 0, at) && isWordDotDash(u, at + 1, colon);
+    }
+
+    private static boolean isWordDotDash(String s, int from, int to) {
+        for (int i = from; i < to; i++) {
+            char c = s.charAt(i);
+            boolean word = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_';
+            if (!word && c != '.' && c != '-') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** The URL with its scheme (ssh, git, http or https) replaced by https, or null if it has another scheme or none. */
+    private static String withHttps(String u) {
+        for (String scheme : SCHEMES) {
+            if (u.startsWith(scheme)) {
+                return HTTPS + u.substring(scheme.length());
+            }
+        }
+        return null;
+    }
+
+    /** Removes a trailing {@code :digits}. */
+    private static String stripPort(String host) {
+        int colon = host.lastIndexOf(':');
+        if (colon < 0 || colon == host.length() - 1) {
+            return host;
+        }
+        for (int i = colon + 1; i < host.length(); i++) {
+            if (host.charAt(i) < '0' || host.charAt(i) > '9') {
+                return host;
+            }
+        }
+        return host.substring(0, colon);
+    }
+
+    /** Removes the trailing slashes and then a {@code .git} suffix. */
+    private static String stripGitSuffix(String path) {
+        int end = path.length();
+        while (end > 0 && path.charAt(end - 1) == '/') {
+            end--;
+        }
+        String p = path.substring(0, end);
+        return p.endsWith(".git") ? p.substring(0, p.length() - ".git".length()) : p;
     }
 
     private static String nameOf(String url) {
