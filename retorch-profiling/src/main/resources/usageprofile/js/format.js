@@ -2,9 +2,8 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-/* Constants (phases, colours) and locale-aware formatting helpers. */
+/* Constants (colours, patterns; the lists of phases, kinds and objects come from the model) and locale-aware formatting helpers. */
 const Fmt = (function () {
-  const PHASES = ['coi-setup', 'tjob-setup', 'tjob-testexec', 'tjob-teardown', 'coi-teardown', 'oversubscription'];
   /* All the colours keep at least 3:1 against the white and the dark card (WCAG 1.4.11). */
   const PHASE_COLORS = {
     'coi-setup': '#64748b', 'tjob-setup': '#0284c7', 'tjob-testexec': '#16a34a',
@@ -51,7 +50,7 @@ const Fmt = (function () {
   function cycleColor(index) { return CYCLE_COLORS[index % CYCLE_COLORS.length]; }
 
   return {
-    PHASES: PHASES, PHASE_COLORS: PHASE_COLORS, PHASE_PATTERNS: PHASE_PATTERNS, OBJECT_COLORS: OBJECT_COLORS, SERIES_COLORS: SERIES_COLORS,
+    PHASE_COLORS: PHASE_COLORS, PHASE_PATTERNS: PHASE_PATTERNS, OBJECT_COLORS: OBJECT_COLORS, SERIES_COLORS: SERIES_COLORS,
     num: num, usd: usd, pct: pct, dur: dur, date: date, orDash: orDash, cycleColor: cycleColor
   };
 })();

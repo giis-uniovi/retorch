@@ -31,7 +31,8 @@ const Theme = (function () {
   function colors() {
     const style = getComputedStyle(document.documentElement);
     const read = function (name) { return style.getPropertyValue(name).trim(); };
-    return {fg: read('--fg'), muted: read('--muted'), line: read('--line'), card: read('--card'), accent: read('--accent')};
+    return {fg: read('--fg'), muted: read('--muted'), line: read('--line'), card: read('--card'), accent: read('--accent'),
+      phase: Fmt.PHASE_COLORS, object: Fmt.OBJECT_COLORS, series: Fmt.SERIES_COLORS};
   }
 
   function init(callback) {

@@ -29,5 +29,5 @@ test('orDash shows a dash for a missing measurement', () => {
 });
 
 test('every phase has a colour and a pattern', () => {
-  Fmt.PHASES.forEach((p) => { assert.ok(Fmt.PHASE_COLORS[p], p); assert.ok(Fmt.PHASE_PATTERNS[p], p); });
+  ['coi-setup', 'tjob-setup', 'tjob-testexec', 'tjob-teardown', 'coi-teardown', 'oversubscription'].forEach((p) => { assert.ok(Fmt.PHASE_COLORS[p], p); assert.ok(Fmt.PHASE_PATTERNS[p], p); });
 });

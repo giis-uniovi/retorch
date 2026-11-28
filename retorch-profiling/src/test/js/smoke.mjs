@@ -199,6 +199,15 @@ async function main() {
       check(metric === 'storage' ? /\(stacked\)/.test(names) : !/\(stacked\)/.test(names), `metric ${metric} draws ${names}`);
     }
 
+    // selecting another alternative refreshes the cost panel only: the Gantt chart instance and the open containers stay as they are
+    await b.ev("echarts.getInstanceByDom(document.getElementById('graphChart')).__smoke = 1; document.querySelector('#graphPanel details').open = true;");
+    const costBefore = await b.ev("document.getElementById('graphCost').textContent");
+    await b.ev("document.querySelector('#table [data-select]:not([aria-current])').click()");
+    await sleep(300);
+    check(await b.ev("echarts.getInstanceByDom(document.getElementById('graphChart')).__smoke === 1"), 'selecting an alternative does not re-create the execution graph');
+    check(await b.ev("document.querySelector('#graphPanel details').open"), 'selecting an alternative keeps the open containers open');
+    check((await b.ev("document.getElementById('graphCost').textContent")) !== costBefore, 'the cost of the TJob in the panel follows the selected alternative');
+
     // focus survives a re-render: a control of the table keeps the focus when the table is rebuilt
     await b.ev("document.querySelector('#table [data-select]').focus()");
     const before = await b.ev("document.activeElement.getAttribute('data-select')");

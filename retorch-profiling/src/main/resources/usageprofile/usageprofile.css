@@ -70,6 +70,7 @@ main:focus-visible{outline:none}
 }
 
 /* layout */
+.contents{display:contents}
 main{padding:.5rem clamp(.75rem,3dvw,1.75rem) 1.5rem;display:grid;gap:1rem}
 main>*{min-inline-size:0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:.625rem;padding:.875rem clamp(.75rem,2dvw,1rem)}

@@ -100,7 +100,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
 - `UsageProfileGenerator.generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfo.detect()`): one self-contained HTML
   (no external requests). It fills `resources/usageprofile/usageprofile.html` by replacing `/*CSS*/` with `usageprofile.css`, `/*ECHARTS*/`
   with Apache ECharts 5.6.0 (`echarts.min.js`, Apache License 2.0, its licence header is kept), `/*APP*/` with the
-  `js/*.js` files joined with a newline in the order `i18n, format, html, theme, model/profile, model/simulation, model/state, model/hash, charts, graph, simulator, app` (constant `APP_SCRIPTS`; one
+  `js/*.js` files joined with a newline in the order `i18n, format, html, theme, model/profile, model/simulation, model/state, model/hash, charts, views/common, views/header, views/usage, views/graph, views/panel, views/alternatives, views/table, views/compare, views/detail, views/simulator, app` (constant `APP_SCRIPTS`; one
   script, one global scope), `<!--HEADER_LOGO_SVG-->` with `giis-logo.svg`, `<!--FOOTER_SVG-->` with `giis-footer.svg`, `/*FAVICON*/` with the
   Base64 of `giis-logo.svg` (page icon as a data URI) and
   `/*DATA*/` with the JSON (replaced last so user data is never scanned for placeholders). `</script` is escaped as
@@ -124,10 +124,24 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
 Output rule: the profile is **one self-contained HTML file** (CSS, JS, ECharts, data and both logos inlined; no external
 request; the only URL is the footer link to the group site; the only `<link>` is the page icon, the GIIS logo as a data URI). A test enforces it.
 
-Source layout: `usageprofile.html` (structure and placeholders), `usageprofile.css` (themes through CSS variables) and one
-namespace per concern in `js/`: `i18n.js` (`I18n`), `format.js` (`Fmt`: formats, colours, phase order), `html.js` (`Html`: tagged template `Html.t` that escapes every interpolated value (`& < > " '`), `Html.raw` for trusted fragments, `Html.join`, `Html.set`; no HTML is concatenated by hand, translations and data are escaped alike), `theme.js`
-(`Theme`), `model/profile.js` (`Profile`: read-only queries over the JSON, no DOM and no translations: alternatives with filter, `sorted`, `cheapest`, `idle`, `label`, `costBy` / `matrix` / `costTable` by phase, TJob and cloud object, chart rows in USD or % of the cheapest, `ganttLayout`, `span`, `duration`, `tjobStorage`; the lists of phases, kinds and objects come from `data.meta`, with the previous hard-coded lists as fallback when the JSON has no `meta`), `model/simulation.js` (`Simulation`: the projection formulas, `compute`, `breakEvenRows`, `curves`, limits and defaults; pure), `model/state.js` (`State`: the only mutable state, plain data: `lang, theme, selectedAlt, node, showOver, metric, sort, cmpGroup, group, contMetric, compared` (ids in the order of the alternatives), `filters {offProviders, kind, region}` and `sim {runs, days, pattern, hours, disc, buy}`; `create(ctx)` gives `get()`, `update(patch)` that validates every value against what the page has (unknown ids, enum values and out of range numbers are ignored, `filters` and `sim` merge key by key) and returns the changed keys, `subscribe(fn)`; `defaults(ctx)`, `sanitize`, `resolve`), `model/hash.js` (`Hash`: `parse(hash, ctx)` and `serialize(state, ctx)`, the only code that knows the URL format), `charts.js` (`Charts`), `graph.js` (`Graph`), `simulator.js` (`Simulator`: the projection view), `app.js` (`App`, ends with `App.init()`). Plain ES2015, no build
-step. The files carry the GIIS notice; ECharts and the SVG logos are third party / assets.
+Source layout (MVC, plain ES2015, no build step, IIFE namespaces; `usageprofile.html` holds the structure and the placeholders,
+`usageprofile.css` the themes through CSS variables). The page is one inline script made of the files of `js/` in this order:
+
+| Layer | File | Responsibility |
+|---|---|---|
+| infra | `i18n.js` (`I18n`), `format.js` (`Fmt`: formats, patterns, palettes), `html.js` (`Html`), `theme.js` (`Theme`) | translations; locale formats; `Html.t` tagged template that escapes every interpolated value (`& < > " '`), `Html.raw` for trusted fragments, `Html.join`, `Html.set` (no HTML is concatenated by hand: translations and data are escaped alike); light / dark / auto and `Theme.colors()` |
+| Model | `model/profile.js` (`Profile`) | read-only queries over the JSON, no DOM and no translations: alternatives with filter, `sorted`, `cheapest`, `idle`, `label`, `costBy` / `matrix` / `costTable` by phase, TJob and cloud object, `chartRows` in USD or % of the cheapest, `ganttLayout`, `span`, `duration`, `tjobStorage`, `tjobItems`; the lists of phases, kinds and objects come from `data.meta` (names, or objects with `label` / `id` / `name`), with the previous hard-coded lists as fallback when the JSON has no `meta` |
+| Model | `model/simulation.js` (`Simulation`) | the projection formulas, `compute`, `breakEvenRows`, `curves`, limits and defaults; pure |
+| Model | `model/state.js` (`State`) | the only mutable state, plain data: `lang, theme, selectedAlt, node, showOver, metric, sort, cmpGroup, group, contMetric, compared` (ids in the order of the alternatives), `filters {offProviders, kind, region}` and `sim {runs, days, pattern, hours, disc, buy}`; `create(ctx)` gives `get()`, `update(patch)` that validates every value against what the page has (unknown ids, enum values and out of range numbers are ignored; `filters` and `sim` merge key by key) and returns the changed keys, `subscribe(fn)`; also `defaults(ctx)`, `sanitize`, `resolve` |
+| Model | `model/hash.js` (`Hash`) | `parse(hash, ctx)` and `serialize(state, ctx)`, the only code that knows the URL format |
+| View | `charts.js` (`Charts`) | ECharts builders (a fresh instance per render), shared time axis (`timeFrame`, `timeAxis`, `timeZoom`, `linkZoom`), `resize(id)`, `dispose(id)`; holds no page state |
+| View | `views/common.js` (`View`) | small HTML builders and `syncSelect` / `syncSegment`, which synchronise a control without rebuilding it when its texts did not change |
+| View | `views/header.js`, `usage.js`, `graph.js`, `panel.js`, `alternatives.js`, `table.js`, `compare.js`, `detail.js`, `simulator.js` (`HeaderView`, `UsageView`, `GraphView`, `PanelView`, `AlternativesView`, `TableView`, `CompareView`, `DetailView`, `SimulatorView`) | each is mounted once on its section (`mount(rootEl)`), renders from a ready view-model with `render(vm)` (and, when it helps, a partial render or `resize()`), writes only inside its own root, never reads the state or computes costs, and tags what the user can do with `data-act` |
+| glue | `app.js` (`App`) | builds the view-models from the model, the state and the translations, renders, turns events into changes of the state and writes the hash; ends with `App.init()` |
+
+Cost panel of a TJob (`PanelView`): rendered apart from the Gantt chart: selecting another alternative only rewrites its cost section
+(`renderCost`; the Gantt chart is not re-created and the open containers stay open); another resource for the chart per container only
+redraws that chart. The files carry the GIIS notice; ECharts and the SVG logos are third party / assets.
 
 The page must provide:
 - **Header** with a large inline GIIS logo, the title "RETORCH Resource Usage Profile" (key `app.title`, the same in every language),
@@ -198,6 +212,6 @@ Not part of the default build (no Node needed for `mvn test`): they run with `mv
   exception or `console.error`; every chart, table and the list of TJobs render; title and header; usage chart and execution graph
   have identical plot areas (x0/x1 in page pixels) before and after selecting a TJob, after zooming and at 390 px, and the zoom is
   linked both ways; the TJob panel is below the chart; the metric selector of the container chart; the keyboard focus stays on the
-  control after a re-render; Escape closes the panel; a deep link restores the state; every change made through the controls is written to the hash and reopening that hash restores the same page and the same hash; axe-core (WCAG 2.x A/AA and best practices) finds
+  control after a re-render; Escape closes the panel; a deep link restores the state; selecting an alternative does not re-create the Gantt chart and keeps the open containers open; every change made through the controls is written to the hash and reopening that hash restores the same page and the same hash; axe-core (WCAG 2.x A/AA and best practices) finds
   0 violations in light and dark (`--full`: also es, fr, de); no horizontal scroll on a phone. `--shots <dir>` saves
   `wide|narrow-light|dark.png` (deterministic) to compare two versions of the page byte by byte.

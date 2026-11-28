@@ -155,8 +155,16 @@ const Charts = (function () {
     });
   }
 
-  function resizeAll() {
-    Object.keys(instances).forEach(function (id) { instances[id].resize(); });
+  /* Adapts a chart to the size of its container (what a resize needs when the text sizes do not change). */
+  function resize(id) {
+    if (instances[id] && document.getElementById(id)) { instances[id].resize(); }
+  }
+
+  function resizeAll() { Object.keys(instances).forEach(resize); }
+
+  /* Releases the chart of an element that is going away (the panel of the TJob closes). */
+  function dispose(id) {
+    if (instances[id]) { discard(instances[id]); delete instances[id]; }
   }
 
   /* Sets the container height first so that ECharts measures the final size. */
@@ -209,7 +217,7 @@ const Charts = (function () {
   }
 
   function usage(timeline) {
-    const colors = Fmt.SERIES_COLORS;
+    const colors = Theme.colors().series;
     const f = fonts('usage');
     const c = Theme.colors();
     const frame = timeFrame(f);
@@ -238,10 +246,10 @@ const Charts = (function () {
   function alternatives(rows, opts) {
     const f = fonts('compare');
     const formatter = opts.pct ? Fmt.pct : Fmt.usd;
-    const series = [{name: I18n.t('alt.used'), type: 'bar', stack: 'cost', color: Fmt.SERIES_COLORS.used, itemStyle: {decal: decal('solid')},
+    const series = [{name: I18n.t('alt.used'), type: 'bar', stack: 'cost', color: Theme.colors().series.used, itemStyle: {decal: decal('solid')},
       data: rows.map(function (r) { return r.used; })}];
     if (opts.showOver) {
-      series.push({name: I18n.t('alt.over'), type: 'bar', stack: 'cost', color: Fmt.SERIES_COLORS.over,
+      series.push({name: I18n.t('alt.over'), type: 'bar', stack: 'cost', color: Theme.colors().series.over,
         itemStyle: {decal: decal(Fmt.PHASE_PATTERNS.oversubscription)}, data: rows.map(function (r) { return r.over; })});
     }
     setHeight('compare', Math.max(f.root * 16, rows.length * f.root * 2.1 + f.root * 6));
@@ -294,7 +302,7 @@ const Charts = (function () {
     }, spec.description);
   }
 
-  return {setTimeSpan: setTimeSpan, timeFrame: timeFrame, timeAxis: timeAxis, timeZoom: timeZoom, linkZoom: linkZoom, mk: mk, resizeAll: resizeAll, setHeight: setHeight, axis: axis, legend: legend, fonts: fonts, describe: describe,
+  return {setTimeSpan: setTimeSpan, timeFrame: timeFrame, timeAxis: timeAxis, timeZoom: timeZoom, linkZoom: linkZoom, mk: mk, resize: resize, resizeAll: resizeAll, dispose: dispose, setHeight: setHeight, axis: axis, legend: legend, fonts: fonts, describe: describe,
     dataTable: dataTable, ARIA_DECAL: ARIA_DECAL, decal: decal, pattern: pattern, cyclePattern: cyclePattern,
     usage: usage, alternatives: alternatives, pie: pie, stacked: stacked};
 })();
