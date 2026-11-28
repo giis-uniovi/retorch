@@ -6,8 +6,8 @@ package giis.retorch.profiling.usageprofile.cost;
 
 import giis.retorch.profiling.usageprofile.measurement.Load;
 import giis.retorch.profiling.usageprofile.measurement.Slice;
-import giis.retorch.profiling.usageprofile.dto.Alternative;
-import giis.retorch.profiling.usageprofile.dto.CostItem;
+import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
+import giis.retorch.profiling.usageprofile.dto.CostItemDTO;
 import giis.retorch.profiling.usageprofile.dto.Phase;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
@@ -26,7 +26,7 @@ final class BrowserServiceCost implements AlternativeCost {
     private static final String TEST_EXECUTION = Phase.TJOB_TESTEXEC.label();
 
     @Override
-    public List<Alternative> calculate(CostContext context, List<Alternative> existing) {
+    public List<AlternativeDTO> calculate(CostContext context, List<AlternativeDTO> existing) {
         if (context.catalog.browsers.isEmpty()) {
             return Collections.emptyList();
         }
@@ -35,28 +35,28 @@ final class BrowserServiceCost implements AlternativeCost {
                     + " (or there is no execution plan)");
             return Collections.emptyList();
         }
-        Alternative base = existing.get(0);
-        List<Alternative> result = new ArrayList<>();
+        AlternativeDTO base = existing.get(0);
+        List<AlternativeDTO> result = new ArrayList<>();
         for (PriceCatalog.BrowserRate rate : context.catalog.browsers) {
             result.add(alternative(context, base, rate));
         }
         return result;
     }
 
-    private static Alternative alternative(CostContext context, Alternative base, PriceCatalog.BrowserRate rate) {
+    private static AlternativeDTO alternative(CostContext context, AlternativeDTO base, PriceCatalog.BrowserRate rate) {
         CostAccumulator acc = new CostAccumulator();
-        for (CostItem item : base.items) {
+        for (CostItemDTO item : base.items) {
             acc.add(item.object, item.tjob, item.phase, item.cost);
         }
         for (Slice s : context.timeline.slices) {
             for (Load l : s.loads) {
                 if (TEST_EXECUTION.equals(l.phase) && context.browserTjobs.contains(l.tjob.toLowerCase(Locale.ROOT))) {
-                    acc.add(CostItem.OBJECT_BROWSER, l.tjob, l.phase, rate.minuteUsd / 60.0);
+                    acc.add(CostItemDTO.OBJECT_BROWSER, l.tjob, l.phase, rate.minuteUsd / 60.0);
                 }
             }
         }
-        return new Alternative(rate.provider + "/" + rate.region + "/" + rate.service + "/" + rate.name
-                + "+" + base.id, rate.service, Alternative.KIND_BROWSER_SERVICE,
+        return new AlternativeDTO(rate.provider + "/" + rate.region + "/" + rate.service + "/" + rate.name
+                + "+" + base.id, rate.service, AlternativeDTO.KIND_BROWSER_SERVICE,
                 rate.name + " + " + base.provider + " " + base.label, base.region, 0, acc.items());
     }
 }

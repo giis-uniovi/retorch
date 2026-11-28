@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 /** One deployment alternative (a VM or a managed container service) and how its cost splits. Immutable. */
-public final class Alternative {
+public final class AlternativeDTO {
     public static final String KIND_VM = "VM";
     public static final String KIND_CONTAINER = "CONTAINER";
     /** The SUT runs on the cheapest compute alternative and the browsers are rented by the minute. */
@@ -25,12 +25,12 @@ public final class Alternative {
     public final double hourlyPrice;
     /** Sum of the cost of all the items. */
     public final double total;
-    public final List<CostItem> items;
+    public final List<CostItemDTO> items;
     /** Reservations of the VM (1 and 3 years); empty for container services and VMs without data. */
-    public final List<ReservationOption> reservations;
+    public final List<ReservationOptionDTO> reservations;
 
-    public Alternative(String id, String provider, String kind, String label, String region, double hourlyPrice,
-                       List<CostItem> items) {
+    public AlternativeDTO(String id, String provider, String kind, String label, String region, double hourlyPrice,
+                       List<CostItemDTO> items) {
         this.id = id;
         this.provider = provider;
         this.kind = kind;
@@ -39,14 +39,14 @@ public final class Alternative {
         this.hourlyPrice = hourlyPrice;
         this.items = Collections.unmodifiableList(new ArrayList<>(items));
         double sum = 0;
-        for (CostItem item : items) {
+        for (CostItemDTO item : items) {
             sum += item.cost;
         }
         this.total = sum;
         this.reservations = Collections.emptyList();
     }
 
-    private Alternative(Alternative base, List<ReservationOption> reservations) {
+    private AlternativeDTO(AlternativeDTO base, List<ReservationOptionDTO> reservations) {
         this.id = base.id;
         this.provider = base.provider;
         this.kind = base.kind;
@@ -59,7 +59,7 @@ public final class Alternative {
     }
 
     /** A copy of this alternative that carries the given reservations (the original is not modified). */
-    public Alternative withReservations(List<ReservationOption> reservations) {
-        return new Alternative(this, reservations);
+    public AlternativeDTO withReservations(List<ReservationOptionDTO> reservations) {
+        return new AlternativeDTO(this, reservations);
     }
 }

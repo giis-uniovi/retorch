@@ -5,7 +5,7 @@ Computes what the measured execution would cost on every deployment alternative 
 split by TJob, lifecycle phase and cloud object.
 
 ## Inputs and output
-`CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `dto.CostReport` (peaks, duration, alternatives sorted by
+`CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `dto.CostReportDTO` (peaks, duration, alternatives sorted by
 total, cheapest first, warnings). Input: a `measurement.Timeline`, a `pricing.PriceCatalog` and optionally the (upper case)
 ids of the TJobs that drive a browser.
 
@@ -18,7 +18,7 @@ Only `CostCalculator` (with the labels of the phases and objects it exposes as c
 - `CostCalculator` only orchestrates: one `AlternativeCost` strategy per kind (`VmCost`, `ContainerCost`,
   `BrowserServiceCost`, sharing a `CostContext` and a `CostAccumulator`); the browser strategy runs last, over the already
   sorted alternatives. A new kind of alternative is a new strategy.
-- VM alternatives carry the reservations of the chosen VM (`Alternative.reservations`); container alternatives have none.
+- VM alternatives carry the reservations of the chosen VM (`AlternativeDTO.reservations`); container alternatives have none.
 - VM alternatives: per provider+region, the cheapest 3 VMs of distinct shape that fit the peak CPU and memory; none fits ->
   warning. Per second the VM costs `hourly/3600`; COI seconds are charged to that COI phase; otherwise split between running
   TJob phases by their share of the VM (the larger of CPU and memory share, normalized when the sum exceeds 1) and the

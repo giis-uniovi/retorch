@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.ReservationOption;
+import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ final class AwsReservations {
      * Positioned on the "Reserved" field: for every sku of {@code products} stores its reservation options in
      * {@code out} (keyed by the product); the other skus are skipped without loading them.
      */
-    static void read(JsonParser parser, Map<String, JsonNode> products, Map<JsonNode, List<ReservationOption>> out)
+    static void read(JsonParser parser, Map<String, JsonNode> products, Map<JsonNode, List<ReservationOptionDTO>> out)
             throws IOException {
         parser.nextToken();
         while (parser.nextToken() == JsonToken.FIELD_NAME) {
@@ -45,7 +45,7 @@ final class AwsReservations {
                 parser.skipChildren();
                 continue;
             }
-            List<ReservationOption> options = options(MAPPER.readTree(parser));
+            List<ReservationOptionDTO> options = options(MAPPER.readTree(parser));
             if (!options.isEmpty()) {
                 out.put(products.get(sku), options);
             }
@@ -53,10 +53,10 @@ final class AwsReservations {
     }
 
     /** The reservation options of the terms of one sku, the cheapest effective price for each (term, payment). */
-    static List<ReservationOption> options(JsonNode skuTerms) {
-        List<ReservationOption> result = new ArrayList<>();
+    static List<ReservationOptionDTO> options(JsonNode skuTerms) {
+        List<ReservationOptionDTO> result = new ArrayList<>();
         for (JsonNode term : skuTerms) {
-            ReservationOption option = option(term);
+            ReservationOptionDTO option = option(term);
             if (option != null) {
                 addCheapest(result, option);
             }
@@ -64,9 +64,9 @@ final class AwsReservations {
         return result;
     }
 
-    private static void addCheapest(List<ReservationOption> options, ReservationOption candidate) {
+    private static void addCheapest(List<ReservationOptionDTO> options, ReservationOptionDTO candidate) {
         for (int i = 0; i < options.size(); i++) {
-            ReservationOption o = options.get(i);
+            ReservationOptionDTO o = options.get(i);
             if (o.termYears == candidate.termYears && o.payment == candidate.payment) {
                 if (candidate.effectiveHourly < o.effectiveHourly) {
                     options.set(i, candidate);
@@ -78,7 +78,7 @@ final class AwsReservations {
     }
 
     /** The option of one term, or null if it is not a standard 1/3 year No Upfront or All Upfront term. */
-    private static ReservationOption option(JsonNode term) {
+    private static ReservationOptionDTO option(JsonNode term) {
         JsonNode attrs = term.path("termAttributes");
         int years = years(attrs.path("LeaseContractLength").asText());
         if (years == 0 || !STANDARD.equals(attrs.path("OfferingClass").asText())) {
@@ -87,11 +87,11 @@ final class AwsReservations {
         String purchase = attrs.path("PurchaseOption").asText();
         if (NO_UPFRONT.equals(purchase)) {
             double hourly = dimensionPrice(term, "Hrs");
-            return hourly < 0 ? null : new ReservationOption(years, ReservationOption.Payment.NO_UPFRONT, hourly);
+            return hourly < 0 ? null : new ReservationOptionDTO(years, ReservationOptionDTO.Payment.NO_UPFRONT, hourly);
         }
         if (ALL_UPFRONT.equals(purchase)) {
             double fee = dimensionPrice(term, "Quantity");
-            return fee < 0 ? null : ReservationOption.allUpfront(years, fee);
+            return fee < 0 ? null : ReservationOptionDTO.allUpfront(years, fee);
         }
         return null;
     }

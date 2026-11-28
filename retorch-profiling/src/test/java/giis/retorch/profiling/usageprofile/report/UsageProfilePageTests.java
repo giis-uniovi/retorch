@@ -9,10 +9,10 @@ import giis.retorch.profiling.usageprofile.measurement.Timeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.CostReport;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
-import giis.retorch.profiling.usageprofile.dto.ReservationOption;
-import giis.retorch.profiling.usageprofile.dto.SutInfo;
+import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
+import giis.retorch.profiling.usageprofile.dto.SutInfoDTO;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.cost.CostCalculator;
 import giis.retorch.profiling.usageprofile.plan.ExecutionGraphBuilder;
@@ -56,12 +56,12 @@ public class UsageProfilePageTests {
     private static PriceCatalog richCatalog() {
         PriceCatalog.Builder catalog = PriceCatalog.builder().fetchedAt(1700000000000L);
         catalog.addVm(vm("Azure", "westeurope", "D2s", 2, 8, 0.1).withReservations(Arrays.asList(
-                ReservationOption.allUpfront(1, 600), ReservationOption.allUpfront(3, 1500))));
+                ReservationOptionDTO.allUpfront(1, 600), ReservationOptionDTO.allUpfront(3, 1500))));
         catalog.addVm(vm("Azure", "westeurope", "D4s", 4, 16, 0.2).withReservations(Arrays.asList(
-                ReservationOption.allUpfront(1, 1200))));
+                ReservationOptionDTO.allUpfront(1, 1200))));
         catalog.addVm(vm("Azure", "eastus", "D2s", 2, 8, 0.09));
         catalog.addVm(vm("AWS", "eu-west-1", "m5.large", 2, 8, 0.11).withReservations(Arrays.asList(
-                new ReservationOption(1, ReservationOption.Payment.NO_UPFRONT, 0.07))));
+                new ReservationOptionDTO(1, ReservationOptionDTO.Payment.NO_UPFRONT, 0.07))));
         for (String[] r : new String[][]{{"Azure", "westeurope"}, {"AWS", "eu-west-1"}}) {
             catalog.addContainer(new PriceCatalog.ContainerRate(r[0], r[1], "Serverless containers", 0.05, 0.006));
             catalog.addStorage(new PriceCatalog.StorageRate(r[0], r[1], "ssd", 0.1));
@@ -79,10 +79,10 @@ public class UsageProfilePageTests {
         Timeline timeline = measurements.toTimeline();
         List<ExecutionPlanReader.PlanNode> plan = ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json"));
         PriceCatalog catalog = richCatalog();
-        CostReport report = new CostCalculator().calculate(timeline, catalog, new HashSet<>(Arrays.asList("TJOBB")));
-        ExecutionGraph graph = ExecutionGraphBuilder.build(plan, measurements.tjobMetrics(timeline), measurements.containerUsage());
+        CostReportDTO report = new CostCalculator().calculate(timeline, catalog, new HashSet<>(Arrays.asList("TJOBB")));
+        ExecutionGraphDTO graph = ExecutionGraphBuilder.build(plan, measurements.tjobMetrics(timeline), measurements.containerUsage());
         new UsageProfileGenerator().generate("FixturePlan", timeline, report, catalog, graph,
-                new SutInfo("petclinic", "https://github.com/giis-uniovi/petclinic", "main"), output);
+                new SutInfoDTO("petclinic", "https://github.com/giis-uniovi/petclinic", "main"), output);
         return output;
     }
 

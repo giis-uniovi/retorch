@@ -4,8 +4,8 @@
  */
 package giis.retorch.profiling.usageprofile.dto;
 
-/** The cost of one (cloud object, TJob, lifecycle phase) combination of an {@link Alternative}. */
-public final class CostItem {
+/** The cost of one (cloud object, TJob, lifecycle phase) combination of an {@link AlternativeDTO}. */
+public final class CostItemDTO {
     public static final String OBJECT_COMPUTE = "compute";
     public static final String OBJECT_STORAGE = "storage";
     /** A browser or device rented by the minute. */
@@ -19,7 +19,7 @@ public final class CostItem {
     public final String phase;
     public final double cost;
 
-    public CostItem(String object, String tjob, String phase, double cost) {
+    public CostItemDTO(String object, String tjob, String phase, double cost) {
         this.object = object;
         this.tjob = tjob;
         this.phase = phase;

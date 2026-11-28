@@ -6,8 +6,8 @@ package giis.retorch.profiling.usageprofile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.Alternative;
-import giis.retorch.profiling.usageprofile.dto.CostItem;
+import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
+import giis.retorch.profiling.usageprofile.dto.CostItemDTO;
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
@@ -67,8 +67,8 @@ public final class TestFixtures {
                 .addStorage(new PriceCatalog.StorageRate("P", "r1", "ssd", 0.1));
     }
 
-    public static boolean hasItem(Alternative alt, String object, String tjob, String phase) {
-        for (CostItem i : alt.items) {
+    public static boolean hasItem(AlternativeDTO alt, String object, String tjob, String phase) {
+        for (CostItemDTO i : alt.items) {
             if (object.equals(i.object) && tjob.equals(i.tjob) && phase.equals(i.phase)) return true;
         }
         return false;

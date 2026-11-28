@@ -9,27 +9,27 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The vocabulary of the page JSON (the values {@code CostItem.phase}, {@code Alternative.kind} and {@code CostItem.object}
+ * The vocabulary of the page JSON (the values {@code CostItemDTO.phase}, {@code AlternativeDTO.kind} and {@code CostItemDTO.object}
  * can take), so the scripts do not keep their own copy. Immutable.
  */
-public final class Meta {
+public final class MetaDTO {
     /** Phase labels in display order. */
     public final List<String> phases;
-    /** Alternative kinds. */
+    /** AlternativeDTO kinds. */
     public final List<String> kinds;
     /** Cloud objects that are billed. */
     public final List<String> objects;
 
-    private Meta() {
+    private MetaDTO() {
         this.phases = Phase.labels();
-        this.kinds = Collections.unmodifiableList(Arrays.asList(Alternative.KIND_VM, Alternative.KIND_CONTAINER,
-                Alternative.KIND_BROWSER_SERVICE));
-        this.objects = Collections.unmodifiableList(Arrays.asList(CostItem.OBJECT_COMPUTE, CostItem.OBJECT_STORAGE,
-                CostItem.OBJECT_BROWSER));
+        this.kinds = Collections.unmodifiableList(Arrays.asList(AlternativeDTO.KIND_VM, AlternativeDTO.KIND_CONTAINER,
+                AlternativeDTO.KIND_BROWSER_SERVICE));
+        this.objects = Collections.unmodifiableList(Arrays.asList(CostItemDTO.OBJECT_COMPUTE, CostItemDTO.OBJECT_STORAGE,
+                CostItemDTO.OBJECT_BROWSER));
     }
 
     /** The only vocabulary there is. */
-    public static Meta standard() {
-        return new Meta();
+    public static MetaDTO standard() {
+        return new MetaDTO();
     }
 }

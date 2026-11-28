@@ -18,7 +18,7 @@ import java.util.Map;
  * metadata of the workspace. Every value is an empty string when unknown. The URL is always a plain {@code https://}
  * address without credentials (so it is safe to embed in the page); the field names are the JSON contract.
  */
-public final class SutInfo {
+public final class SutInfoDTO {
     private static final String REMOTE_ORIGIN = "[remote \"origin\"]";
     private static final String HEAD_PREFIX = "ref: refs/heads/";
     private static final String HTTPS = "https://";
@@ -28,27 +28,27 @@ public final class SutInfo {
     public final String url;
     public final String branch;
 
-    public SutInfo(String name, String url, String branch) {
+    public SutInfoDTO(String name, String url, String branch) {
         this.name = name == null ? "" : name;
         this.url = url == null ? "" : url;
         this.branch = branch == null ? "" : branch;
     }
 
-    public static SutInfo none() {
-        return new SutInfo("", "", "");
+    public static SutInfoDTO none() {
+        return new SutInfoDTO("", "", "");
     }
 
     /** From the process environment and the workspace (the {@code WORKSPACE} variable or the current directory). */
-    public static SutInfo detect() {
+    public static SutInfoDTO detect() {
         Map<String, String> env = java.lang.System.getenv();
         String workspace = env.get("WORKSPACE");
         return detect(env, Paths.get(workspace == null || workspace.isEmpty() ? "." : workspace));
     }
 
-    public static SutInfo detect(Map<String, String> env, Path workspace) {
+    public static SutInfoDTO detect(Map<String, String> env, Path workspace) {
         String url = normalizeUrl(first(env.get("GIT_URL"), remoteUrl(workspace.resolve(".git").resolve("config"))));
         String branch = first(env.get("BRANCH_NAME"), stripRemote(env.get("GIT_BRANCH")), headBranch(workspace.resolve(".git").resolve("HEAD")));
-        return new SutInfo(nameOf(url), url, branch);
+        return new SutInfoDTO(nameOf(url), url, branch);
     }
 
     private static String first(String... values) {

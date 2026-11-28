@@ -6,7 +6,7 @@ package giis.retorch.profiling.usageprofile.pricing;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.ReservationOption;
+import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -143,12 +143,12 @@ public final class AzurePrices implements PriceProvider {
         out.replaceVms(updated);
     }
 
-    private static List<ReservationOption> reservationsOf(PriceCatalog.VmOffer vm, Map<String, Double> bestFee) {
-        List<ReservationOption> result = new ArrayList<>(vm.reservations);
+    private static List<ReservationOptionDTO> reservationsOf(PriceCatalog.VmOffer vm, Map<String, Double> bestFee) {
+        List<ReservationOptionDTO> result = new ArrayList<>(vm.reservations);
         for (Map.Entry<String, Double> e : bestFee.entrySet()) {
             String[] key = e.getKey().split("\\|");
             if (key[0].equals(vm.name)) {
-                result.add(ReservationOption.allUpfront(Integer.parseInt(key[1]), e.getValue()));
+                result.add(ReservationOptionDTO.allUpfront(Integer.parseInt(key[1]), e.getValue()));
             }
         }
         result.sort((a, b) -> Integer.compare(a.termYears, b.termYears));

@@ -7,8 +7,8 @@ package giis.retorch.profiling.usageprofile.cost;
 import giis.retorch.profiling.usageprofile.measurement.Load;
 import giis.retorch.profiling.usageprofile.measurement.Slice;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
-import giis.retorch.profiling.usageprofile.dto.Alternative;
-import giis.retorch.profiling.usageprofile.dto.CostItem;
+import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
+import giis.retorch.profiling.usageprofile.dto.CostItemDTO;
 import giis.retorch.profiling.usageprofile.dto.Phase;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
@@ -36,8 +36,8 @@ final class VmCost implements AlternativeCost {
     private static final double SECONDS_PER_MONTH = 30.0 * 86400;
 
     @Override
-    public List<Alternative> calculate(CostContext context, List<Alternative> existing) {
-        List<Alternative> result = new ArrayList<>();
+    public List<AlternativeDTO> calculate(CostContext context, List<AlternativeDTO> existing) {
+        List<AlternativeDTO> result = new ArrayList<>();
         double provisionedGb = Math.max(1, Math.ceil(context.peakDiskGb));
         for (String key : providerRegions(context.catalog)) {
             String[] providerRegion = key.split("\\|");
@@ -54,7 +54,7 @@ final class VmCost implements AlternativeCost {
         return providerRegions;
     }
 
-    private static List<Alternative> forProviderRegion(CostContext context, String provider, String region,
+    private static List<AlternativeDTO> forProviderRegion(CostContext context, String provider, String region,
                                                        double provisionedGb) {
         List<PriceCatalog.VmOffer> offers = cheapestFittingShapes(context.catalog, provider, region, context.peakCpu,
                 context.peakMemGb);
@@ -63,7 +63,7 @@ final class VmCost implements AlternativeCost {
                     + CostContext.fmt(context.peakCpu) + " vCPU, " + CostContext.fmt(context.peakMemGb) + " GB)");
         }
         PriceCatalog.StorageRate disk = cheapestStorage(context.catalog, provider, region);
-        List<Alternative> result = new ArrayList<>();
+        List<AlternativeDTO> result = new ArrayList<>();
         for (PriceCatalog.VmOffer vm : offers) {
             result.add(alternative(context.timeline, vm, disk, provisionedGb));
         }
@@ -104,21 +104,21 @@ final class VmCost implements AlternativeCost {
         return best;
     }
 
-    private static Alternative alternative(Timeline timeline, PriceCatalog.VmOffer vm, PriceCatalog.StorageRate disk,
+    private static AlternativeDTO alternative(Timeline timeline, PriceCatalog.VmOffer vm, PriceCatalog.StorageRate disk,
                                            double provisionedGb) {
         CostAccumulator acc = new CostAccumulator();
         double vmSecond = vm.hourly / 3600.0;
         double diskSecond = disk == null ? 0 : disk.gbMonth * provisionedGb / SECONDS_PER_MONTH;
         for (Slice s : timeline.slices) {
             if (s.coiPhase != null) {
-                acc.add(CostItem.OBJECT_COMPUTE, COI, s.coiPhase, vmSecond);
-                acc.add(CostItem.OBJECT_STORAGE, COI, s.coiPhase, diskSecond);
+                acc.add(CostItemDTO.OBJECT_COMPUTE, COI, s.coiPhase, vmSecond);
+                acc.add(CostItemDTO.OBJECT_STORAGE, COI, s.coiPhase, diskSecond);
             } else {
-                split(acc, CostItem.OBJECT_COMPUTE, s, vmSecond, l -> Math.max(l.cpu / vm.vcpu, l.memGb / vm.memGb));
-                split(acc, CostItem.OBJECT_STORAGE, s, diskSecond, l -> l.diskGb / provisionedGb);
+                split(acc, CostItemDTO.OBJECT_COMPUTE, s, vmSecond, l -> Math.max(l.cpu / vm.vcpu, l.memGb / vm.memGb));
+                split(acc, CostItemDTO.OBJECT_STORAGE, s, diskSecond, l -> l.diskGb / provisionedGb);
             }
         }
-        return new Alternative(vm.provider + "/" + vm.region + "/" + vm.name, vm.provider, Alternative.KIND_VM,
+        return new AlternativeDTO(vm.provider + "/" + vm.region + "/" + vm.name, vm.provider, AlternativeDTO.KIND_VM,
                 vm.name + " (" + CostContext.fmt(vm.vcpu) + " vCPU, " + CostContext.fmt(vm.memGb) + " GB)", vm.region,
                 vm.hourly, acc.items()).withReservations(vm.reservations);
     }

@@ -8,15 +8,15 @@ absolute classpath name (`usageprofile/...`), independent of the Java package.
 
 ## Public API
 - `UsageProfileGenerator` (the only public class): `generate(planName, timeline, report, catalog, graph[, sut], output)`. Its caller is
-  `main.UsageProfilerToolBox`, which passes `SutInfo.detect()`. Package-private: `toJson`, `appScripts()`, `LANGUAGES`, `SCRIPT_LIST`.
+  `main.UsageProfilerToolBox`, which passes `SutInfoDTO.detect()`. Package-private: `toJson`, `appScripts()`, `LANGUAGES`, `SCRIPT_LIST`.
 
 ## Pipeline
-`measurement.Timeline` + `pricing.PriceCatalog` -> `cost.CostCalculator.calculate` -> `dto.CostReport`; the generator builds a
-`dto.TimelineSeries` and a `dto.UsageProfileData` (with the optional `plan.ExecutionGraph`, nullable, and the `SutInfo`) -> Jackson JSON
+`measurement.Timeline` + `pricing.PriceCatalog` -> `cost.CostCalculator.calculate` -> `dto.CostReportDTO`; the generator builds a
+`dto.TimelineSeriesDTO` and a `dto.UsageProfileDTO` (with the optional `plan.ExecutionGraphDTO`, nullable, and the `SutInfoDTO`) -> Jackson JSON
 embedded in the HTML.
 
 ## Page assembly
-- `generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfo.detect()`): one self-contained HTML
+- `generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfoDTO.detect()`): one self-contained HTML
   (no external requests). It fills `resources/usageprofile/usageprofile.html` by replacing `/*CSS*/` with `usageprofile.css`, `/*ECHARTS*/`
   with Apache ECharts 5.6.0 (`echarts.min.js`, Apache License 2.0, its licence header is kept), `/*APP*/` with the
   scripts listed in `js/scripts.txt` (one file name per line, relative to `js/`, in the order they must run; blank lines and `#` comments ignored; `UsageProfileGenerator.appScripts()`), joined with a newline: one
@@ -29,7 +29,7 @@ embedded in the HTML.
   alternatives, breakdowns, table, price date and warnings.
 
 ## JSON contract
-- JSON contract with the scripts in `resources/usageprofile/js` (`UsageProfileData` serialized by Jackson; the page is not
+- JSON contract with the scripts in `resources/usageprofile/js` (`UsageProfileDTO` serialized by Jackson; the page is not
   generated from it, it reads these names, so renaming a field breaks the page):
   - top level: `plan, pricesFetchedAt, durationSec, peakCpu, peakMemGb, peakDiskGb, warnings, alternatives, timeline, graph, sut`;
   - `sut`: `{name, url, branch}` (strings, possibly empty);

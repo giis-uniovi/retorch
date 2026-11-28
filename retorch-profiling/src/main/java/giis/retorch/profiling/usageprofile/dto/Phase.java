@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * The lifecycle phases a cost or a load can belong to, in display order. The label is the exact string written in the
- * usage file and in the JSON of the page ({@code CostItem.phase}). {@link #OVERSUBSCRIPTION} is not a lifecycle phase
+ * usage file and in the JSON of the page ({@code CostItemDTO.phase}). {@link #OVERSUBSCRIPTION} is not a lifecycle phase
  * but the capacity paid and not used, shown as one more phase.
  */
 public enum Phase {

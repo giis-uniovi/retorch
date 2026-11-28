@@ -9,7 +9,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.ReservationOption;
+import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public final class AwsPrices implements PriceProvider {
         }
         log.info("Downloading the AWS EC2 price list for {}, this can take a few minutes", region);
         try (InputStream in = http.open(AWS_URL + "AmazonEC2/current/" + region + "/index.json")) {
-            Map<JsonNode, List<ReservationOption>> reserved = new HashMap<>();
+            Map<JsonNode, List<ReservationOptionDTO>> reserved = new HashMap<>();
             Map<JsonNode, Double> offer = readOffer(in, AwsPrices::isEc2Candidate, reserved);
             parseEc2(offer, reserved, region, catalog);
         }
@@ -95,7 +95,7 @@ public final class AwsPrices implements PriceProvider {
      * reservation options of the accepted products (section {@code terms.Reserved}, which follows {@code OnDemand}).
      */
     static Map<JsonNode, Double> readOffer(InputStream in, Predicate<JsonNode> filter,
-                                           Map<JsonNode, List<ReservationOption>> reserved) throws IOException {
+                                           Map<JsonNode, List<ReservationOptionDTO>> reserved) throws IOException {
         Map<String, JsonNode> products = new HashMap<>();
         Map<JsonNode, Double> priced = new LinkedHashMap<>();
         try (JsonParser parser = new JsonFactory(MAPPER).createParser(in)) {
@@ -177,10 +177,10 @@ public final class AwsPrices implements PriceProvider {
     }
 
     static void parseEc2(Map<JsonNode, Double> offer, String region, PriceCatalog.Builder out) {
-        parseEc2(offer, Collections.<JsonNode, List<ReservationOption>>emptyMap(), region, out);
+        parseEc2(offer, Collections.<JsonNode, List<ReservationOptionDTO>>emptyMap(), region, out);
     }
 
-    static void parseEc2(Map<JsonNode, Double> offer, Map<JsonNode, List<ReservationOption>> reserved, String region,
+    static void parseEc2(Map<JsonNode, Double> offer, Map<JsonNode, List<ReservationOptionDTO>> reserved, String region,
                          PriceCatalog.Builder out) {
         Map<String, PriceCatalog.VmOffer> cheapest = new LinkedHashMap<>();
         for (Map.Entry<JsonNode, Double> e : offer.entrySet()) {
@@ -195,7 +195,7 @@ public final class AwsPrices implements PriceProvider {
                 double vcpu = Double.parseDouble(attr(p, "vcpu"));
                 double memGb = Double.parseDouble(attr(p, "memory").replace("GiB", "").replace(",", "").trim());
                 cheapest.put(type, new PriceCatalog.VmOffer(PROVIDER, region, type, vcpu, memGb, e.getValue(),
-                        new ArrayList<>(reserved.getOrDefault(p, Collections.<ReservationOption>emptyList()))));
+                        new ArrayList<>(reserved.getOrDefault(p, Collections.<ReservationOptionDTO>emptyList()))));
             }
         }
         for (PriceCatalog.VmOffer vm : cheapest.values()) {

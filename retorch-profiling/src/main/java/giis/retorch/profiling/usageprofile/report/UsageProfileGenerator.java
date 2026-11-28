@@ -9,11 +9,11 @@ import giis.retorch.profiling.usageprofile.measurement.Slice;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.CostReport;
-import giis.retorch.profiling.usageprofile.dto.SutInfo;
-import giis.retorch.profiling.usageprofile.dto.UsageProfileData;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
-import giis.retorch.profiling.usageprofile.dto.TimelineSeries;
+import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.SutInfoDTO;
+import giis.retorch.profiling.usageprofile.dto.UsageProfileDTO;
+import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.TimelineSeriesDTO;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.io.ByteArrayOutputStream;
@@ -53,15 +53,15 @@ public class UsageProfileGenerator {
      * @param graph    execution graph of the TJobs, or null when there is no execution plan
      * @param output   file to write, e.g. {@code usageprofile.html}
      */
-    public void generate(String planName, Timeline timeline, CostReport report, PriceCatalog catalog,
-                         ExecutionGraph graph, Path output) throws IOException {
-        generate(planName, timeline, report, catalog, graph, SutInfo.none(), output);
+    public void generate(String planName, Timeline timeline, CostReportDTO report, PriceCatalog catalog,
+                         ExecutionGraphDTO graph, Path output) throws IOException {
+        generate(planName, timeline, report, catalog, graph, SutInfoDTO.none(), output);
     }
 
-    /** Same as above, adding the SUT and branch shown in the header ({@link SutInfo#none()} when unknown). */
-    public void generate(String planName, Timeline timeline, CostReport report, PriceCatalog catalog,
-                         ExecutionGraph graph, SutInfo sut, Path output) throws IOException {
-        UsageProfileData data = new UsageProfileData(planName, catalog.fetchedAtEpochMs, report, sample(timeline), graph, sut);
+    /** Same as above, adding the SUT and branch shown in the header ({@link SutInfoDTO#none()} when unknown). */
+    public void generate(String planName, Timeline timeline, CostReportDTO report, PriceCatalog catalog,
+                         ExecutionGraphDTO graph, SutInfoDTO sut, Path output) throws IOException {
+        UsageProfileDTO data = new UsageProfileDTO(planName, catalog.fetchedAtEpochMs, report, sample(timeline), graph, sut);
         // the JSON goes last: it is user data and must never be scanned for placeholders
         String html = resource(DIR + "usageprofile.html")
                 .replace("/*CSS*/", resource(DIR + "usageprofile.css"))
@@ -114,12 +114,12 @@ public class UsageProfileGenerator {
         return json.append('}').toString();
     }
 
-    static String toJson(UsageProfileData data) throws IOException {
+    static String toJson(UsageProfileDTO data) throws IOException {
         return MAPPER.writeValueAsString(data);
     }
 
     /** Total CPU/memory/disk per second, averaged into at most {@value #MAX_TIMELINE_POINTS} points. */
-    private static TimelineSeries sample(Timeline timeline) {
+    private static TimelineSeriesDTO sample(Timeline timeline) {
         List<Slice> slices = timeline.slices;
         int bucket = Math.max(1, (int) Math.ceil(slices.size() / (double) MAX_TIMELINE_POINTS));
         List<Integer> t = new ArrayList<>();
@@ -144,7 +144,7 @@ public class UsageProfileGenerator {
             mem.add(round(m / n));
             disk.add(round(d / n));
         }
-        return new TimelineSeries(t, cpu, mem, disk);
+        return new TimelineSeriesDTO(t, cpu, mem, disk);
     }
 
     private static double round(double v) {

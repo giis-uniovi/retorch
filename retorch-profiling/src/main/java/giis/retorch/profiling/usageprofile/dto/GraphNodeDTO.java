@@ -12,7 +12,7 @@ import java.util.List;
  * One TJob of the execution graph, as the usage profile receives it. The measured fields are {@code null} when the TJob has no
  * measurements. Immutable; the field names are the JSON contract.
  */
-public final class GraphNode {
+public final class GraphNodeDTO {
     public final String id;
     public final int stage;
     public final List<String> resources;
@@ -30,17 +30,17 @@ public final class GraphNode {
     /** Highest memory (GB) used by the TJob. */
     public final Double peakMemGb;
     /** Usage per container, sorted by name; empty when there is no container information. Never null. */
-    public final List<ContainerUsage> containers;
+    public final List<ContainerUsageDTO> containers;
 
     /** Plan data of a node plus its (nullable) measured values and no container information. */
-    public GraphNode(String id, int stage, List<String> resources, List<String> tests, List<String> predecessors,
+    public GraphNodeDTO(String id, int stage, List<String> resources, List<String> tests, List<String> predecessors,
                      Double[] measured) {
         this(id, stage, resources, tests, predecessors, measured, null);
     }
 
     /** Plan data of a node plus its (nullable) measured values and its containers ({@code null} means none). */
-    public GraphNode(String id, int stage, List<String> resources, List<String> tests, List<String> predecessors,
-                     Double[] measured, List<ContainerUsage> containers) {
+    public GraphNodeDTO(String id, int stage, List<String> resources, List<String> tests, List<String> predecessors,
+                     Double[] measured, List<ContainerUsageDTO> containers) {
         this.id = id;
         this.stage = stage;
         this.resources = resources;
@@ -52,7 +52,7 @@ public final class GraphNode {
         this.teardownSec = measured[3];
         this.peakCpu = measured[4];
         this.peakMemGb = measured[5];
-        this.containers = containers == null ? Collections.<ContainerUsage>emptyList()
+        this.containers = containers == null ? Collections.<ContainerUsageDTO>emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(containers));
     }
 }

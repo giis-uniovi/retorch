@@ -12,9 +12,9 @@ import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.pricing.PriceSource;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 import giis.retorch.profiling.usageprofile.report.UsageProfileGenerator;
-import giis.retorch.profiling.usageprofile.dto.CostReport;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
-import giis.retorch.profiling.usageprofile.dto.SutInfo;
+import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.SutInfoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,11 +49,11 @@ public class UsageProfilerToolBox {
         Path planFile = existingPlanFile(request.executionPlanJson());
         List<ExecutionPlanReader.PlanNode> plan = planFile == null
                 ? Collections.<ExecutionPlanReader.PlanNode>emptyList() : ExecutionPlanReader.read(planFile);
-        CostReport report = new CostCalculator().calculate(timeline, catalog,
+        CostReportDTO report = new CostCalculator().calculate(timeline, catalog,
                 browserTjobs(plan, request.browserResourcePattern()));
-        ExecutionGraph graph = planFile == null ? null
+        ExecutionGraphDTO graph = planFile == null ? null
                 : ExecutionGraphBuilder.build(plan, measurements.tjobMetrics(timeline), measurements.containerUsage());
-        new UsageProfileGenerator().generate(request.planName(), timeline, report, catalog, graph, SutInfo.detect(), out);
+        new UsageProfileGenerator().generate(request.planName(), timeline, report, catalog, graph, SutInfoDTO.detect(), out);
         log.info("Usage profile written to {}", out);
     }
 

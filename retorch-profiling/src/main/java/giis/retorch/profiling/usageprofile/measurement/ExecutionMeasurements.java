@@ -4,7 +4,7 @@
  */
 package giis.retorch.profiling.usageprofile.measurement;
 
-import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
+import giis.retorch.profiling.usageprofile.dto.ContainerUsageDTO;
 import giis.retorch.profiling.usageprofile.dto.Phase;
 
 import java.io.IOException;
@@ -47,7 +47,7 @@ public final class ExecutionMeasurements {
     }
 
     /** Usage of every container of every TJob that has container rows and samples, by lower case TJob name. */
-    public Map<String, List<ContainerUsage>> containerUsage() {
+    public Map<String, List<ContainerUsageDTO>> containerUsage() {
         return TJobMetricsCalculator.containerUsage(data);
     }
 }

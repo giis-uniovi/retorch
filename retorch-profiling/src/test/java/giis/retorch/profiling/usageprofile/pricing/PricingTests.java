@@ -5,7 +5,7 @@
 package giis.retorch.profiling.usageprofile.pricing;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import giis.retorch.profiling.usageprofile.dto.ReservationOption;
+import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -90,10 +90,10 @@ public class PricingTests {
                 "{\"reservationTerm\":\"5 Years\",\"retailPrice\":1,\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"x\"}," +
                 "{\"reservationTerm\":\"1 Year\",\"retailPrice\":5,\"armSkuName\":\"Other\",\"productName\":\"x\"}]");
         AzurePrices.parseReservations(toArray(items), "westeurope", builder);
-        List<ReservationOption> r = builder.build().vms.get(0).reservations;
+        List<ReservationOptionDTO> r = builder.build().vms.get(0).reservations;
         assertEquals(2, r.size());
         assertEquals(1, r.get(0).termYears);
-        assertEquals(ReservationOption.Payment.ALL_UPFRONT, r.get(0).payment);
+        assertEquals(ReservationOptionDTO.Payment.ALL_UPFRONT, r.get(0).payment);
         assertEquals(0.1, r.get(0).effectiveHourly, 1e-9);
         assertEquals(3, r.get(1).termYears);
         assertEquals(1752.0 / (3 * 8760), r.get(1).effectiveHourly, 1e-9);
@@ -113,7 +113,7 @@ public class PricingTests {
                 + "," + term("E", "1yr", "Partial Upfront", "standard", "0.03", "260")
                 + "," + term("F", "1yr", "No Upfront", "convertible", "0.07", null)
                 + "},\"S9\":{" + term("G", "1yr", "No Upfront", "standard", "0.1", null) + "}}}}";
-        Map<JsonNode, List<ReservationOption>> reserved = new HashMap<>();
+        Map<JsonNode, List<ReservationOptionDTO>> reserved = new HashMap<>();
         Map<JsonNode, Double> offer = AwsPrices.readOffer(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)),
                 p -> "Linux".equals(p.path("attributes").path("operatingSystem").asText("Linux"))
@@ -122,12 +122,12 @@ public class PricingTests {
         AwsPrices.parseEc2(offer, reserved, "eu-west-1", builder);
         PriceCatalog out = builder.build();
         assertEquals(1, out.vms.size());
-        List<ReservationOption> r = out.vms.get(0).reservations;
+        List<ReservationOptionDTO> r = out.vms.get(0).reservations;
         assertEquals(4, r.size());
         assertEquals(1, r.get(0).termYears);
-        assertEquals(ReservationOption.Payment.NO_UPFRONT, r.get(0).payment);
+        assertEquals(ReservationOptionDTO.Payment.NO_UPFRONT, r.get(0).payment);
         assertEquals(0.06, r.get(0).effectiveHourly, 1e-9);
-        assertEquals(ReservationOption.Payment.ALL_UPFRONT, r.get(1).payment);
+        assertEquals(ReservationOptionDTO.Payment.ALL_UPFRONT, r.get(1).payment);
         assertEquals(525.6 / 8760, r.get(1).effectiveHourly, 1e-9);
         assertEquals(3, r.get(2).termYears);
         assertEquals(788.4 / (3 * 8760), r.get(2).effectiveHourly, 1e-9);
@@ -161,7 +161,7 @@ public class PricingTests {
         }
         File cache = new File(tmp.getRoot(), "v.json");
         PriceCatalog current = PriceCatalog.builder().addVm(vm("P", "x", 1, 1, 1)
-                .withReservations(Arrays.asList(ReservationOption.allUpfront(1, 8760)))).build();
+                .withReservations(Arrays.asList(ReservationOptionDTO.allUpfront(1, 8760)))).build();
         current.save(cache);
         PriceCatalog loaded = PriceCatalog.load(cache);
         assertEquals(PriceCatalog.SCHEMA_VERSION, loaded.schemaVersion);

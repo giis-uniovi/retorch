@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.ReservationOption;
+import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,13 +32,13 @@ public final class PriceCatalog {
         public final double memGb;
         public final double hourly;
         /** Reservations (1 and 3 years) with their effective hourly price; empty if there is no data. */
-        public final List<ReservationOption> reservations;
+        public final List<ReservationOptionDTO> reservations;
 
         @JsonCreator
         public VmOffer(@JsonProperty("provider") String provider, @JsonProperty("region") String region,
                        @JsonProperty("name") String name, @JsonProperty("vcpu") double vcpu,
                        @JsonProperty("memGb") double memGb, @JsonProperty("hourly") double hourly,
-                       @JsonProperty("reservations") List<ReservationOption> reservations) {
+                       @JsonProperty("reservations") List<ReservationOptionDTO> reservations) {
             this.provider = provider;
             this.region = region;
             this.name = name;
@@ -54,7 +54,7 @@ public final class PriceCatalog {
         }
 
         /** A copy with these reservations. */
-        public VmOffer withReservations(List<ReservationOption> newReservations) {
+        public VmOffer withReservations(List<ReservationOptionDTO> newReservations) {
             return new VmOffer(provider, region, name, vcpu, memGb, hourly, newReservations);
         }
     }

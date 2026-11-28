@@ -8,12 +8,12 @@ import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import giis.retorch.profiling.usageprofile.dto.CostReport;
-import giis.retorch.profiling.usageprofile.dto.UsageProfileData;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
-import giis.retorch.profiling.usageprofile.dto.ReservationOption;
-import giis.retorch.profiling.usageprofile.dto.SutInfo;
-import giis.retorch.profiling.usageprofile.dto.TimelineSeries;
+import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.UsageProfileDTO;
+import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
+import giis.retorch.profiling.usageprofile.dto.SutInfoDTO;
+import giis.retorch.profiling.usageprofile.dto.TimelineSeriesDTO;
 import giis.retorch.profiling.main.UsageProfilerToolBox;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.cost.CostCalculator;
@@ -48,12 +48,12 @@ public class UsageProfileGeneratorTests {
     public void testJsonContractMatchesWhatTheUsageProfilePageReads() throws IOException {
         Timeline t = timeline();
         PriceCatalog catalog = smallCatalog();
-        CostReport report = new CostCalculator().calculate(t, catalog);
+        CostReportDTO report = new CostCalculator().calculate(t, catalog);
         assertFalse(report.alternatives.isEmpty());
-        TimelineSeries series = new TimelineSeries(Arrays.asList(0, 1), Arrays.asList(0.5, 1.5),
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0, 1), Arrays.asList(0.5, 1.5),
                 Arrays.asList(0.1, 0.2), Arrays.asList(0.0, 1.0));
         JsonNode json = MAPPER.readTree(UsageProfileGenerator.toJson(
-                new UsageProfileData("MyPlan", catalog.fetchedAtEpochMs, report, series, null)));
+                new UsageProfileDTO("MyPlan", catalog.fetchedAtEpochMs, report, series, null)));
 
         assertEquals(set("plan", "pricesFetchedAt", "durationSec", "peakCpu", "peakMemGb", "peakDiskGb", "warnings",
                 "alternatives", "timeline", "graph", "sut", "meta"), names(json));
@@ -101,7 +101,7 @@ public class UsageProfileGeneratorTests {
         assertTrue(t.slices.size() > 600);
 
         PriceCatalog catalog = smallCatalog();
-        CostReport report = new CostCalculator().calculate(t, catalog);
+        CostReportDTO report = new CostCalculator().calculate(t, catalog);
         Path out = new File(tmp.getRoot(), "long/usageprofile.html").toPath();
         new UsageProfileGenerator().generate("Long", t, report, catalog, null, out);
 
@@ -117,13 +117,13 @@ public class UsageProfileGeneratorTests {
     public void testReservationsAreInTheJsonOfAVmAlternativeAndEmptyForContainers() throws IOException {
         PriceCatalog catalog = smallCatalog();
         catalog = smallCatalogBuilder().replaceVms(Arrays.asList(catalog.vms.get(0).withReservations(Arrays.asList(
-                new ReservationOption(1, ReservationOption.Payment.NO_UPFRONT, 0.5),
-                ReservationOption.allUpfront(3, 8760 * 3 * 0.25))))).build();
-        CostReport report = new CostCalculator().calculate(timeline(), catalog);
-        TimelineSeries series = new TimelineSeries(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1),
+                new ReservationOptionDTO(1, ReservationOptionDTO.Payment.NO_UPFRONT, 0.5),
+                ReservationOptionDTO.allUpfront(3, 8760 * 3 * 0.25))))).build();
+        CostReportDTO report = new CostCalculator().calculate(timeline(), catalog);
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1),
                 Arrays.asList(0.0));
         JsonNode json = MAPPER.readTree(UsageProfileGenerator.toJson(
-                new UsageProfileData("P", catalog.fetchedAtEpochMs, report, series, null)));
+                new UsageProfileDTO("P", catalog.fetchedAtEpochMs, report, series, null)));
         int vms = 0;
         int containers = 0;
         for (JsonNode alt : json.get("alternatives")) {
@@ -150,16 +150,16 @@ public class UsageProfileGeneratorTests {
     @Test
     public void testJsonGraphIsPresentAsNullOrAsNodes() throws IOException {
         ExecutionMeasurements m = ExecutionMeasurements.read(Paths.get(DATA + "usage.csv"));
-        ExecutionGraph graph = ExecutionGraphBuilder.build(
+        ExecutionGraphDTO graph = ExecutionGraphBuilder.build(
                 ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")), m.tjobMetrics(m.toTimeline()));
-        CostReport report = new CostCalculator().calculate(m.toTimeline(), smallCatalog());
-        TimelineSeries series = new TimelineSeries(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1), Arrays.asList(0.0));
-        JsonNode withGraph = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileData("P", 1L, report, series, graph)));
+        CostReportDTO report = new CostCalculator().calculate(m.toTimeline(), smallCatalog());
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1), Arrays.asList(0.0));
+        JsonNode withGraph = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileDTO("P", 1L, report, series, graph)));
         JsonNode node = withGraph.get("graph").get("nodes").get(0);
         assertEquals(set("id", "stage", "resources", "tests", "predecessors", "startSec", "setupSec", "execSec", "teardownSec",
                 "peakCpu", "peakMemGb", "containers"), names(node));
         assertTrue(withGraph.get("graph").get("nodes").get(2).get("setupSec").isNull());
-        JsonNode without = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileData("P", 1L, report, series, null)));
+        JsonNode without = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileDTO("P", 1L, report, series, null)));
         assertTrue(without.has("graph"));
         assertTrue(without.get("graph").isNull());
     }
@@ -167,11 +167,11 @@ public class UsageProfileGeneratorTests {
     @Test
     public void testJsonGraphNodeCarriesTheContainers() throws IOException {
         ExecutionMeasurements m = containers();
-        ExecutionGraph graph = ExecutionGraphBuilder.build(ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")),
+        ExecutionGraphDTO graph = ExecutionGraphBuilder.build(ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")),
                 m.tjobMetrics(m.toTimeline()), m.containerUsage());
-        CostReport report = new CostCalculator().calculate(m.toTimeline(), smallCatalog());
-        TimelineSeries series = new TimelineSeries(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1), Arrays.asList(0.0));
-        JsonNode nodes = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileData("P", 1L, report, series, graph)))
+        CostReportDTO report = new CostCalculator().calculate(m.toTimeline(), smallCatalog());
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1), Arrays.asList(0.0));
+        JsonNode nodes = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileDTO("P", 1L, report, series, graph)))
                 .get("graph").get("nodes");
         JsonNode list = nodes.get(0).get("containers");
         assertEquals(2, list.size());
@@ -284,10 +284,10 @@ public class UsageProfileGeneratorTests {
     public void testTheHeaderDataTravelsInThePage() throws IOException {
         Timeline t = timeline();
         PriceCatalog catalog = smallCatalog();
-        CostReport report = new CostCalculator().calculate(t, catalog);
+        CostReportDTO report = new CostCalculator().calculate(t, catalog);
         Path out = new File(tmp.getRoot(), "sut/usageprofile.html").toPath();
         new UsageProfileGenerator().generate("P", t, report, catalog, null,
-                new SutInfo("petclinic", "https://github.com/giis-uniovi/petclinic", "main"), out);
+                new SutInfoDTO("petclinic", "https://github.com/giis-uniovi/petclinic", "main"), out);
         JsonNode sut = embeddedJson(new String(Files.readAllBytes(out), StandardCharsets.UTF_8)).get("sut");
         assertEquals("petclinic", sut.get("name").asText());
         assertEquals("https://github.com/giis-uniovi/petclinic", sut.get("url").asText());

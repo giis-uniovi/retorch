@@ -5,9 +5,9 @@
 package giis.retorch.profiling.usageprofile.cost;
 
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
-import giis.retorch.profiling.usageprofile.dto.Alternative;
-import giis.retorch.profiling.usageprofile.dto.CostItem;
-import giis.retorch.profiling.usageprofile.dto.CostReport;
+import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
+import giis.retorch.profiling.usageprofile.dto.CostItemDTO;
+import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
 import giis.retorch.profiling.usageprofile.dto.Phase;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
@@ -39,19 +39,19 @@ import java.util.Set;
  */
 public class CostCalculator {
 
-    public static final String COMPUTE = CostItem.OBJECT_COMPUTE;
-    public static final String STORAGE = CostItem.OBJECT_STORAGE;
-    public static final String BROWSER = CostItem.OBJECT_BROWSER;
+    public static final String COMPUTE = CostItemDTO.OBJECT_COMPUTE;
+    public static final String STORAGE = CostItemDTO.OBJECT_STORAGE;
+    public static final String BROWSER = CostItemDTO.OBJECT_BROWSER;
     public static final String COI = VmCost.COI;
     public static final String IDLE = VmCost.IDLE;
     public static final String OVERSUBSCRIPTION = Phase.OVERSUBSCRIPTION.label();
 
-    private static final Comparator<Alternative> BY_TOTAL = Comparator.comparingDouble((Alternative a) -> a.total);
+    private static final Comparator<AlternativeDTO> BY_TOTAL = Comparator.comparingDouble((AlternativeDTO a) -> a.total);
     private final AlternativeCost vms = new VmCost();
     private final AlternativeCost containers = new ContainerCost();
     private final AlternativeCost browserServices = new BrowserServiceCost();
 
-    public CostReport calculate(Timeline timeline, PriceCatalog catalog) {
+    public CostReportDTO calculate(Timeline timeline, PriceCatalog catalog) {
         return calculate(timeline, catalog, Collections.<String>emptySet());
     }
 
@@ -59,15 +59,15 @@ public class CostCalculator {
      * Same as above; {@code browserTjobs} are the (case-insensitive) ids of the TJobs that use a browser, which
      * the browser services of the catalog are charged for.
      */
-    public CostReport calculate(Timeline timeline, PriceCatalog catalog, Set<String> browserTjobs) {
+    public CostReportDTO calculate(Timeline timeline, PriceCatalog catalog, Set<String> browserTjobs) {
         CostContext context = new CostContext(timeline, catalog, lowerCase(browserTjobs));
-        List<Alternative> alternatives = new ArrayList<>();
+        List<AlternativeDTO> alternatives = new ArrayList<>();
         alternatives.addAll(vms.calculate(context, alternatives));
         alternatives.addAll(containers.calculate(context, alternatives));
         alternatives.sort(BY_TOTAL);
         alternatives.addAll(browserServices.calculate(context, alternatives));
         alternatives.sort(BY_TOTAL);
-        return new CostReport(context.peakCpu, context.peakMemGb, context.peakDiskGb, timeline.slices.size(),
+        return new CostReportDTO(context.peakCpu, context.peakMemGb, context.peakDiskGb, timeline.slices.size(),
                 alternatives, context.warnings);
     }
 

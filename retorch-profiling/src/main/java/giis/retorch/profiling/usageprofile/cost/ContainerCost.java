@@ -7,8 +7,8 @@ package giis.retorch.profiling.usageprofile.cost;
 import giis.retorch.profiling.usageprofile.measurement.Load;
 import giis.retorch.profiling.usageprofile.measurement.Slice;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
-import giis.retorch.profiling.usageprofile.dto.Alternative;
-import giis.retorch.profiling.usageprofile.dto.CostItem;
+import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
+import giis.retorch.profiling.usageprofile.dto.CostItemDTO;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.util.ArrayList;
@@ -21,23 +21,23 @@ import java.util.List;
 final class ContainerCost implements AlternativeCost {
 
     @Override
-    public List<Alternative> calculate(CostContext context, List<Alternative> existing) {
-        List<Alternative> result = new ArrayList<>();
+    public List<AlternativeDTO> calculate(CostContext context, List<AlternativeDTO> existing) {
+        List<AlternativeDTO> result = new ArrayList<>();
         for (PriceCatalog.ContainerRate rate : context.catalog.containers) {
             result.add(alternative(context.timeline, rate));
         }
         return result;
     }
 
-    private static Alternative alternative(Timeline timeline, PriceCatalog.ContainerRate rate) {
+    private static AlternativeDTO alternative(Timeline timeline, PriceCatalog.ContainerRate rate) {
         CostAccumulator acc = new CostAccumulator();
         for (Slice s : timeline.slices) {
             for (Load l : s.loads) {
-                acc.add(CostItem.OBJECT_COMPUTE, l.tjob, l.phase,
+                acc.add(CostItemDTO.OBJECT_COMPUTE, l.tjob, l.phase,
                         (l.cpu * rate.vcpuHour + l.memGb * rate.gbHour) / 3600.0);
             }
         }
-        return new Alternative(rate.provider + "/" + rate.region + "/" + rate.service, rate.provider,
-                Alternative.KIND_CONTAINER, rate.service, rate.region, 0, acc.items());
+        return new AlternativeDTO(rate.provider + "/" + rate.region + "/" + rate.service, rate.provider,
+                AlternativeDTO.KIND_CONTAINER, rate.service, rate.region, 0, acc.items());
     }
 }

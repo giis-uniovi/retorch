@@ -4,7 +4,7 @@
  */
 package giis.retorch.profiling.usageprofile.cost;
 
-import giis.retorch.profiling.usageprofile.dto.Alternative;
+import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
 
 import java.util.List;
 
@@ -19,5 +19,5 @@ interface AlternativeCost {
      * strategies, sorted by total (the browser services build on the cheapest of them). Problems are added to
      * {@code context.warnings}.
      */
-    List<Alternative> calculate(CostContext context, List<Alternative> existing);
+    List<AlternativeDTO> calculate(CostContext context, List<AlternativeDTO> existing);
 }

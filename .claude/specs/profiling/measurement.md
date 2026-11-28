@@ -38,7 +38,7 @@ optional: a file with only the first 9 columns, as older runs produced, is still
   earlier of its `container` row and its first sample, held until the end of the TJob like the samples). A shared image
   counts once per TJob. Hence the peak disk, the provisioned volume and `diskGb` include images and volumes. Without
   `container` rows the storage is just the writable layers (old behaviour).
-- `containerUsage()` -> `Map<lower case tjob, List<ContainerUsage>>` sorted by container name, only for TJobs that have
+- `containerUsage()` -> `Map<lower case tjob, List<ContainerUsageDTO>>` sorted by container name, only for TJobs that have
   `container` rows and samples (others are absent): peak and average (mean of the samples) CPU and memory, `layerGb` = peak
   writable layer, `imageGb`, `volumeGb` as recorded (the image counted fully even if shared), `storageGb` = their sum.
 - `tjobMetrics(timeline)` -> `Map<lower case tjob, TJobMetrics>`: `startSec` (seconds from the timeline start to the start of

@@ -7,7 +7,7 @@ package giis.retorch.profiling.usageprofile.measurement;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.ContainerInfo;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.Sample;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.Window;
-import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
+import giis.retorch.profiling.usageprofile.dto.ContainerUsageDTO;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,8 +50,8 @@ final class TJobMetricsCalculator {
      * Usage of every container of every TJob that has container rows and samples, by lower case TJob name, sorted by
      * container name (CPU in cores, memory and storage in GB). Other TJobs are not in the map.
      */
-    static Map<String, List<ContainerUsage>> containerUsage(UsageData data) {
-        Map<String, List<ContainerUsage>> result = new HashMap<>();
+    static Map<String, List<ContainerUsageDTO>> containerUsage(UsageData data) {
+        Map<String, List<ContainerUsageDTO>> result = new HashMap<>();
         for (Map.Entry<String, Map<String, ContainerInfo>> e : data.containerInfo.entrySet()) {
             Map<String, List<Sample>> byContainer = data.samples.getOrDefault(e.getKey(), Collections.emptyMap());
             if (byContainer.isEmpty()) {
@@ -59,7 +59,7 @@ final class TJobMetricsCalculator {
             }
             Set<String> names = new TreeSet<>(e.getValue().keySet());
             names.addAll(byContainer.keySet());
-            List<ContainerUsage> usage = new ArrayList<>();
+            List<ContainerUsageDTO> usage = new ArrayList<>();
             for (String name : names) {
                 usage.add(usageOf(name, e.getValue().get(name), byContainer.get(name)));
             }
@@ -68,7 +68,7 @@ final class TJobMetricsCalculator {
         return result;
     }
 
-    private static ContainerUsage usageOf(String name, ContainerInfo info, List<Sample> list) {
+    private static ContainerUsageDTO usageOf(String name, ContainerInfo info, List<Sample> list) {
         double[] stats = new double[4]; // peak cpu, avg cpu, peak mem, avg mem
         double layer = 0;
         if (list != null) {
@@ -80,7 +80,7 @@ final class TJobMetricsCalculator {
                 layer = Math.max(layer, s.diskGb);
             }
         }
-        return new ContainerUsage(name, info == null ? "" : info.image, stats, layer,
+        return new ContainerUsageDTO(name, info == null ? "" : info.image, stats, layer,
                 info == null ? 0 : info.imageGb, info == null ? 0 : info.volumeGb);
     }
 }

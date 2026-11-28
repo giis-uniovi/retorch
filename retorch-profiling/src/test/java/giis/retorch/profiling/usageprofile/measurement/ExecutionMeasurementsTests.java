@@ -4,7 +4,7 @@
  */
 package giis.retorch.profiling.usageprofile.measurement;
 
-import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
+import giis.retorch.profiling.usageprofile.dto.ContainerUsageDTO;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -96,11 +96,11 @@ public class ExecutionMeasurementsTests {
 
     @Test
     public void testContainerUsageHasPeaksAveragesAndStorage() throws IOException {
-        Map<String, List<ContainerUsage>> usage = containers().containerUsage();
+        Map<String, List<ContainerUsageDTO>> usage = containers().containerUsage();
         assertEquals(set("tjoba", "tjobb"), usage.keySet());
-        List<ContainerUsage> a = usage.get("tjoba");
+        List<ContainerUsageDTO> a = usage.get("tjoba");
         assertEquals(2, a.size());
-        ContainerUsage db = a.get(0);
+        ContainerUsageDTO db = a.get(0);
         assertEquals("db-1", db.name);
         assertEquals("app:1", db.image);
         assertEquals(1.5, db.peakCpu, 1e-9);
@@ -111,7 +111,7 @@ public class ExecutionMeasurementsTests {
         assertEquals(1.0, db.imageGb, 1e-9);
         assertEquals(0.5, db.volumeGb, 1e-9);
         assertEquals(1.5, db.storageGb, 1e-9);
-        ContainerUsage web = a.get(1);
+        ContainerUsageDTO web = a.get(1);
         assertEquals("web-1", web.name);
         assertEquals(2.0, web.peakCpu, 1e-9);
         assertEquals(1.5, web.avgCpu, 1e-9);

@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A reservation (committed use) of a VM: for how many years and how it is paid, and the hourly price that is really
  * paid for the reserved VM, running or not. Immutable. It is part of the JSON contract (alternative.reservations).
  */
-public final class ReservationOption {
+public final class ReservationOptionDTO {
     /** Hours of a year used to spread an upfront fee over the term. */
     public static final int HOURS_PER_YEAR = 8760;
 
@@ -28,7 +28,7 @@ public final class ReservationOption {
     public final double effectiveHourly;
 
     @JsonCreator
-    public ReservationOption(@JsonProperty("termYears") int termYears, @JsonProperty("payment") Payment payment,
+    public ReservationOptionDTO(@JsonProperty("termYears") int termYears, @JsonProperty("payment") Payment payment,
                              @JsonProperty("effectiveHourly") double effectiveHourly) {
         this.termYears = termYears;
         this.payment = payment;
@@ -36,7 +36,7 @@ public final class ReservationOption {
     }
 
     /** An option paid in full at the start: the fee of the whole term is spread over its hours. */
-    public static ReservationOption allUpfront(int termYears, double upfrontFee) {
-        return new ReservationOption(termYears, Payment.ALL_UPFRONT, upfrontFee / ((double) termYears * HOURS_PER_YEAR));
+    public static ReservationOptionDTO allUpfront(int termYears, double upfrontFee) {
+        return new ReservationOptionDTO(termYears, Payment.ALL_UPFRONT, upfrontFee / ((double) termYears * HOURS_PER_YEAR));
     }
 }

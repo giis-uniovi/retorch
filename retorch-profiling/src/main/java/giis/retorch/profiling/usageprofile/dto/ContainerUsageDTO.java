@@ -8,7 +8,7 @@ package giis.retorch.profiling.usageprofile.dto;
  * Resources used by one container (deployed resource) of a TJob. CPU in cores, memory and storage in GB (1024^3).
  * Immutable; the field names are the JSON contract.
  */
-public final class ContainerUsage {
+public final class ContainerUsageDTO {
     public final String name;
     /** Image name, empty when unknown. */
     public final String image;
@@ -24,7 +24,7 @@ public final class ContainerUsage {
     public final double storageGb;
 
     /** @param cpuMem values in the order peak CPU, average CPU, peak memory, average memory */
-    public ContainerUsage(String name, String image, double[] cpuMem, double layerGb, double imageGb, double volumeGb) {
+    public ContainerUsageDTO(String name, String image, double[] cpuMem, double layerGb, double imageGb, double volumeGb) {
         this.name = name;
         this.image = image;
         this.peakCpu = cpuMem[0];

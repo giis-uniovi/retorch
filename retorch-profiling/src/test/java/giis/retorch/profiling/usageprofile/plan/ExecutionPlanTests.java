@@ -5,8 +5,8 @@
 package giis.retorch.profiling.usageprofile.plan;
 
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
-import giis.retorch.profiling.usageprofile.dto.GraphNode;
+import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.GraphNodeDTO;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -35,14 +35,14 @@ public class ExecutionPlanTests {
     @Test
     public void testGraphMergesPlanAndMeasurementsAndKeepsNullsForUnmeasuredTJobs() throws IOException {
         ExecutionMeasurements m = ExecutionMeasurements.read(Paths.get(DATA + "usage.csv"));
-        ExecutionGraph graph = ExecutionGraphBuilder.build(
+        ExecutionGraphDTO graph = ExecutionGraphBuilder.build(
                 ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")), m.tjobMetrics(m.toTimeline()));
         assertEquals(3, graph.nodes.size());
-        GraphNode b = graph.nodes.get(1);
+        GraphNodeDTO b = graph.nodes.get(1);
         assertEquals("tjobb", b.id);
         assertEquals(20.0, b.execSec, 1e-9);
         assertEquals(Arrays.asList("tjoba"), b.predecessors);
-        GraphNode gate = graph.nodes.get(2);
+        GraphNodeDTO gate = graph.nodes.get(2);
         assertEquals(null, gate.startSec);
         assertEquals(null, gate.setupSec);
         assertEquals(null, gate.peakCpu);
@@ -53,9 +53,9 @@ public class ExecutionPlanTests {
     public void testOldFileWithoutContainerRowsHasNoContainers() throws IOException {
         ExecutionMeasurements m = ExecutionMeasurements.read(Paths.get(DATA + "usage.csv"));
         assertTrue(m.containerUsage().isEmpty());
-        ExecutionGraph graph = ExecutionGraphBuilder.build(ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")),
+        ExecutionGraphDTO graph = ExecutionGraphBuilder.build(ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")),
                 m.tjobMetrics(m.toTimeline()), m.containerUsage());
-        for (GraphNode n : graph.nodes) {
+        for (GraphNodeDTO n : graph.nodes) {
             assertTrue(n.containers.isEmpty());
         }
     }
