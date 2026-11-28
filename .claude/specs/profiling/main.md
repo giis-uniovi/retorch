@@ -6,7 +6,7 @@ PDF/chart profile generation (dataset averaging, profile generator and plotter, 
 Instance JSON model) has been removed.
 
 ## Public API
-- `UsageProfilerToolBox.generate(UsageProfileRequest)`: the single entry point; builds the interactive usage profile from the single usage file (see `profiling/usageprofile.md`).
+- `UsageProfilerToolBox.generate(UsageProfileRequest)`: the single entry point; builds the interactive usage profile from the single usage file (see `profiling/report.md`, `profiling/cost.md` and `profiling/measurement.md`).
   `UsageProfileRequest` (immutable, `UsageProfileRequest.builder(planName, usageCsv, outputHtml)`) carries the prices (`prices(PriceSource)` or
   `prices(PriceCatalog)`; one of them is required, else `IllegalStateException`), the optional `executionPlan(path)` (path of `.retorch/executionplan.json`;
   null or a file that does not exist means the usage profile has no execution graph, while an existing file with an empty plan gives a graph without nodes) and the
@@ -24,4 +24,5 @@ No dependency on the other modules. Jackson, commons-csv and slf4j; `logback-cla
 CLI jar logs.
 
 ## Tests
-`UsageProfileTests`, `UsageProfileRequestTests` (default and property of the browser pattern, request without prices rejected, browser TJobs by pattern, missing plan file = no graph vs empty plan = empty graph).
+`UsageProfileRequestTests` (default and property of the browser pattern, request without prices rejected, browser TJobs by pattern, missing plan file = no graph vs empty plan = empty graph).
+The end-to-end paths of the toolbox are covered by `report.UsageProfileGeneratorTests`.

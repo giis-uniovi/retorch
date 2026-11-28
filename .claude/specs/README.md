@@ -16,7 +16,13 @@ a package must be reflected in its spec **in the same change**.
 | retorch-orchestration | `giis.retorch.orchestration.model` | [orchestration/model.md](orchestration/model.md) |
 | retorch-orchestration | `giis.retorch.orchestration.orchestrator` (+ `resources/generictemplates`) | [orchestration/orchestrator.md](orchestration/orchestrator.md) |
 | retorch-orchestration | `giis.retorch.orchestration.scheduler` | [orchestration/scheduler.md](orchestration/scheduler.md) |
-| retorch-profiling | `giis.retorch.profiling.usageprofile` (+ `resources/usageprofile`) | [profiling/usageprofile.md](profiling/usageprofile.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile` (front-end: `resources/usageprofile`) | [profiling/usageprofile.md](profiling/usageprofile.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.measurement` | [profiling/measurement.md](profiling/measurement.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.pricing` | [profiling/pricing.md](profiling/pricing.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.cost` | [profiling/cost.md](profiling/cost.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.plan` | [profiling/plan.md](profiling/plan.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.report` | [profiling/report.md](profiling/report.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.dto` | [profiling/dto.md](profiling/dto.md) |
 | retorch-profiling | `giis.retorch.profiling.main` | [profiling/main.md](profiling/main.md) |
 | retorch-profiling | `giis.retorch.profiling.utils` | [profiling/utils.md](profiling/utils.md) |
 
