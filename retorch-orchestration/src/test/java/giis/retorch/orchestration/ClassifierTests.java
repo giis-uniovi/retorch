@@ -9,6 +9,7 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.classifier.EmptyInputException;
+import giis.retorch.orchestration.exception.InvalidSystemException;
 import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.testdata.SyntheticInvalidClassTests;
 import giis.retorch.orchestration.testdata.synteticpackage.insidepackage.SyntheticClassOneTests;
@@ -49,8 +50,7 @@ public class ClassifierTests {
     }
 
     @Test
-    public void testUnitArchIResValidPackage() throws EmptyInputException, IOException, ClassNotFoundException,
-            URISyntaxException {
+    public void testUnitArchIResValidPackage() throws Exception {
         String packageName = "giis.retorch.orchestration.testdata.synteticpackage";
         SystemUnderTest currentSystem = classifier.getSystemFromPackage(SYSTEM_NAME, packageName);
         SystemUnderTest expectedSystem = utilsClassifier.generateSystemPackage();
@@ -58,7 +58,7 @@ public class ClassifierTests {
     }
 
     @Test
-    public void testUnitArchIResValidClass() throws EmptyInputException, IOException {
+    public void testUnitArchIResValidClass() throws Exception {
         Class<?> testClass = SyntheticClassOneTests.class;
         SystemUnderTest system = classifier.getSystemFromClass(SYSTEM_NAME, testClass);
         SystemUnderTest expectedSystem = utilsClassifier.generateSystemFromClass();
@@ -66,16 +66,34 @@ public class ClassifierTests {
     }
 
     @Test(expected = EmptyInputException.class)
-    public void testUnitArchIResInvalidEmptyPackage() throws EmptyInputException, IOException, ClassNotFoundException
-            , URISyntaxException {
+    public void testUnitArchIResInvalidEmptyPackage() throws Exception {
         String packageName = "retorch.examples.architecture.aggregator.emptypackage";
         classifier.getSystemFromPackage(SYSTEM_NAME, packageName);
     }
 
     @Test
-    public void testUnitArchIResInvalidClass() throws EmptyInputException, IOException {
+    public void testUnitArchIResInvalidClassFailsListingEveryProblem() throws Exception {
+        try {
+            classifier.getSystemFromClass(SYSTEM_NAME, SyntheticInvalidClassTests.class);
+            org.junit.Assert.fail("the annotations are invalid");
+        } catch (InvalidSystemException e) {
+            assertTrue(e.getProblems().size() > 1);
+            assertTrue(e.getProblems().contains("The AccessModeType in method testThreeAttributesLoosingAccessMode is not specified"));
+            assertTrue(e.getProblems().contains("The Concurrency Attribute in method testTwoAttributesLoosingAccessMode is not present"));
+            assertTrue(e.getMessage().contains("validationAccessModeAttributes"));
+        }
+    }
+
+    @Test
+    public void testUnitArchIResMethodsWithoutRetorchAnnotationsAreNotTests() throws Exception {
+        // the valid class has helper methods that are not annotated: they are not errors
+        classifier.getSystemFromClass(SYSTEM_NAME, SyntheticClassOneTests.class);
+    }
+
+    @Test
+    public void testUnitArchIResInvalidClass() throws Exception {
         Class<?> invalidClass = SyntheticInvalidClassTests.class;
-        classifier.getSystemFromClass(SYSTEM_NAME, invalidClass);
+        classifier.lenient(true).getSystemFromClass(SYSTEM_NAME, invalidClass);
         ArgumentCaptor<ch.qos.logback.classic.spi.LoggingEvent> argument =
                 ArgumentCaptor.forClass(ch.qos.logback.classic.spi.LoggingEvent.class);
         verify(appender, atLeast(25)).doAppend(argument.capture());

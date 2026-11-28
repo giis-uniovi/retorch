@@ -10,6 +10,7 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import giis.retorch.orchestration.model.Activity;
 import giis.retorch.orchestration.model.SystemUnderTest;
+import giis.retorch.orchestration.exception.SchedulingException;
 import giis.retorch.orchestration.model.TGroup;
 import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
 import giis.retorch.orchestration.scheduler.NotValidSystemException;
@@ -22,12 +23,15 @@ import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -52,7 +56,7 @@ public class SchedulerTests {
     }
 
     @Test
-    public void testUnitArchIAggValidTGroup() throws NotValidSystemException, IOException {
+    public void testUnitArchIAggValidTGroup() throws Exception {
         baseSystem = utils.generateSystemAggregator();
         aggregator = new RetorchAggregator(baseSystem);
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
@@ -61,9 +65,9 @@ public class SchedulerTests {
     }
 
     @Test
-    public void testUnitArchAggInvalidTGroup() throws NotValidSystemException, IOException {
+    public void testUnitArchAggInvalidTGroup() throws Exception {
         baseSystem = utils.getInvalidSystemAggregator();
-        aggregator = new RetorchAggregator(baseSystem);
+        aggregator = new RetorchAggregator(baseSystem, null, true);
         ArgumentCaptor<LoggingEvent> argument = ArgumentCaptor.forClass(LoggingEvent.class);
         verify(appender, atLeast(2)).doAppend(argument.capture());
         List<LoggingEvent> listEvents = argument.getAllValues();
@@ -76,9 +80,52 @@ public class SchedulerTests {
     }
 
     @Test
-    public void testUnitArchAggInvalidEmptyTGroups() throws NotValidSystemException, IOException {
+    public void testUnitArchAggInvalidSystemFailsListingEveryProblem() throws Exception {
+        try {
+            new RetorchAggregator(utils.getInvalidSystemAggregator());
+            org.junit.Assert.fail("the system is not valid");
+        } catch (NotValidSystemException e) {
+            assertEquals(2, e.getProblems().size());
+            assertTrue(e.getProblems().get(0).startsWith("There are several repeated Test Cases in the System InvalidSystem"));
+            assertTrue(e.getProblems().get(1).startsWith("The test case  TCNoRequired requires the resources"));
+        }
+    }
+
+    @Test
+    public void testUnitArchAggEmptySystemFails() throws Exception {
+        try {
+            new RetorchAggregator(new SystemUnderTest("EmptySystem"));
+            org.junit.Assert.fail("the system is empty");
+        } catch (NotValidSystemException e) {
+            assertEquals(Arrays.asList("The number of resources in the system EmptySystem is zero",
+                    "The number of test cases in the system EmptySystem is zero"), e.getProblems());
+        }
+    }
+
+    @Test
+    public void testUnitArchSchTJobThatCannotBePlacedFails() throws Exception {
+        // the TGroup resource is not among the (elastic) base resources the scheduler computes: give it zero instances
+        TGroup unplaceable = utils.getUnplaceableTGroup();
+        try {
+            new RetorchScheduler(Collections.singletonList(unplaceable)).generateActivities();
+            org.junit.Assert.fail("the TJob cannot be placed");
+        } catch (SchedulingException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("cannot be placed"));
+        }
+    }
+
+    @Test
+    public void testUnitArchSchLenientDropsTheTJobThatCannotBePlaced() throws Exception {
+        TGroup unplaceable = utils.getUnplaceableTGroup();
+        TGroup valid = utils.getNoRepeatedExpectedTGroups().get(2);
+        List<Activity> activities = new RetorchScheduler(Arrays.asList(valid, unplaceable), true).generateActivities();
+        assertEquals(1, activities.size());
+    }
+
+    @Test
+    public void testUnitArchAggInvalidEmptyTGroups() throws Exception {
         baseSystem = utils.generateSystemAggregator();
-        aggregator = new RetorchAggregator(new SystemUnderTest("EmptySystem"));
+        aggregator = new RetorchAggregator(new SystemUnderTest("EmptySystem"), null, true);
         ArgumentCaptor<LoggingEvent> argument = ArgumentCaptor.forClass(LoggingEvent.class);
         verify(appender, atLeast(2)).doAppend(argument.capture());
         List<LoggingEvent> listEvents = argument.getAllValues();
@@ -90,7 +137,7 @@ public class SchedulerTests {
     }
 
     @Test
-    public void testUnitArchSchValidTGroupRepeated() throws NoTGroupsInTheSchedulerException {
+    public void testUnitArchSchValidTGroupRepeated() throws Exception {
         List<TGroup> initialTGroups = utils.getExpectedSchedulerTGroups();
         scheduler = new RetorchScheduler(initialTGroups);
         List<Activity> listActivities = scheduler.generateActivities();
@@ -100,7 +147,7 @@ public class SchedulerTests {
     }
 
     @Test
-    public void testUnitArchSchValidTGroupNoRepeated() throws NoTGroupsInTheSchedulerException {
+    public void testUnitArchSchValidTGroupNoRepeated() throws Exception {
         List<TGroup> initialTGroups = utils.getNoRepeatedExpectedTGroups();
         scheduler = new RetorchScheduler(initialTGroups);
         List<Activity> listActivities = scheduler.generateActivities();
@@ -109,13 +156,13 @@ public class SchedulerTests {
     }
 
     @Test(expected = NoTGroupsInTheSchedulerException.class)
-    public void testUnitArchSchInvalidEmptyTGroup() throws NoTGroupsInTheSchedulerException {
+    public void testUnitArchSchInvalidEmptyTGroup() throws Exception {
         scheduler = new RetorchScheduler(new LinkedList<>());
         scheduler.generateActivities();
     }
 
     @Test
-    public void testUnitArchSchInvalidDuplicatedResources() throws NoTGroupsInTheSchedulerException {
+    public void testUnitArchSchInvalidDuplicatedResources() throws Exception {
         List<TGroup> initialTGroups = utils.getInvalidTGroups();
         scheduler = new RetorchScheduler(initialTGroups);
         ArgumentCaptor<LoggingEvent> argument = ArgumentCaptor.forClass(LoggingEvent.class);

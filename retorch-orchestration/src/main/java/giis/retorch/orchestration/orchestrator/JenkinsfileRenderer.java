@@ -4,6 +4,7 @@
  */
 package giis.retorch.orchestration.orchestrator;
 
+import giis.retorch.orchestration.classifier.ResourceSerializer;
 import giis.retorch.orchestration.config.RetorchConfig;
 import giis.retorch.orchestration.model.Activity;
 import giis.retorch.orchestration.model.ExecutionPlan;
@@ -14,6 +15,7 @@ import giis.retorch.orchestration.model.TestCase;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -179,6 +181,10 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
      */
     public static Map<String, String> environmentOf(TJob tJob, RetorchConfig config) {
         Map<String, String> placeHoldersAndImages = new HashMap<>();
+        List<String> imageProblems = ResourceSerializer.dockerImageProblems(tJob.getListResourceClasses());
+        if (!imageProblems.isEmpty()) {
+            throw new IllegalStateException(imageProblems.get(0));
+        }
         for (Resource res : tJob.getListResourceClasses()) {
             String[] placeHolderWithImage = res.getDockerImage().split(";");
             placeHoldersAndImages.put(placeHolderWithImage[0], placeHolderWithImage[1]);

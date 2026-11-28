@@ -23,7 +23,11 @@ Resource Identification phase: turns annotated test classes into a `SystemUnderT
 
 - The annotation defaults `"None"` and `-1` (attribute not specified) are named constants of the classifier; per-method
   discovery is logged at DEBUG. Resource JSON files are read and written as UTF-8.
-- Current behavior (known issue): tests without valid access modes are dropped and only logged; no exception.
+- **Strict by default**: wrong annotations (missing/invalid resource id, concurrency, access mode type, unknown
+  resource, resources of the JSON that fail validation, replaceable resources that do not exist) make
+  `getSystemFromPackage`/`getSystemFromClass` throw `InvalidSystemException` with every problem. Methods without any
+  RETORCH annotation are not tests and are ignored. `lenient(true)` keeps the old behavior (log, drop the test).
+- `getSystemFromPackage`/`getSystemFromClass` throw `InvalidSystemException` (superclass of `EmptyInputException`).
 
 ## Tests
 `ClassifierTests`, `ClassifierUtils`, `OrchestrationIntegrationTests`.

@@ -6,6 +6,7 @@ package giis.retorch.orchestration;
 
 import giis.retorch.orchestration.config.RetorchConfig;
 import giis.retorch.orchestration.config.RetorchPaths;
+import giis.retorch.orchestration.exception.InvalidConfigurationException;
 import giis.retorch.orchestration.generator.OrchestrationGenerator;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
@@ -13,7 +14,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -106,12 +107,48 @@ public class WorkspaceConfigTests {
     }
 
     @Test
-    public void testMissingConfigurationFile() throws IOException {
+    public void testMissingConfigurationFile() throws Exception {
         try {
             RetorchConfig.load(new RetorchPaths(tmp.newFolder("empty").toPath()));
             fail("the file does not exist");
-        } catch (IOException e) {
+        } catch (InvalidConfigurationException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("retorchCI.properties"));
+        }
+    }
+
+    @Test
+    public void testLoadListsAllTheMissingProperties() throws Exception {
+        Path workspace = tmp.newFolder("incomplete").toPath();
+        Files.createDirectories(workspace.resolve(".retorch/configurations"));
+        Files.write(workspace.resolve(".retorch/configurations/retorchCI.properties"),
+                ("agentCIName=any" + System.lineSeparator() + "sut-location=x").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        try {
+            RetorchConfig.load(new RetorchPaths(workspace));
+            fail("three required properties are missing");
+        } catch (InvalidConfigurationException e) {
+            assertEquals(3, e.getProblems().size());
+            assertTrue(e.getMessage(), e.getMessage().contains("'app-url'")
+                    && e.getMessage().contains("'sut-wait-html'") && e.getMessage().contains("'testsBasePath'"));
+        }
+    }
+
+    @Test
+    public void testInvalidDockerImageFailsTheGeneration() throws Exception {
+        Path workspace = tmp.newFolder("workspace").toPath();
+        FileUtils.copyDirectory(new File(".retorch/configurations"),
+                workspace.resolve(".retorch/configurations").toFile());
+        Path json = workspace.resolve(".retorch/configurations/" + SYSTEM + "SystemResources.json");
+        String content = new String(Files.readAllBytes(json), StandardCharsets.UTF_8);
+        Files.write(json, content.replace("someplaceholder2;heavyInElasticResource.someImage", "noplaceholder")
+                .getBytes(StandardCharsets.UTF_8));
+        try {
+            new OrchestrationGenerator(new RetorchPaths(workspace))
+                    .generateJenkinsfile("giis.retorch.orchestration.testdata.integration", SYSTEM,
+                            tmp.newFolder("out").getPath() + File.separator);
+            fail("a docker image without placeholder is invalid");
+        } catch (InvalidConfigurationException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("heavyInElasticResource")
+                    && e.getMessage().contains("noplaceholder"));
         }
     }
 }

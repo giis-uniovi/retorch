@@ -5,10 +5,11 @@ Aggregates test cases into `TGroup`s and schedules them into ordered `Activity`s
 
 ## Public API
 - `RetorchAggregator`: `validateSystem` (non-empty lists, no resource without test cases, all requirements fulfilled,
-  no duplicates; returns a boolean and logs the reason; it does not throw for those cases; the constructor replaces an
-  invalid system by `SystemUnderTest("EmptySystem ERROR")`), `generateTGroups`, `addTestCaseToaTGroup`.
+  no duplicates; returns a boolean and logs every reason). The constructor **throws `NotValidSystemException` listing
+  every problem** when the system is invalid; with `lenient = true` it only logs and replaces the system by
+  `SystemUnderTest("EmptySystem ERROR")` (old behavior), `generateTGroups`, `addTestCaseToaTGroup`.
 - `RetorchAggregator(system[, resources])`: the resources by id can be given by the caller instead of being read again.
-- `RetorchScheduler`: `generateActivities()` (works on the TGroups given to the scheduler) -> ordered activities (throws
+- `RetorchScheduler`: `generateActivities()` (works on the TGroups given to the scheduler; throws `SchedulingException`) -> ordered activities (throws
   `NoTGroupsInTheSchedulerException` on empty input), `getAllResources`.
 - `Scheduling` / `ScheduleStruct`: chronological moments (stage -> TJobs and available resources).
 
@@ -17,10 +18,10 @@ Aggregates test cases into `TGroup`s and schedules them into ordered `Activity`s
   exceeded inside a stage.
 - Output is deterministic for the same input (the expected Jenkinsfiles in tests depend on it).
 
-## Current behavior (known issues, to be fixed by the refactoring plan)
-- `Scheduling.addTJob` silently drops a TJob whose resources are not all in the base resources (its tests never reach
-  the pipeline and nothing is logged).
-- An invalid system degrades into a later `NoTGroupsInTheSchedulerException`.
+## Failing loudly
+- `Scheduling.addTJob` returns `false` for a TJob whose resources are not all in the base resources;
+  `RetorchScheduler.generateActivities()` then throws `SchedulingException` listing every TJob that cannot be placed
+  (`new RetorchScheduler(tGroups, true)` logs a warning and leaves them out instead).
 
 ## Tests
 `SchedulerTests`, `SchedulerUtils`.

@@ -55,9 +55,7 @@ public class OrchestrationIntegrationTests {
     }
 
     @Test
-    public void testIntegrationRetorchArchitecture() throws EmptyInputException, NotValidSystemException,
-            NoTGroupsInTheSchedulerException, NoFinalActivitiesException, IOException, ClassNotFoundException,
-            URISyntaxException {
+    public void testIntegrationRetorchArchitecture() throws Exception {
         String packageName = "giis.retorch.orchestration.testdata.integration";
         SystemUnderTest currentSystem = classifier.getSystemFromPackage("SyntheticIntegration", packageName);
         SystemUnderTest expectedSystem = utils.getExpectedSystemIntegration();

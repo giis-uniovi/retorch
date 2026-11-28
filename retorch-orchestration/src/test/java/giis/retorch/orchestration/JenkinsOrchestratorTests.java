@@ -35,7 +35,7 @@ public class JenkinsOrchestratorTests {
     private ExecutionPlan plan;
 
     /** Renders the plan and writes the scripts and env files under the working directory. */
-    private String generate(ExecutionPlan planToGenerate) throws IOException {
+    private String generate(ExecutionPlan planToGenerate) throws Exception {
         RetorchPaths paths = new RetorchPaths();
         return new OrchestrationWriter(paths).generate(planToGenerate, RetorchConfig.load(paths));
     }
@@ -47,8 +47,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchExecutionPlanGraphHasValidDependencies() throws EmptyInputException,
-            NoFinalActivitiesException, IOException {
+    public void testUnitArchOrchExecutionPlanGraphHasValidDependencies() throws Exception {
         plan = new ExecutionPlan("defaultName", utils.getListComplexActivities());
         Map<Integer, LinkedList<Activity>> activities = plan.getSortedActivities();
 
@@ -73,8 +72,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchValidComplexGraph() throws IOException, EmptyInputException,
-            NoFinalActivitiesException {
+    public void testUnitArchOrchValidComplexGraph() throws Exception {
         String expectedOutputPath = EXPECTED_OUTPUT_PATH + "/outputTestUnitArchOrchValidComplexGraph";
         List<Activity> listComplexActivities = utils.getListComplexActivities();
 
@@ -97,8 +95,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchValidSimpleGraph() throws EmptyInputException, NoFinalActivitiesException,
-            IOException {
+    public void testUnitArchOrchValidSimpleGraph() throws Exception {
         String expectedOutputPath = EXPECTED_OUTPUT_PATH + "/outputTestUnitArchOrchValidSimpleGraph";
 
         List<Activity> listSimpleActivities = utils.getListSimpleActivities();
@@ -130,8 +127,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchProfilingOptionAddsMeasurementAndUsageProfile() throws EmptyInputException,
-            NoFinalActivitiesException, IOException {
+    public void testUnitArchOrchProfilingOptionAddsMeasurementAndUsageProfile() throws Exception {
         System.setProperty("retorch.profiling", "true");
         try {
             List<Activity> listSimpleActivities = utils.getListSimpleActivities();
@@ -153,8 +149,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchWithoutProfilingGeneratesNoMeasurementNorUsageProfile() throws EmptyInputException,
-            NoFinalActivitiesException, IOException {
+    public void testUnitArchOrchWithoutProfilingGeneratesNoMeasurementNorUsageProfile() throws Exception {
         plan = new ExecutionPlan("defaultName", utils.getListSimpleActivities());
         String executionPipeline = generate(plan);
         org.junit.Assert.assertFalse(executionPipeline.contains("Usage-Profile"));
@@ -165,8 +160,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchCustomCoiTearDownAndJenkinsPostHooks() throws EmptyInputException,
-            NoFinalActivitiesException, IOException {
+    public void testUnitArchOrchCustomCoiTearDownAndJenkinsPostHooks() throws Exception {
         java.nio.file.Path coiTearDown = java.nio.file.Paths.get(".retorch/customscriptscode/custom-coi-teardown");
         java.nio.file.Path jenkinsPost = java.nio.file.Paths.get(".retorch/customscriptscode/custom-jenkins-post");
         java.nio.file.Files.write(coiTearDown, "echo coverage-report".getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -187,8 +181,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchCustomTjobTearDownRunsBeforeTheContainersAreRemoved() throws EmptyInputException,
-            NoFinalActivitiesException, IOException {
+    public void testUnitArchOrchCustomTjobTearDownRunsBeforeTheContainersAreRemoved() throws Exception {
         plan = new ExecutionPlan("defaultName", utils.getListSimpleActivities());
         generate(plan);
         String script = new String(java.nio.file.Files.readAllBytes(
@@ -197,8 +190,7 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test
-    public void testUnitArchOrchCustomUsageProfileHookIsInsertedInTheScript() throws EmptyInputException,
-            NoFinalActivitiesException, IOException {
+    public void testUnitArchOrchCustomUsageProfileHookIsInsertedInTheScript() throws Exception {
         java.nio.file.Path hook = java.nio.file.Paths.get(".retorch/customscriptscode/custom-usageprofile");
         java.nio.file.Files.write(hook, "echo preparing-the-profiling-jar".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         System.setProperty("retorch.profiling", "true");
@@ -217,14 +209,12 @@ public class JenkinsOrchestratorTests {
     }
 
     @Test(expected = EmptyInputException.class)
-    public void testUnitArchOrchInvalidNoActivities() throws EmptyInputException, NoFinalActivitiesException,
-            IOException {
+    public void testUnitArchOrchInvalidNoActivities() throws Exception {
         plan = new ExecutionPlan("defaultName", new LinkedList<>());
     }
 
     @Test(expected = NoFinalActivitiesException.class)
-    public void testUnitArchOrchInvalidNoInitialAndFinalActivities() throws EmptyInputException,
-            NoFinalActivitiesException, IOException {
+    public void testUnitArchOrchInvalidNoInitialAndFinalActivities() throws Exception {
         List<Activity> listSimpleActivities = utils.getNotValidActivities();
         plan = new ExecutionPlan("defaultName", listSimpleActivities);
     }

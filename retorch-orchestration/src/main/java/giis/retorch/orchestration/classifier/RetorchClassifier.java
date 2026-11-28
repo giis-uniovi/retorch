@@ -6,6 +6,7 @@ package giis.retorch.orchestration.classifier;
 
 import giis.retorch.annotations.AccessModes;
 import giis.retorch.orchestration.config.RetorchPaths;
+import giis.retorch.orchestration.exception.InvalidSystemException;
 import giis.retorch.orchestration.model.*;
 import giis.retorch.orchestration.model.SystemUnderTest;
 import org.slf4j.Logger;
@@ -41,6 +42,8 @@ public class RetorchClassifier {
     private static final String JACOCO_INIT_METHOD = "$jacocoInit";
     private final ResourceSerializer deserializer; //Serializer employed to deserialize the resources info
     private final Map<String, Resource> loadedResources; //Resources given by the caller, null to read the JSON
+    private final List<String> problems = new ArrayList<>(); //Errors found while classifying (reported by the public methods)
+    private boolean lenient = false;
 
     /**
      * Empty constructor used to validate RETORCH in the test case
@@ -64,6 +67,25 @@ public class RetorchClassifier {
     private RetorchClassifier(ResourceSerializer deserializer, Map<String, Resource> resources) {
         this.deserializer = deserializer;
         this.loadedResources = resources;
+    }
+
+    /**
+     * Strict by default: annotated tests or resources with errors make the classification fail with an
+     * {@link InvalidSystemException} that lists all of them. In lenient mode they are only logged and the affected
+     * tests are left out of the system (the previous behavior, which hides the error from the generated pipeline).
+     */
+    public RetorchClassifier lenient(boolean lenientMode) {
+        this.lenient = lenientMode;
+        return this;
+    }
+
+    private void throwIfProblems(String systemName) throws InvalidSystemException {
+        if (!lenient && !problems.isEmpty()) {
+            List<String> all = new ArrayList<>(new LinkedHashSet<>(problems));
+            problems.clear();
+            throw new InvalidSystemException("The annotated tests of the system " + systemName + " are not valid", all);
+        }
+        problems.clear();
     }
 
     private Map<String, Resource> resourcesOf(String systemName) throws IOException {
@@ -134,8 +156,9 @@ public class RetorchClassifier {
      * @param systemName  String with the system name (must be the same as specified in the resource attributes JSON
      *                    file
      */
-    public SystemUnderTest getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
+    public SystemUnderTest getSystemFromPackage(String systemName, String packageName) throws InvalidSystemException,
             IOException, ClassNotFoundException, URISyntaxException {
+        problems.clear();
         Map<String, Resource> validatedResources = new HashMap<>();
         for (Resource res : resourcesOf(systemName).values()) {
             if (resourceChecker(res)) {
@@ -151,7 +174,9 @@ public class RetorchClassifier {
             systemRetorch.addListTestCases(temporalSystem.getTestCases());
         }
         sortSystemClass(systemRetorch);
-        return checkSystemClass(systemRetorch, validatedResources);
+        SystemUnderTest checked = checkSystemClass(systemRetorch, validatedResources);
+        throwIfProblems(systemName);
+        return checked;
     }
 
     private void addUniqueResources(SystemUnderTest systemRetorch, SystemUnderTest temporalSystem) {
@@ -174,10 +199,13 @@ public class RetorchClassifier {
      * @param systemName    String with the system name
      * @param testCaseClass Class with the test cases annotated
      */
-    public SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
+    public SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass) throws InvalidSystemException,
             IOException {
+        problems.clear();
         Map<String, Resource> resourceMap = resourcesOf(systemName);
-        return getSystemFromClass(systemName, testCaseClass, resourceMap);
+        SystemUnderTest system = getSystemFromClass(systemName, testCaseClass, resourceMap);
+        throwIfProblems(systemName);
+        return system;
     }
 
     private SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass, Map<String, Resource> resourceMap)
@@ -278,6 +306,7 @@ public class RetorchClassifier {
             return Optional.of(resourceMap.get(idResource));
         } else {
             log.error("The resource {} is not tagged", idResource);
+            problems.add(String.format("The resource %s is not tagged", idResource));
             return Optional.empty();
         }
     }
@@ -303,6 +332,7 @@ public class RetorchClassifier {
         } else {
             for (String message : messages) {
                 log.error(message);
+                problems.add(message);
             }
         }
         return messages.isEmpty();
@@ -346,7 +376,7 @@ public class RetorchClassifier {
         List<String> listMessages = new LinkedList<>();
         if (isOutElasticity && isOutElasticityCost && isOutElasticityID) {
             listMessages.add(String.format("No Elasticity Annotation Specified in the resource %s", resource.getResourceID()));
-            return false;
+            return logAndReturn(listMessages, "ElasticityModel checking");
         }
         if (isOutElasticityID) {
             listMessages.add(String.format("The ElasticityId Attribute in the resource %s %s", resource.getResourceID(), CHORUS_ATTRIBUTES));
@@ -422,7 +452,10 @@ public class RetorchClassifier {
                 .forEach(systemOutput::addResourceClass);
         systemToCheck.getResources().stream()
                 .filter(res -> !idResourcesList.containsAll(res.getReplaceable()))
-                .forEach(res -> log.error("The Replaceable of resource {}{}", res.getResourceID(), NO_EXIST));
+                .forEach(res -> {
+                    log.error("The Replaceable of resource {}{}", res.getResourceID(), NO_EXIST);
+                    problems.add(String.format("The Replaceable of resource %s%s", res.getResourceID(), NO_EXIST));
+                });
         systemOutput.addListTestCases(systemToCheck.getTestCases());
 
         return systemOutput;

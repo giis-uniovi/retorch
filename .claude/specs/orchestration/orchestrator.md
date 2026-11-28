@@ -18,8 +18,9 @@ pipeline runs.
   only); all text files are read and written as UTF-8. Per-file generation is logged at DEBUG.
 - `ExecutionPlanWriter(RetorchPaths)`, `EnvFileWriter(RetorchPaths)`.
 - Every path comes from `RetorchPaths` and every property from `RetorchConfig` (see `orchestration/config.md`).
-- The renderer throws `IllegalStateException` for a missing required property; a resource without a
-  `PLACEHOLDER;image` docker image fails when the `.env` file is built (known issue).
+- The renderer throws `IllegalStateException` for a missing required property of a config that was not validated, and for
+  a resource whose docker image is not `PLACEHOLDER;image` (the generator validates both earlier and reports them as
+  `InvalidConfigurationException`).
 
 ## Configuration (`.retorch/configurations/retorchCI.properties`)
 | Property | Meaning | Default |

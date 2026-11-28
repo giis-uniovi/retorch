@@ -4,6 +4,7 @@
  */
 package giis.retorch.orchestration.main;
 
+import giis.retorch.orchestration.exception.RetorchException;
 import giis.retorch.orchestration.generator.OrchestrationGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +22,13 @@ import java.util.List;
 /**
  * CLI entry point for the RETORCH orchestration uber JAR.
  * Usage:
- *   java -jar retorch-orchestration-&lt;version&gt;-standalone.jar &lt;rootPackageNameTests&gt; &lt;systemName&gt; &lt;jenkinsFilePath&gt; [--profiling|--no-profiling]
+ *   java -jar retorch-orchestration-&lt;version&gt;-standalone.jar &lt;rootPackageNameTests&gt; &lt;systemName&gt; &lt;jenkinsFilePath&gt; [--profiling|--no-profiling] [--lenient]
  * Arguments:
  *   rootPackageNameTests  Root package containing the annotated test classes
  *   systemName            System name matching the &lt;systemName&gt;SystemResources.json file
  *   jenkinsFilePath       Directory path where the Jenkinsfile will be written
  *   --profiling           Optional. Measures the resource usage in the pipeline and publishes the usage profile
+ *   --lenient             Optional. Invalid tests, resources and TJobs are logged and left out instead of failing
  *   --no-profiling        Optional. Generates the pipeline without profiling. Without any of the two flags, the
  *                         {@code profiling} property of retorchCI.properties is used (false by default)
  */
@@ -35,28 +37,43 @@ public class RetorchMain {
     private static final Logger log = LoggerFactory.getLogger(RetorchMain.class);
 
     public static void main(String[] args) {
-        boolean validFlag = args.length == 3
-                || (args.length == 4 && ("--profiling".equals(args[3]) || "--no-profiling".equals(args[3])));
-        if (!validFlag) {
-            log.error("Usage: java -jar retorch-orchestration-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath> [--profiling|--no-profiling]");
+        Boolean profiling = null;
+        boolean lenient = false;
+        boolean validArgs = args.length >= 3 && args.length <= 5;
+        for (int i = 3; validArgs && i < args.length; i++) {
+            if ("--profiling".equals(args[i])) {
+                profiling = Boolean.TRUE;
+            } else if ("--no-profiling".equals(args[i])) {
+                profiling = Boolean.FALSE;
+            } else if ("--lenient".equals(args[i])) {
+                lenient = true;
+            } else {
+                validArgs = false;
+            }
+        }
+        if (!validArgs) {
+            log.error("Usage: java -jar retorch-orchestration-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath> [--profiling|--no-profiling] [--lenient]");
             log.error("  rootPackageNameTests : root package containing the annotated test classes");
             log.error("  systemName           : system name matching the <systemName>SystemResources.json file");
             log.error("  jenkinsFilePath      : directory path where the Jenkinsfile will be written");
             log.error("  --profiling          : (optional) add the resource measurement and the usage profile");
             log.error("  --no-profiling       : (optional) do not add them, overriding retorchCI.properties");
+            log.error("  --lenient            : (optional) log invalid tests, resources and TJobs and leave them out instead of failing");
             System.exit(1);
         }
 
         String rootPackageNameTests = args[0];
         String systemName = args[1];
         String jenkinsFilePath = args[2];
-        Boolean profiling = args.length == 4 ? Boolean.valueOf("--profiling".equals(args[3])) : null;
 
         try {
             extendClasspathFromCwd();
-            OrchestrationGenerator generator = new OrchestrationGenerator().withProfiling(profiling);
+            OrchestrationGenerator generator = new OrchestrationGenerator().withProfiling(profiling).withLenient(lenient);
             generator.generateJenkinsfile(rootPackageNameTests, systemName, jenkinsFilePath);
             log.info("Jenkinsfile and scripts generated successfully in: {}", jenkinsFilePath);
+        } catch (RetorchException e) {
+            log.error("Failed to generate Jenkinsfile: {}", e.getMessage());
+            System.exit(2);
         } catch (Exception e) {
             log.error("Failed to generate Jenkinsfile: {}", e.getMessage(), e);
             System.exit(2);

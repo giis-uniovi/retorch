@@ -283,6 +283,16 @@ public class SchedulerUtils extends GenericUtils {
         return Arrays.asList(tGroupFive, tGroupSeven, tGroupEight, tGroupOne);
     }
 
+    /** A TGroup whose resource has no instances (elasticity 0), so its TJob can never be placed. */
+    public TGroup getUnplaceableTGroup() {
+        Resource noInstances = new Resource("noInstancesRes", new LinkedList<>(), new LinkedList<>(),
+                new ElasticityModel("noInstancesModel", 0, 1.0), Resource.type.LOGICAL, new LinkedList<>(), DOCKER_IMAGE);
+        TestCase testCase = new TestCase("tUnplaceable", AggregatorClassTests.class,
+                new LinkedList<>(Arrays.asList(new AccessMode(new AccessModeTypes("READONLY"), false, 1, noInstances))));
+        return new TGroup(new ArrayList<>(Collections.singletonList(testCase)),
+                new ArrayList<>(Collections.singletonList(noInstances)));
+    }
+
     public List<TGroup> getInvalidTGroups() {
         List<TestCase> listTestCases = schedulerTestCases();
 

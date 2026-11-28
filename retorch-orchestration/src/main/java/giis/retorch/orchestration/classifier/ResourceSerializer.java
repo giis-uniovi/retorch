@@ -134,6 +134,24 @@ public class ResourceSerializer {
     }
 
     /**
+     * Checks that the docker image of every resource is {@code PLACEHOLDER;image}: the placeholder is the variable of
+     * the TJob environment file that holds the image.
+     *
+     * @return one message per resource with a missing or malformed image (empty if all are valid)
+     */
+    public static List<String> dockerImageProblems(Collection<Resource> resources) {
+        List<String> problems = new LinkedList<>();
+        for (Resource resource : resources) {
+            String[] parts = resource.getDockerImage() == null ? new String[0] : resource.getDockerImage().split(";", -1);
+            if (parts.length != 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
+                problems.add(String.format("The dockerImage of resource %s must be 'PLACEHOLDER;image' but is '%s'",
+                        resource.getResourceID(), resource.getDockerImage()));
+            }
+        }
+        return problems;
+    }
+
+    /**
      * Deserializes the SystemResources.json file in the /retorchresources folder into a Map of ResourceClass objects.
      *
      * @param name the name of the SystemResources.json file to deserialize

@@ -5,20 +5,19 @@
 package giis.retorch.orchestration.generator;
 
 
-import giis.retorch.orchestration.classifier.EmptyInputException;
 import giis.retorch.orchestration.classifier.ResourceSerializer;
 import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.config.RetorchConfig;
 import giis.retorch.orchestration.config.RetorchPaths;
+import giis.retorch.orchestration.exception.InvalidConfigurationException;
+import giis.retorch.orchestration.exception.InvalidSystemException;
+import giis.retorch.orchestration.exception.RetorchException;
 import giis.retorch.orchestration.model.Activity;
 import giis.retorch.orchestration.model.ExecutionPlan;
 import giis.retorch.orchestration.model.Resource;
 import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
 import giis.retorch.orchestration.orchestrator.OrchestrationWriter;
-import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
-import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
-import giis.retorch.orchestration.scheduler.NotValidSystemException;
 import giis.retorch.orchestration.scheduler.RetorchAggregator;
 import giis.retorch.orchestration.scheduler.RetorchScheduler;
 
@@ -38,6 +37,7 @@ public class OrchestrationGenerator {
 
     private final RetorchPaths paths;
     private Boolean profilingOverride;
+    private boolean lenient;
 
     /** Generator that reads and writes under the working directory. */
     public OrchestrationGenerator() {
@@ -58,6 +58,16 @@ public class OrchestrationGenerator {
     }
 
     /**
+     * Lenient mode keeps the previous behavior for invalid input: tests with wrong annotations, systems that fail the
+     * validation and TJobs that cannot be placed are logged and left out of the pipeline instead of failing the
+     * generation. Strict (the default) reports all the problems in a {@link RetorchException}.
+     */
+    public OrchestrationGenerator withLenient(boolean lenientMode) {
+        this.lenient = lenientMode;
+        return this;
+    }
+
+    /**
      * Main method of RETORCH prototype. Given the root package name where tests are located and the system name,
      * classifies, aggregates and schedules the tests, and writes the Jenkinsfile and the scripting code in the
      * directory of the project specified
@@ -66,9 +76,8 @@ public class OrchestrationGenerator {
      * @param rootPackageNameTests    String with root package name where tests are located
      * @param jenkinsFilePath String with the route where the Jenkinsfile will be placed
      */
-    public String generateJenkinsfile(String rootPackageNameTests, String systemName, String jenkinsFilePath) throws NotValidSystemException,
-            IOException, NoTGroupsInTheSchedulerException, EmptyInputException, NoFinalActivitiesException,
-            ClassNotFoundException, URISyntaxException {
+    public String generateJenkinsfile(String rootPackageNameTests, String systemName, String jenkinsFilePath)
+            throws RetorchException, IOException {
         RetorchConfig config = RetorchConfig.load(paths).withProfiling(profilingOverride);
         ExecutionPlan plan = buildExecutionPlan(rootPackageNameTests, systemName);
         String executionPipeline = new OrchestrationWriter(paths).generate(plan, config);
@@ -89,9 +98,8 @@ public class OrchestrationGenerator {
      * @param rootPackageNameTests String with root package name where tests are located
      * @return The RETORCH Execution plan
      */
-    public ExecutionPlan getExecutionPlan(String rootPackageNameTests, String systemName) throws NotValidSystemException,
-            IOException, NoTGroupsInTheSchedulerException, EmptyInputException, NoFinalActivitiesException,
-            ClassNotFoundException, URISyntaxException {
+    public ExecutionPlan getExecutionPlan(String rootPackageNameTests, String systemName)
+            throws RetorchException, IOException {
         return buildExecutionPlan(rootPackageNameTests, systemName);
     }
 
@@ -103,16 +111,25 @@ public class OrchestrationGenerator {
      * @param systemName   String with the system name (must coincide with the SystemResources.json file).
      * @param rootPackageNameTests String with root package name where tests are located.
      */
-    private ExecutionPlan buildExecutionPlan(String rootPackageNameTests, String systemName) throws
-            EmptyInputException, IOException, ClassNotFoundException, URISyntaxException, NotValidSystemException,
-            NoTGroupsInTheSchedulerException, NoFinalActivitiesException {
+    private ExecutionPlan buildExecutionPlan(String rootPackageNameTests, String systemName)
+            throws RetorchException, IOException {
         // the resources JSON is read once and shared by the classifier and the aggregator
         Map<String, Resource> resources = new ResourceSerializer(paths).deserializeResources(systemName);
-        RetorchClassifier classifier = new RetorchClassifier(resources);
-        SystemUnderTest currentSystem = classifier.getSystemFromPackage(systemName, rootPackageNameTests);
-        RetorchAggregator aggregator = new RetorchAggregator(currentSystem, resources);
+        SystemUnderTest currentSystem;
+        try {
+            currentSystem = new RetorchClassifier(resources).lenient(lenient)
+                    .getSystemFromPackage(systemName, rootPackageNameTests);
+        } catch (ClassNotFoundException | URISyntaxException e) {
+            throw new InvalidSystemException("The tests of the package " + rootPackageNameTests
+                    + " cannot be loaded: " + e);
+        }
+        List<String> imageProblems = ResourceSerializer.dockerImageProblems(currentSystem.getResources());
+        if (!imageProblems.isEmpty()) {
+            throw new InvalidConfigurationException("Invalid resources of the system " + systemName, imageProblems);
+        }
+        RetorchAggregator aggregator = new RetorchAggregator(currentSystem, resources, lenient);
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
-        RetorchScheduler scheduler = new RetorchScheduler(tGroupsOutputAggregator);
+        RetorchScheduler scheduler = new RetorchScheduler(tGroupsOutputAggregator, lenient);
         List<Activity> listActivities = scheduler.generateActivities();
         return new ExecutionPlan("defaultName", listActivities);
     }

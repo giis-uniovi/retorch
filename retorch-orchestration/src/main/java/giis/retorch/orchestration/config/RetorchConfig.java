@@ -4,11 +4,15 @@
  */
 package giis.retorch.orchestration.config;
 
+import giis.retorch.orchestration.exception.InvalidConfigurationException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -30,6 +34,9 @@ public class RetorchConfig {
     public static final String DEFAULT_PROFILING_JAR_URL =
             "https://github.com/giis-uniovi/retorch/releases/latest/download/retorch-profiling-cli.jar";
 
+    private static final String[] REQUIRED_PROPERTIES =
+            {"agentCIName", "sut-location", "app-url", "sut-wait-html", "testsBasePath"};
+
     private static final String TJOB_NAME_TOKEN = "$TJOB_NAME";
 
     private final Properties properties;
@@ -43,19 +50,39 @@ public class RetorchConfig {
     /**
      * Loads {@code retorchCI.properties}; the deprecated system property {@code retorch.profiling} overrides the file.
      *
-     * @throws IOException with a clear message if the file is missing or unreadable
+     * @throws InvalidConfigurationException if the file does not exist or a required property is missing (all the
+     *                                       missing ones are listed)
+     * @throws IOException                   if the file cannot be read
      */
-    public static RetorchConfig load(RetorchPaths paths) throws IOException {
+    public static RetorchConfig load(RetorchPaths paths) throws IOException, InvalidConfigurationException {
         Path file = paths.ciPropertiesFile();
         Properties props = new Properties();
         try (InputStream input = Files.newInputStream(file)) {
             props.load(input);
         } catch (NoSuchFileException e) {
-            throw new IOException("The configuration file " + file + " does not exist", e);
+            throw new InvalidConfigurationException("The configuration file " + file + " does not exist");
         }
         RetorchConfig config = new RetorchConfig(props, file.toString());
+        config.validate();
         String legacyOverride = System.getProperty(PROFILING_SYSTEM_PROPERTY);
         return legacyOverride == null ? config : config.withProfiling(Boolean.valueOf(legacyOverride));
+    }
+
+    /**
+     * Checks that every required property is present.
+     *
+     * @throws InvalidConfigurationException listing all the missing properties
+     */
+    public void validate() throws InvalidConfigurationException {
+        List<String> problems = new ArrayList<>();
+        for (String name : REQUIRED_PROPERTIES) {
+            if (properties.getProperty(name) == null) {
+                problems.add("The required property '" + name + "' is missing");
+            }
+        }
+        if (!problems.isEmpty()) {
+            throw new InvalidConfigurationException("Invalid configuration file " + source, problems);
+        }
     }
 
     /** A copy with the profiling flag forced to {@code profiling}; {@code null} keeps the configured value. */

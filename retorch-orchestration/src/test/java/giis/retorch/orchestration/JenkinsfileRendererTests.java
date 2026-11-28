@@ -34,8 +34,7 @@ public class JenkinsfileRendererTests {
     }
 
     @Test
-    public void testRenderMatchesTheExpectedPipeline() throws IOException, EmptyInputException,
-            NoFinalActivitiesException {
+    public void testRenderMatchesTheExpectedPipeline() throws Exception {
         ExecutionPlan plan = new ExecutionPlan("plan", new OrchestratorUtils().getListSimpleActivities());
         String pipeline = new JenkinsfileRenderer().render(plan, config(false));
         new OrchestratorUtils().compareOutputToFile(EXPECTED_OUTPUT_PATH + "outputTestUnitArchOrchValidSimpleGraph",
@@ -44,7 +43,7 @@ public class JenkinsfileRendererTests {
     }
 
     @Test
-    public void testRenderWithProfilingAndCustomPostSteps() throws EmptyInputException, NoFinalActivitiesException {
+    public void testRenderWithProfilingAndCustomPostSteps() throws Exception {
         ExecutionPlan plan = new ExecutionPlan("plan", new OrchestratorUtils().getListSimpleActivities());
         String pipeline = new JenkinsfileRenderer("        junit 'x.xml'\n").render(plan, config(true));
         assertTrue(pipeline.contains("stage('Usage-Profile')"));
@@ -52,7 +51,7 @@ public class JenkinsfileRendererTests {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testRenderFailsWithAMissingRequiredProperty() throws EmptyInputException, NoFinalActivitiesException {
+    public void testRenderFailsWithAMissingRequiredProperty() throws Exception {
         ExecutionPlan plan = new ExecutionPlan("plan", new OrchestratorUtils().getListSimpleActivities());
         new JenkinsfileRenderer().render(plan, new RetorchConfig(new Properties(), "in memory"));
     }
