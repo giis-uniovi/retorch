@@ -1,7 +1,7 @@
 # Spec: `giis.retorch.orchestration.model`
 
 ## Purpose
-Domain entities of RETORCH. Plain data classes (Jackson-friendly) with value-based `equals`/`hashCode`.
+Domain entities of RETORCH. Plain data classes (Jackson-friendly).
 
 ## Entities
 `Resource`, `ElasticityModel`, `Capacity` (valid names: memory, processor, slots, storage; an unknown name falls back
@@ -19,6 +19,12 @@ to the default), `AccessMode`/`AccessModeTypes`, `TestCase`, `TGroup` (test case
   scripts and the profiling phases (`profiling.utils.CsvConstants`) must stay aligned with it.
 - Serialized property names (`@JsonProperty`) are part of the JSON configuration format: renaming them breaks users'
   `*SystemResources.json` files.
+
+## Current behavior (known issues, to be fixed by the refactoring plan)
+- `hashCode()` of the entities returns the identity hash (`super.hashCode()`) while `equals` compares values, so
+  hash-based collections work by identity only.
+- `equals` of `TJob`, `Activity`, `TGroup` and `System` is asymmetric (one-way `containsAll`).
+- `Resource.getReplaceable()` and `setMinimalCapacities` sort their list in place.
 
 ## Tests
 `TJobsEntityTests` (including a resource without capacities), plus every test that builds entities (`SchedulerTests`, `JenkinsOrchestratorTests`).

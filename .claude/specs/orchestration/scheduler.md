@@ -5,8 +5,9 @@ Aggregates test cases into `TGroup`s and schedules them into ordered `Activity`s
 
 ## Public API
 - `RetorchAggregator`: `validateSystem` (non-empty lists, no resource without test cases, all requirements fulfilled,
-  no duplicates; throws `NotValidSystemException`), `generateTGroups`, `addTestCaseToaTGroup`.
-- `RetorchScheduler`: `generateActivities(List<TGroup>)` -> ordered activities (throws
+  no duplicates; returns a boolean and logs the reason; it does not throw for those cases; the constructor replaces an
+  invalid system by `System("EmptySystem ERROR")`), `generateTGroups`, `addTestCaseToaTGroup`.
+- `RetorchScheduler`: `generateActivities()` (works on the TGroups given to the scheduler) -> ordered activities (throws
   `NoTGroupsInTheSchedulerException` on empty input), `getAllResources`.
 - `Scheduling` / `ScheduleStruct`: chronological moments (stage -> TJobs and available resources).
 
@@ -14,6 +15,11 @@ Aggregates test cases into `TGroup`s and schedules them into ordered `Activity`s
 - TJobs of the same stage may run in parallel; a resource's access-mode concurrency and elasticity bounds are never
   exceeded inside a stage.
 - Output is deterministic for the same input (the expected Jenkinsfiles in tests depend on it).
+
+## Current behavior (known issues, to be fixed by the refactoring plan)
+- `Scheduling.addTJob` silently drops a TJob whose resources are not all in the base resources (its tests never reach
+  the pipeline and nothing is logged).
+- An invalid system degrades into a later `NoTGroupsInTheSchedulerException`.
 
 ## Tests
 `SchedulerTests`, `SchedulerUtils`.

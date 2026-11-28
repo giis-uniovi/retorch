@@ -5,7 +5,7 @@ Resource Identification phase: turns annotated test classes into a `System` (res
 (de)serializes `Resource` configuration JSON files.
 
 ## Public API
-- `RetorchClassifier`: `getSystemFromPackage(pkg)`, `getSystemFromClass(cls)`, `validateTestCase`,
+- `RetorchClassifier`: `getSystemFromPackage(systemName, pkg)`, `getSystemFromClass(cls)`, `validateTestCase`,
   `getTestCasesFromMethod`, `getAccessModesFromMethod`, `getRequiredResource`, `getClassMethods`.
 - `ResourceSerializer`: `addResourceToSerialize`, `serializeResources`, `deserialize`,
   `deserializeResources(systemName)` -> `Map<String, Resource>` read from
@@ -18,6 +18,8 @@ Resource Identification phase: turns annotated test classes into a `System` (res
 - Only methods carrying the RETORCH annotations become `TestCase`s; each access mode is bound to the `Resource`
   declared in the JSON file.
 - The resources file path is relative to the working directory.
+
+- Current behavior (known issue): tests without valid access modes are dropped and only logged; no exception.
 
 ## Tests
 `ClassifierTests`, `ClassifierUtils`, `OrchestrationIntegrationTests`.
