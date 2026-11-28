@@ -5,7 +5,7 @@
 /* View: the table of all the alternatives (shown by the filters, in the chosen order) with the checkbox that adds each one to the
    comparison and the selection shortcuts. Wide: a table with sticky header. Narrow (container query in the CSS): one card per
    alternative, built from data-label.
-   vm: {rows: [{id, label, kind, region, total, used, over, picked: selected alternative, compared: ticked}]}. */
+   vm: {rows: [{id, label, provider (icon), kind, region, total, used, over, picked: selected alternative, compared: ticked}]}. */
 const TableView = (function () {
   let root = null;
 
@@ -19,7 +19,7 @@ const TableView = (function () {
     const rows = vm.rows.map(function (r) {
       return Html.t`<tr class="alt ${r.picked ? 'sel' : ''}" data-id="${r.id}"><td class="c-pick"><label class="cell-check"><input type="checkbox" data-act="pick" data-cmp="${r.id}" aria-label="${I18n.t('cmp.pick') + ' ' + r.label}"${
         r.compared ? View.CHECKED : ''}></label></td><th scope="row"><button type="button" class="link" data-act="select-alt" data-select="${r.id}"${
-        r.picked ? Html.raw(' aria-current="true"') : ''}>${r.label}</button></th>${cell('type', I18n.t('kind.' + r.kind))}${cell('region', r.region)}${
+        r.picked ? Html.raw(' aria-current="true"') : ''}>${Icons.img(r.provider)}${r.label}</button></th>${cell('type', I18n.t('kind.' + r.kind))}${cell('region', r.region)}${
         cell('total', Fmt.usd(r.total))}${cell('used', Fmt.usd(r.used))}${cell('over', Fmt.usd(r.over))}</tr>`;
     });
     Html.set(View.$(root, 'table'), Html.t`${head}<tbody>${rows}</tbody>`);

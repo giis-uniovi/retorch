@@ -17,7 +17,8 @@ export function load(files, names, options) {
   const store = {};
   const documentStub = {
     documentElement: {setAttribute() {}, getAttribute() { return null; }, lang: 'en', style: {}},
-    getElementById() { return null; },
+    // options.elements: {id: element stub} (e.g. the #icons data block)
+    getElementById(id) { return (opts.elements && opts.elements[id]) || null; },
     querySelectorAll() { return []; },
     title: ''
   };

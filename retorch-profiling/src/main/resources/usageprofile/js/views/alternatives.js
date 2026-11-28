@@ -6,7 +6,7 @@
    chart with the cost of every alternative shown. The controls are synchronised, never rebuilt unless their texts change, so a render
    does not take the keyboard focus away from the control that triggered it.
    vm: {providers: [{name, on}], kinds: [kind], regions: [region], filters: {kind, region}, showOver, metric, sort,
-   rows: [{label, used, over}] (the chart, in the order shown), ids: [alternative id] (same order), onSelect(id): click on a bar}. */
+   rows: [{label, provider, used, over}] (the chart, in the order shown), ids: [alternative id] (same order), onSelect(id): click on a bar}. */
 const AlternativesView = (function () {
   let root = null;
 
@@ -15,10 +15,10 @@ const AlternativesView = (function () {
   function renderControls(vm) {
     const all = [['', I18n.t('filter.all')]];
     const boxes = View.$(root, 'providerBoxes');
-    const key = JSON.stringify(vm.providers.map(function (p) { return p.name; }));
+    const key = JSON.stringify(vm.providers.map(function (p) { return p.name; })) + Theme.effective(); // the icons depend on the theme
     if (boxes.getAttribute('data-options') !== key) {
       Html.set(boxes, Html.join(vm.providers.map(function (p) {
-        return Html.t`<label class="chk"><input type="checkbox" data-act="provider" value="${p.name}"> ${p.name}</label>`;
+        return Html.t`<label class="chk"><input type="checkbox" data-act="provider" value="${p.name}"> ${Icons.img(p.name)}${p.name}</label>`;
       }), ' '));
       boxes.setAttribute('data-options', key);
     }

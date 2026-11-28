@@ -2,6 +2,7 @@ i18n.js
 format.js
 html.js
 theme.js
+icons.js
 model/profile.js
 model/simulation.js
 model/state.js
