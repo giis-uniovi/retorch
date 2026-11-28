@@ -1,7 +1,3 @@
-/*
- * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
- * All intellectual property rights on this file belong to GIIS.
- */
 package giis.retorch.orchestration.scheduler;
 
 import giis.retorch.orchestration.exception.InvalidSystemException;

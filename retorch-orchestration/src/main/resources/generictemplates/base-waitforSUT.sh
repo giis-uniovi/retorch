@@ -1,6 +1,4 @@
 #!/bin/bash
-# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
-# All intellectual property rights on this file belong to GIIS.
 # The waitforSUT.sh script waits until the SUT is up: the page at the given URL must contain the text configured in
 # sut-wait-html. It polls every ${SUT-WAIT-INTERVAL} seconds, at most ${SUT-WAIT-LIMIT} times (sut-wait-interval and
 # sut-wait-limit in retorchCI.properties). If the SUT is not up after that, it stores the container logs, tears the

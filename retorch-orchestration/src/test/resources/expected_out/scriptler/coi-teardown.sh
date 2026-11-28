@@ -1,6 +1,4 @@
 #!/bin/bash
-# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
-# All intellectual property rights on this file belong to GIIS.
 # The coi-teardown.sh script provides all the necessary commands to tear-down the infrastructure after executing
 # the TJobs. It performs cleaning actions, like remove all the containers and docker volumes, but also ends, collects
 # and creates file with the different TJob and COI lifecycles using the savetjoblifecycledata.sh script.

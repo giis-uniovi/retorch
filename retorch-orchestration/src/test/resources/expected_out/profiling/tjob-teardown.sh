@@ -1,6 +1,4 @@
 #!/bin/bash
-# Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
-# All intellectual property rights on this file belong to GIIS.
 # The tjob-teardown.sh script provides all the necessary commands to tear-down each TJob's Resources after the
 # test execution has ended. It stores the container logs of the current TJob, tear down the containers
 # and execute the custom commands provided in the custom-tjob-teardown file.
