@@ -6,8 +6,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {load} from './helpers/load.mjs';
 
-const {Simulator} = load(['i18n.js', 'format.js', 'theme.js', 'simulator.js'], ['Simulator']);
-const calc = Simulator.calc;
+const {Simulation} = load(['model/simulation.js'], ['Simulation']);
+const calc = Simulation.calc;
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, a + ' != ' + b);
 
 const vmAlt = {id: 'vm', kind: 'VM', hourlyPrice: 1, total: 0.5, items: [
@@ -44,7 +44,7 @@ test('break-even runs per day = always-on monthly / (days x per-run cost)', () =
 
 test('a container service is always pay per use; the cheapest fitting alternative is the best', () => {
   const p = {runs: 4, days: 22, pattern: 'always', hours: 10, disc: 0, buy: 'od'};
-  const result = Simulator.compute([vmAlt, containerAlt], 3600, p);
+  const result = Simulation.compute([vmAlt, containerAlt], 3600, p);
   const byId = {};
   result.rows.forEach((r) => { byId[r.alt.id] = r; });
   assert.equal(byId.c.mode, 'perUse');
@@ -55,14 +55,14 @@ test('a container service is always pay per use; the cheapest fitting alternativ
 
 test('a reservation is applied only to the always-on patterns', () => {
   const res = vmAlt.reservations[0];
-  const perRun = Simulator.project(vmAlt, 3600, {runs: 4, days: 22, pattern: 'perRun', hours: 10, disc: 0, buy: '1-ALL_UPFRONT'}, res);
+  const perRun = Simulation.project(vmAlt, 3600, {runs: 4, days: 22, pattern: 'perRun', hours: 10, disc: 0, buy: '1-ALL_UPFRONT'}, res);
   assert.equal(perRun.mode, 'perRun');
-  const always = Simulator.project(vmAlt, 3600, {runs: 4, days: 22, pattern: 'always', hours: 10, disc: 0, buy: '1-ALL_UPFRONT'}, res);
+  const always = Simulation.project(vmAlt, 3600, {runs: 4, days: 22, pattern: 'always', hours: 10, disc: 0, buy: '1-ALL_UPFRONT'}, res);
   assert.equal(always.mode, 'res');
   near(always.monthly, 0.5 * 730 + 0.1 * 730);
 });
 
 test('reservation keys are sorted by term and payment', () => {
-  const keys = Simulator.reservationKeys([{reservations: [{termYears: 3, payment: 'ALL_UPFRONT'}, {termYears: 1, payment: 'ALL_UPFRONT'}, {termYears: 1, payment: 'NO_UPFRONT'}]}]);
+  const keys = Simulation.reservationKeys([{reservations: [{termYears: 3, payment: 'ALL_UPFRONT'}, {termYears: 1, payment: 'ALL_UPFRONT'}, {termYears: 1, payment: 'NO_UPFRONT'}]}]);
   assert.deepEqual([...keys], ['1-NO_UPFRONT', '1-ALL_UPFRONT', '3-ALL_UPFRONT']);
 });

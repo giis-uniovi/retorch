@@ -39,8 +39,8 @@ public class UsageProfileGenerator {
     private static final String SCRIPT_END_ESCAPED = "<\\/script";
     /** The page scripts, concatenated in this order into one script (one global scope). */
     static final List<String> APP_SCRIPTS = Collections.unmodifiableList(Arrays.asList(
-            DIR + "js/i18n.js", DIR + "js/format.js", DIR + "js/html.js", DIR + "js/theme.js", DIR + "js/charts.js", DIR + "js/graph.js",
-            DIR + "js/simulator.js", DIR + "js/app.js"));
+            DIR + "js/i18n.js", DIR + "js/format.js", DIR + "js/html.js", DIR + "js/theme.js", DIR + "js/model/profile.js",
+            DIR + "js/model/simulation.js", DIR + "js/charts.js", DIR + "js/graph.js", DIR + "js/simulator.js", DIR + "js/app.js"));
 
     /**
      * @param planName name shown in the usage profile title

@@ -481,7 +481,8 @@ public class UsageProfileTests {
         assertTrue(PricingFetcher.split(null).isEmpty());
     }
 
-    private static final String[] SCRIPTS = {"i18n", "format", "html", "theme", "charts", "graph", "simulator", "app"};
+    private static final String[] SCRIPTS = {"i18n", "format", "html", "theme", "model/profile", "model/simulation", "charts", "graph",
+        "simulator", "app"};
 
     private static String html(Path out) throws IOException {
         return new String(Files.readAllBytes(out), StandardCharsets.UTF_8);
@@ -652,7 +653,7 @@ public class UsageProfileTests {
         assertEquals(SCRIPTS.length, UsageProfileGenerator.APP_SCRIPTS.size());
         assertTrue(UsageProfileGenerator.APP_SCRIPTS.get(0).endsWith("js/i18n.js"));
         assertTrue(UsageProfileGenerator.APP_SCRIPTS.get(SCRIPTS.length - 1).endsWith("js/app.js"));
-        assertTrue(UsageProfileGenerator.APP_SCRIPTS.get(6).endsWith("js/simulator.js"));
+        assertTrue(UsageProfileGenerator.APP_SCRIPTS.get(8).endsWith("js/simulator.js"));
     }
 
     @Test

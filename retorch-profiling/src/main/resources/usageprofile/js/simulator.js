@@ -2,118 +2,20 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-/* Projection simulator: how many times the suite runs per day, in which pattern, with which purchase option, and what it costs per
-   month / year. The formulas are small pure functions (no DOM) exposed as Simulator.calc; the rest builds the form results, the
-   break-even table and the chart. Deep links: #runs=&days=&pattern=perRun|always|hours&hours=&disc=&buy=<termYears>-<payment>|od */
+/* Projection simulator view: the form, the results, the break-even table and the chart. The formulas are in model/simulation.js. Deep links: #runs=&days=&pattern=perRun|always|hours&hours=&disc=&buy=<termYears>-<payment>|od */
 const Simulator = (function () {
-  const HOURS_MONTH = 730;
-  const DAY_HOURS = 24;
-  const SECONDS_HOUR = 3600;
-  const DEFAULTS = {runs: 4, days: 22, pattern: 'perRun', hours: 10, disc: 0, buy: 'od'};
-  const LIMITS = {runs: [0.1, 1000], days: [1, 31], hours: [0.5, 24], disc: [0, 95]};
-  const PATTERNS = ['perRun', 'always', 'hours'];
+  const DEFAULTS = Simulation.DEFAULTS;
+  const LIMITS = Simulation.LIMITS;
+  const PATTERNS = Simulation.PATTERNS;
   const FIELDS = {runs: 'simRuns', days: 'simDays', hours: 'simHours', disc: 'simDisc'};
-  const PAY_ORDER = {NO_UPFRONT: 0, ALL_UPFRONT: 1};
-  const MAX_CURVES = 4;
+  const MAX_CURVES = Simulation.MAX_CURVES;
   const LINE_STYLES = {perRun: 'solid', od: 'dashed', res: 'dotted'};
+  const calc = Simulation.calc;
+  const isVm = Simulation.isVm;
+  const reservationKeys = Simulation.reservationKeys;
 
   const t = function (key, params) { return I18n.t(key, params); };
   const el = function (id) { return document.getElementById(id); };
-
-  /* ---- pure formulas (no DOM): every cost is USD, T = seconds of the measured execution ---- */
-  const calc = (function () {
-    const sumStorage = function (alt) {
-      return alt.items.filter(function (i) { return i.object === 'storage'; }).reduce(function (s, i) { return s + i.cost; }, 0);
-    };
-    const storageRun = sumStorage;
-    const computeRun = function (alt) { return Math.max(0, alt.total - sumStorage(alt)); };
-
-    /* The disk exists all month (730 h) in the always-on patterns: its hourly rate is the measured storage cost over T. */
-    function storageMonthly(storage, T) { return T > 0 ? storage / T * SECONDS_HOUR * HOURS_MONTH : 0; }
-
-    function perRunCost(compute, storage, disc) { return compute * (1 - disc / 100) + storage; }
-
-    function perRunMonthly(compute, storage, runs, days, disc) { return runs * days * perRunCost(compute, storage, disc); }
-
-    function onDemandMonthly(hourly, disc, hoursOn, storage, T) { return hourly * (1 - disc / 100) * hoursOn + storageMonthly(storage, T); }
-
-    function reservedMonthly(effectiveHourly, storage, T) { return effectiveHourly * HOURS_MONTH + storageMonthly(storage, T); }
-
-    function hoursOn(pattern, hoursPerDay, days) { return pattern === 'always' ? HOURS_MONTH : hoursPerDay * days; }
-
-    function availableHours(pattern, hoursPerDay) { return pattern === 'always' ? DAY_HOURS : hoursPerDay; }
-
-    /* Fraction of the available hours per day that the executions keep the VM busy (> 1: the suite does not fit). */
-    function utilisation(runs, T, available) { return available > 0 ? runs * T / SECONDS_HOUR / available : Infinity; }
-
-    function maxRuns(T, available) { return T > 0 ? Math.floor(available * SECONDS_HOUR / T) : Infinity; }
-
-    /* Runs per day from which the always-on option is cheaper than paying every execution on demand. */
-    function breakEven(alwaysMonthly, days, perRun) { return perRun > 0 && days > 0 ? alwaysMonthly / (days * perRun) : Infinity; }
-
-    return {HOURS_MONTH: HOURS_MONTH, storageRun: storageRun, computeRun: computeRun, storageMonthly: storageMonthly, perRunCost: perRunCost,
-      perRunMonthly: perRunMonthly, onDemandMonthly: onDemandMonthly, reservedMonthly: reservedMonthly, hoursOn: hoursOn,
-      availableHours: availableHours, utilisation: utilisation, maxRuns: maxRuns, breakEven: breakEven};
-  })();
-
-  /* ---- reservations ---- */
-  const resKey = function (r) { return r.termYears + '-' + r.payment; };
-  const isVm = function (a) { return a.kind === 'VM'; };
-
-  function reservationKeys(alternatives) {
-    const found = {};
-    alternatives.forEach(function (a) { (a.reservations || []).forEach(function (r) { found[resKey(r)] = r; }); });
-    return Object.keys(found).map(function (k) { return found[k]; }).sort(function (a, b) {
-      return a.termYears - b.termYears || (PAY_ORDER[a.payment] || 0) - (PAY_ORDER[b.payment] || 0);
-    }).map(resKey);
-  }
-
-  function findReservation(alt, key) {
-    return (alt.reservations || []).find(function (r) { return resKey(r) === key; }) || null;
-  }
-
-  /* ---- projection of one alternative ---- */
-  /* p: {runs, days, pattern, hours, disc, buy}; res: the reservation of this alternative for p.buy, or null. */
-  function project(alt, T, p, res) {
-    const storage = calc.storageRun(alt);
-    const compute = calc.computeRun(alt);
-    const unit = calc.perRunCost(compute, storage, p.disc);
-    const row = {alt: alt, perRunCost: unit, res: res, util: null, fits: true, missing: false, mode: 'perRun',
-      monthly: calc.perRunMonthly(compute, storage, p.runs, p.days, p.disc)};
-    if (!isVm(alt)) { row.mode = p.pattern === 'perRun' ? 'perRun' : 'perUse'; return row; }
-    if (p.pattern === 'perRun') { return row; }
-    row.util = calc.utilisation(p.runs, T, calc.availableHours(p.pattern, p.hours));
-    row.fits = row.util <= 1;
-    if (res) {
-      row.mode = 'res';
-      row.monthly = calc.reservedMonthly(res.effectiveHourly, storage, T);
-    } else {
-      row.mode = p.pattern === 'always' ? 'od24' : 'odHours';
-      row.missing = p.buy !== 'od';
-      row.monthly = calc.onDemandMonthly(alt.hourlyPrice, p.disc, calc.hoursOn(p.pattern, p.hours, p.days), storage, T);
-    }
-    return row;
-  }
-
-  function compute(alternatives, T, p) {
-    const rows = alternatives.map(function (a) { return project(a, T, p, p.buy === 'od' ? null : findReservation(a, p.buy)); });
-    rows.sort(function (a, b) { return a.monthly - b.monthly; });
-    const fitting = rows.filter(function (r) { return r.fits; });
-    return {rows: rows, best: (fitting.length ? fitting : rows)[0] || null};
-  }
-
-  /* Always-on option (24x7) of a VM against the per-execution on-demand price. */
-  function breakEvenRow(alt, T, p) {
-    const storage = calc.storageRun(alt);
-    const res = p.buy === 'od' ? null : findReservation(alt, p.buy);
-    const row = {alt: alt, priced: p.buy === 'od' || !!res, max: calc.maxRuns(T, DAY_HOURS),
-      perRun: calc.perRunCost(calc.computeRun(alt), storage, p.disc)};
-    row.always = res ? calc.reservedMonthly(res.effectiveHourly, storage, T)
-      : calc.onDemandMonthly(alt.hourlyPrice, p.disc, HOURS_MONTH, storage, T);
-    row.runs = calc.breakEven(row.always, p.days, row.perRun);
-    row.verdict = row.runs > row.max ? 'never' : (p.runs >= row.runs ? 'yes' : 'not');
-    return row;
-  }
 
   /* ---- state of the form ---- */
   let data = null;
@@ -220,11 +122,6 @@ const Simulator = (function () {
     return t({yes: 'sim.be.yes', not: 'sim.be.not', never: 'sim.be.never'}[row.verdict]);
   };
 
-  function breakEvenRows(p) {
-    return data.alternatives.filter(isVm).map(function (a) { return breakEvenRow(a, data.durationSec, p); })
-      .sort(function (a, b) { return a.always - b.always; });
-  }
-
   function breakEvenTable(rows) {
     if (!rows.length) { Html.set(el('simBe'), ''); return; }
     const num = function (v, digits) { return isFinite(v) ? Fmt.num(v, digits) : '–'; };
@@ -239,31 +136,14 @@ const Simulator = (function () {
   }
 
   /* ---- chart: monthly cost vs runs per day ---- */
-  function runAxis(p, cap) {
-    const top = Math.max(2, Math.min(100, cap));
-    return Math.max(top, p.runs > top ? Math.min(1000, Math.ceil(p.runs * 1.2)) : top);
-  }
-
-  const range = function (n) { return Array.apply(null, new Array(n)).map(function (v, i) { return i + 1; }); };
-
-  /* Lines of one alternative: [{kind, name, data: [[runs, usd]]}]. Always-on lines stop where the VM is full. */
+  /* Lines of one projected alternative with their names: [{kind, name, data: [[runs, usd]]}]. */
   function curves(row, p, xs) {
-    const T = data.durationSec;
-    const storage = calc.storageRun(row.alt);
-    const flat = function (value, cap) {
-      return xs.filter(function (x) { return x <= cap; }).map(function (x) { return [x, value]; });
-    };
-    const lines = [{kind: 'perRun', name: t('sim.line.perRun'), data: xs.map(function (x) { return [x, x * p.days * row.perRunCost]; })}];
-    if (!isVm(row.alt)) { return lines; }
-    const hoursMode = p.pattern === 'hours';
-    const hoursOn = hoursMode ? p.hours * p.days : HOURS_MONTH;
-    const od = calc.onDemandMonthly(row.alt.hourlyPrice, p.disc, hoursOn, storage, T);
-    lines.push({kind: 'od', name: hoursMode ? t('sim.line.odHours', {h: Fmt.num(p.hours, 1)}) : t('sim.line.od24'),
-      data: flat(od, calc.maxRuns(T, hoursMode ? p.hours : DAY_HOURS))});
-    if (row.res) {
-      lines.push({kind: 'res', name: t('sim.line.res'), data: flat(calc.reservedMonthly(row.res.effectiveHourly, storage, T), calc.maxRuns(T, DAY_HOURS))});
-    }
-    return lines;
+    return Simulation.curves(row, p, xs, data.durationSec).map(function (line) {
+      const name = line.kind === 'perRun' ? t('sim.line.perRun')
+        : line.kind === 'res' ? t('sim.line.res')
+        : line.hours !== null ? t('sim.line.odHours', {h: Fmt.num(line.hours, 1)}) : t('sim.line.od24');
+      return {kind: line.kind, name: name, data: line.data};
+    });
   }
 
   function markLine(p, f) {
@@ -289,7 +169,7 @@ const Simulator = (function () {
     if (!current || !el('simChart')) { return; }
     const p = current.p;
     const shown = current.rows.slice(0, MAX_CURVES);
-    const xs = range(runAxis(p, calc.maxRuns(data.durationSec, DAY_HOURS)));
+    const xs = Simulation.range(Simulation.runAxis(p, calc.maxRuns(data.durationSec, Simulation.DAY_HOURS)));
     const f = Charts.fonts('simChart');
     const c = Theme.colors();
     Charts.setHeight('simChart', f.root * (f.narrow ? 24 : 22));
@@ -311,12 +191,12 @@ const Simulator = (function () {
     Html.set(el('simNotes'), notes(model, model.p, model.hasReservations));
     resultsTable(model, model.p);
     el('simBeIntro').textContent = t('sim.be.intro', {buy: buyLabel(model.p.buy)});
-    breakEvenTable(breakEvenRows(model.p));
+    breakEvenTable(Simulation.breakEvenRows(data.alternatives, data.durationSec, model.p));
   }
 
   function recompute() {
     const p = readForm();
-    current = compute(data.alternatives, data.durationSec, p);
+    current = Simulation.compute(data.alternatives, data.durationSec, p);
     current.p = p;
     current.hasReservations = reservationKeys(data.alternatives).length > 0;
     renderResults();
@@ -385,6 +265,5 @@ const Simulator = (function () {
     el('simForm').addEventListener('submit', function (e) { e.preventDefault(); });
   }
 
-  return {init: init, render: render, renderChart: renderChart, applyParams: applyParams, calc: calc, project: project, compute: compute,
-    breakEvenRow: breakEvenRow, reservationKeys: reservationKeys, state: function () { return current; }};
+  return {init: init, render: render, renderChart: renderChart, applyParams: applyParams, state: function () { return current; }};
 })();

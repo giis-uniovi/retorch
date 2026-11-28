@@ -14,47 +14,21 @@ const App = (function () {
     showOver: true, metric: 'usd', sort: 'cost', node: null
   };
 
-  /* ---- data helpers ---- */
-  const providers = Array.from(new Set(D.alternatives.map(function (a) { return a.provider; })));
-  const kinds = ['VM', 'CONTAINER', 'BROWSER_SERVICE'].filter(function (k) { return D.alternatives.some(function (a) { return a.kind === k; }); });
-  const regions = Array.from(new Set(D.alternatives.map(function (a) { return a.region; }))).sort();
-  const multiRegion = new Set(D.alternatives.filter(function (a) { return a.kind === 'VM'; })
-    .map(function (a) { return a.provider + a.region; })).size > providers.length;
-
-  const sum = function (items, pred) { return items.filter(pred).reduce(function (s, i) { return s + i.cost; }, 0); };
-  const idle = function (a) { return sum(a.items, function (i) { return i.phase === 'oversubscription'; }); };
-  const label = function (a) { return a.provider + ' · ' + a.label + (multiRegion ? ' [' + a.region + ']' : ''); };
-  const findAlt = function (id) { return D.alternatives.find(function (a) { return a.id === id; }); };
+  /* ---- data (model/profile.js) ---- */
+  const P = Profile.create(D);
+  const providers = P.providers();
+  const kinds = P.kinds();
+  const regions = P.regions();
+  const phases = P.meta.phases;
+  const sum = Profile.sum;
+  const idle = Profile.idle;
+  const label = P.label;
+  const findAlt = P.find;
   const phaseName = function (p) { return I18n.t('phase.' + p); };
 
-  function visible() {
-    return D.alternatives.filter(function (a) {
-      return !S.offProviders.has(a.provider) && (!S.kind || a.kind === S.kind) && (!S.region || a.region === S.region);
-    });
-  }
+  function visible() { return P.alternatives({offProviders: S.offProviders, kind: S.kind, region: S.region}); }
 
-  /* The alternatives preloaded in the comparison (and chosen by its "cheapest" helper): the cheapest overall, whatever the provider. */
-  const CHEAPEST_COUNT = 5;
-  function cheapest() {
-    return D.alternatives.slice().sort(function (a, b) { return a.total - b.total; }).slice(0, CHEAPEST_COUNT);
-  }
-
-  function sorted(alts) {
-    const by = {
-      cost: function (a, b) { return a.total - b.total; },
-      provider: function (a, b) { return a.provider.localeCompare(b.provider) || a.total - b.total; },
-      over: function (a, b) { return idle(b) - idle(a); }
-    };
-    return alts.slice().sort(by[S.sort]);
-  }
-
-  /* Rows of the alternatives chart in the chosen metric (USD or % of the cheapest shown). */
-  function alternativeRows(alts) {
-    const shown = function (a) { return S.showOver ? a.total : a.total - idle(a); };
-    const base = Math.min.apply(null, alts.map(shown).concat([Infinity]));
-    const scale = function (v) { return S.metric === 'pct' && base > 0 ? 100 * v / base : v; };
-    return alts.map(function (a) { return {label: label(a), used: scale(a.total - idle(a)), over: S.showOver ? scale(idle(a)) : 0}; });
-  }
+  const sorted = function (alts) { return P.sorted(alts, S.sort); };
 
   /* ---- accessibility helpers ---- */
   /* One polite live region for the messages that are not tied to a focus change. */
@@ -153,7 +127,7 @@ const App = (function () {
   }
 
   function renderAlternativesChart(alts) {
-    Charts.alternatives(alternativeRows(alts), {
+    Charts.alternatives(P.chartRows(alts, {showOver: S.showOver, metric: S.metric}), {
       showOver: S.showOver, pct: S.metric === 'pct',
       onClick: function (index) { select(alts[index].id); }
     });
@@ -189,11 +163,10 @@ const App = (function () {
     Html.set(el('cmpTabs'), tabs(S.cmpGroup, [['phase', 'cmp.byPhase'], ['tjob', 'cmp.byTjob']]));
     el('cmpCount').textContent = I18n.t('cmp.selected', {n: alts.length});
     const byPhase = S.cmpGroup === 'phase';
-    const keys = byPhase ? Fmt.PHASES : Array.from(new Set([].concat.apply([], alts.map(function (a) { return a.items.map(function (i) { return i.tjob; }); })))).sort();
-    const stacks = keys.map(function (k, n) {
+    const table = P.costTable(alts, S.cmpGroup);
+    const stacks = table.keys.map(function (k, n) {
       return {name: byPhase ? phaseName(k) : k, color: byPhase ? Fmt.PHASE_COLORS[k] : Fmt.cycleColor(n),
-        pattern: byPhase ? Fmt.PHASE_PATTERNS[k] : Charts.cyclePattern(n),
-        values: alts.map(function (a) { return sum(a.items, function (i) { return (byPhase ? i.phase : i.tjob) === k; }); })};
+        pattern: byPhase ? Fmt.PHASE_PATTERNS[k] : Charts.cyclePattern(n), values: table.values[k]};
     }).filter(function (s) { return s.values.some(function (v) { return v > 0; }); });
     const labels = alts.map(label);
     const root = Charts.fonts('cmpChart').root;
@@ -209,8 +182,8 @@ const App = (function () {
     });
   }
 
-  function renderPies(a, phases, objects) {
-    const pies = [['byPhase', 'detail.byPhase', pieEntries(a.items, phases, phaseName, Fmt.PHASE_COLORS, function (k) { return Fmt.PHASE_PATTERNS[k]; })],
+  function renderPies(a, costPhases, objects) {
+    const pies = [['byPhase', 'detail.byPhase', pieEntries(a.items, costPhases, phaseName, Fmt.PHASE_COLORS, function (k) { return Fmt.PHASE_PATTERNS[k]; })],
       ['byObject', 'detail.byObject', pieEntries(a.items, objects, function (o) { return I18n.t('obj.' + o); }, Fmt.OBJECT_COLORS,
         function (k, n) { return Charts.cyclePattern(n * 3); })]];
     pies.forEach(function (p) {
@@ -232,25 +205,23 @@ const App = (function () {
       [I18n.t('detail.price'), a.kind === 'VM' ? Fmt.usd(a.hourlyPrice) + ' ' + I18n.t('detail.perHour') : I18n.t('detail.perUse')]
     ].map(function (k) { return kpiCard(k[0], k[1]); }));
 
-    const phases = Fmt.PHASES.filter(function (p) { return sum(a.items, function (i) { return i.phase === p; }) > 0; });
-    const objects = Array.from(new Set(a.items.map(function (i) { return i.object; })));
-    renderPies(a, phases, objects);
-    renderBreakdown(a, phases, objects);
+    const costPhases = P.costBy(a, 'phase').filter(function (e) { return e.cost > 0; }).map(function (e) { return e.key; });
+    const objects = P.costBy(a, 'object').map(function (e) { return e.key; });
+    renderPies(a, costPhases, objects);
+    renderBreakdown(a, costPhases, objects);
     Html.set(el('tabs'), tabs(S.group, [['phase', 'detail.tabPhase'], ['object', 'detail.tabObject']]));
   }
 
   /* Stacked bars: X = TJob stacked by phase, or X = phase stacked by cloud object. */
-  function renderBreakdown(a, phases, objects) {
+  function renderBreakdown(a, costPhases, objects) {
     const byPhase = S.group === 'phase';
-    const categories = byPhase ? Array.from(new Set(a.items.map(function (i) { return i.tjob; }))).sort() : phases;
-    const stackKeys = byPhase ? phases : objects;
+    const categories = byPhase ? P.costBy(a, 'tjob').map(function (e) { return e.key; }) : costPhases;
+    const stackKeys = byPhase ? costPhases : objects;
+    const grid = byPhase ? P.matrix(a, 'tjob', 'phase', categories, stackKeys) : P.matrix(a, 'phase', 'object', categories, stackKeys);
     const stacks = stackKeys.map(function (s, n) {
       return {
         name: byPhase ? phaseName(s) : I18n.t('obj.' + s), color: byPhase ? Fmt.PHASE_COLORS[s] : Fmt.OBJECT_COLORS[s],
-        pattern: byPhase ? Fmt.PHASE_PATTERNS[s] : Charts.cyclePattern(n * 3),
-        values: categories.map(function (c) {
-          return sum(a.items, function (i) { return byPhase ? i.tjob === c && i.phase === s : i.phase === c && i.object === s; });
-        })
+        pattern: byPhase ? Fmt.PHASE_PATTERNS[s] : Charts.cyclePattern(n * 3), values: grid.values[n]
       };
     });
     const labels = byPhase ? categories : categories.map(phaseName);
@@ -259,9 +230,7 @@ const App = (function () {
     stackTable('byTjobData', title, I18n.t(byPhase ? 'data.tjob' : 'detail.byPhase'), labels, stacks);
   }
 
-  function nodeById(id) {
-    return D.graph ? D.graph.nodes.find(function (n) { return n.id === id; }) || null : null;
-  }
+  const nodeById = P.node;
 
   function renderGraph() {
     if (!D.graph) { return; }
@@ -269,13 +238,13 @@ const App = (function () {
     const alt = findAlt(S.selected);
     Graph.render(D.graph, S.node, selectNode);
     Graph.renderList(D.graph, S.node, function (id) { selectNode(id, true); });
-    Graph.renderPanel(nodeById(S.node), alt, alt ? label(alt) : '');
+    Graph.renderPanel(nodeById(S.node), alt, alt ? label(alt) : '', phases);
   }
 
   /* The usage chart and the execution graph share the time axis: the span is the longest of the two. */
   function renderTimeCharts() {
     const t = D.timeline.t;
-    Charts.setTimeSpan(Math.max(t.length ? t[t.length - 1] : 0, D.graph ? Graph.span(D.graph) : 0));
+    Charts.setTimeSpan(Math.max(t.length ? t[t.length - 1] : 0, P.span()));
     Charts.usage(D.timeline);
   }
 
@@ -333,7 +302,7 @@ const App = (function () {
     const ids = {
       all: D.alternatives.map(function (a) { return a.id; }),
       none: [],
-      cheapest: cheapest().map(function (a) { return a.id; })
+      cheapest: P.cheapest().map(function (a) { return a.id; })
     }[helper] || [];
     S.compared = new Set(ids);
     keepFocus(function () {
@@ -432,7 +401,7 @@ const App = (function () {
   function init() {
     I18n.init();
     Theme.init(function () { renderAll(); });
-    S.compared = new Set(cheapest().map(function (a) { return a.id; }));
+    S.compared = new Set(P.cheapest().map(function (a) { return a.id; }));
     Simulator.init(D, {label: label, announce: announce});
     applyHash();
     bindControls();

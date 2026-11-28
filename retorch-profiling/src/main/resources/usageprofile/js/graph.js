@@ -6,42 +6,15 @@
    the keyboard-accessible list of TJobs and the side panel with the details of the selected TJob. The dependencies are
    not drawn (the arrows cluttered the chart); the panel lists the predecessors of the selected TJob. */
 const Graph = (function () {
-  const MIN_NO_DATA = 0.03; // placeholder width as a fraction of the longest end time
   const SEGMENTS = [['graph.setup', 'tjob-setup'], ['graph.exec', 'tjob-testexec'], ['graph.teardown', 'tjob-teardown']];
 
-  const isNum = function (v) { return typeof v === 'number'; };
-
-  function byStageThenStart(nodes) {
-    return nodes.slice().sort(function (a, b) {
-      return a.stage - b.stage || (isNum(a.startSec) ? a.startSec : 1e12) - (isNum(b.startSec) ? b.startSec : 1e12) ||
-        (a.id < b.id ? -1 : 1);
-    });
-  }
-
-  function measured(n) {
-    return isNum(n.startSec) && (isNum(n.setupSec) || isNum(n.execSec) || isNum(n.teardownSec));
-  }
-
-  /* Adds start / segment ends / end / noData to each node, in stage order so predecessors are resolved first. */
-  function layout(nodes) {
-    const rows = byStageThenStart(nodes);
-    const byId = {};
-    rows.forEach(function (n, i) {
-      const ok = measured(n);
-      const r = {node: n, row: i, noData: !ok, start: ok ? n.startSec : 0, setup: n.setupSec || 0, exec: n.execSec || 0, tear: n.teardownSec || 0};
-      r.end = r.start + r.setup + r.exec + r.tear;
-      byId[n.id] = r;
-    });
-    const longest = Math.max.apply(null, rows.map(function (n) { return byId[n.id].end; }).concat([1]));
-    rows.forEach(function (n) {
-      const r = byId[n.id];
-      if (!r.noData) { return; }
-      const ends = n.predecessors.map(function (p) { return byId[p] ? byId[p].end : 0; });
-      r.start = Math.max.apply(null, ends.concat([0]));
-      r.end = r.start + longest * MIN_NO_DATA;
-    });
-    return {rows: rows.map(function (n) { return byId[n.id]; }), byId: byId, longest: longest};
-  }
+  /* The layout, durations and storage figures come from the model (model/profile.js). */
+  const isNum = Profile.isNum;
+  const byStageThenStart = Profile.byStageThenStart;
+  const measured = Profile.measured;
+  const layout = Profile.ganttLayout;
+  const tjobStorage = Profile.tjobStorage;
+  const total = Profile.total;
 
   function value(r) {
     return [r.row, r.start, r.start + r.setup, r.start + r.setup + r.exec, r.end, r.node.id, r.noData];
@@ -157,9 +130,7 @@ const Graph = (function () {
   let listKey = '';
 
   function itemText(n) {
-    const parts = [n.setupSec, n.execSec, n.teardownSec].filter(isNum);
-    const total = parts.length ? parts.reduce(function (s, v) { return s + v; }, 0) : null;
-    return n.id + ' · ' + I18n.t('graph.stage', {n: n.stage}) + ' · ' + Fmt.orDash(total, Fmt.dur);
+    return n.id + ' · ' + I18n.t('graph.stage', {n: n.stage}) + ' · ' + Fmt.orDash(Profile.duration(n), Fmt.dur);
   }
 
   function renderList(graph, selectedId, onSelect) {
@@ -197,24 +168,23 @@ const Graph = (function () {
     return Html.t`<dt>${I18n.t(labelKey)}</dt><dd>${value}</dd>`;
   }
 
-  function costRows(items, caption) {
-    const total = items.reduce(function (s, i) { return s + i.cost; }, 0);
-    if (!total) { return Html.t`<p class="muted">${I18n.t('graph.noCost')}</p>`; }
-    const rows = Fmt.PHASES.map(function (phase) {
-      const sum = items.filter(function (i) { return i.phase === phase; }).reduce(function (s, i) { return s + i.cost; }, 0);
+  function costRows(items, caption, phases) {
+    const all = Profile.sum(items);
+    if (!all) { return Html.t`<p class="muted">${I18n.t('graph.noCost')}</p>`; }
+    const rows = phases.map(function (phase) {
+      const sum = Profile.sum(items, function (i) { return i.phase === phase; });
       return sum > 0 ? Html.t`<tr><th scope="row"><span class="dot" aria-hidden="true" style="background:${Fmt.PHASE_COLORS[phase]}"></span>${
         I18n.t('phase.' + phase)}</th><td>${Fmt.usd(sum)}</td></tr>` : '';
     });
     return Html.t`<table class="mini"><caption class="vh">${caption}</caption><tbody>${rows}<tr class="total"><th scope="row">${
-      I18n.t('graph.total')}</th><td>${Fmt.usd(total)}</td></tr></tbody></table>`;
+      I18n.t('graph.total')}</th><td>${Fmt.usd(all)}</td></tr></tbody></table>`;
   }
 
   function measures(n) {
-    const parts = [n.setupSec, n.execSec, n.teardownSec].filter(isNum);
-    const total = parts.length ? parts.reduce(function (s, v) { return s + v; }, 0) : null;
+    const duration = Profile.duration(n);
     return Html.t`<dl class="measures">${[row('graph.start', Fmt.orDash(n.startSec, Fmt.dur)), row('graph.setup', Fmt.orDash(n.setupSec, Fmt.dur)),
       row('graph.exec', Fmt.orDash(n.execSec, Fmt.dur)), row('graph.teardown', Fmt.orDash(n.teardownSec, Fmt.dur)),
-      row('graph.duration', Fmt.orDash(total, Fmt.dur)),
+      row('graph.duration', Fmt.orDash(duration, Fmt.dur)),
       row('graph.peakCpu', Fmt.orDash(n.peakCpu, function (v) { return Fmt.num(v, 2) + ' vCPU'; })),
       row('graph.peakMem', Fmt.orDash(n.peakMemGb, function (v) { return Fmt.num(v, 2) + ' GB'; }))]}</dl>`;
   }
@@ -242,14 +212,6 @@ const Graph = (function () {
   let metricId = 'storage'; // kept while the user moves between TJobs
 
   const gb = function (v) { return Fmt.num(v, v > 0 && v < 0.1 ? 3 : 2); };
-  const total = function (list, key) { return list.reduce(function (s, c) { return s + c[key]; }, 0); };
-
-  /* Writable layers + volumes + images; an image shared by several containers counts once. */
-  function tjobStorage(list) {
-    const images = {};
-    list.forEach(function (c, i) { images[c.image ? c.image : '#' + i] = c.imageGb; });
-    return total(list, 'layerGb') + total(list, 'volumeGb') + Object.keys(images).reduce(function (s, k) { return s + images[k]; }, 0);
-  }
 
   function containerValue(col, c) {
     return col[2] === 'vCPU' ? Fmt.num(c[col[1]], 2) : gb(c[col[1]]);
@@ -325,7 +287,7 @@ const Graph = (function () {
   }
 
   /* node: graph node or null; alt: the selected alternative or null. */
-  function renderPanel(node, alt, label) {
+  function renderPanel(node, alt, label, phases) {
     const panel = document.getElementById('graphPanel');
     if (!node) {
       panel.innerHTML = '';
@@ -336,7 +298,7 @@ const Graph = (function () {
       I18n.t('graph.stage', {n: node.stage})}</div>${measured(node) ? '' : Html.t`<div class="warn small">${I18n.t('graph.noData')}</div>`}${
       node.predecessors.length ? Html.t`<h4>${I18n.t('graph.predecessors')}</h4><div>${chips(node.predecessors)}</div>` : ''}<h4>${I18n.t('graph.resources')}</h4><div>${
       chips(node.resources)}</div><h4 id="graphTestsTitle">${I18n.t('graph.tests') + ' (' + node.tests.length + ')'}</h4>${testList(node)}${containerChartSection(node)}<h4>${
-      I18n.t('graph.measures')}</h4>${measures(node)}${containerSection(node)}<h4>${I18n.t('graph.cost', {alt: label || ''})}</h4>${costRows(items, I18n.t('graph.cost', {alt: label || ''}))}`);
+      I18n.t('graph.measures')}</h4>${measures(node)}${containerSection(node)}<h4>${I18n.t('graph.cost', {alt: label || ''})}</h4>${costRows(items, I18n.t('graph.cost', {alt: label || ''}), phases)}`);
     I18n.apply();
     const box = document.getElementById('graphContChartBox');
     if (box) {
@@ -347,8 +309,5 @@ const Graph = (function () {
     }
   }
 
-  /* Seconds the execution graph spans (used to give the usage chart the same time axis). */
-  function span(graph) { return layout(graph.nodes).longest; }
-
-  return {span: span, render: render, renderPanel: renderPanel, renderContainersChart: renderContainersChart, renderList: renderList, focusItem: focusItem, focusPanel: focusPanel};
+  return {render: render, renderPanel: renderPanel, renderContainersChart: renderContainersChart, renderList: renderList, focusItem: focusItem, focusPanel: focusPanel};
 })();

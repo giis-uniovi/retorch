@@ -100,7 +100,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
 - `UsageProfileGenerator.generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfo.detect()`): one self-contained HTML
   (no external requests). It fills `resources/usageprofile/usageprofile.html` by replacing `/*CSS*/` with `usageprofile.css`, `/*ECHARTS*/`
   with Apache ECharts 5.6.0 (`echarts.min.js`, Apache License 2.0, its licence header is kept), `/*APP*/` with the
-  `js/*.js` files joined with a newline in the order `i18n, format, html, theme, charts, graph, simulator, app` (constant `APP_SCRIPTS`; one
+  `js/*.js` files joined with a newline in the order `i18n, format, html, theme, model/profile, model/simulation, charts, graph, simulator, app` (constant `APP_SCRIPTS`; one
   script, one global scope), `<!--HEADER_LOGO_SVG-->` with `giis-logo.svg`, `<!--FOOTER_SVG-->` with `giis-footer.svg`, `/*FAVICON*/` with the
   Base64 of `giis-logo.svg` (page icon as a data URI) and
   `/*DATA*/` with the JSON (replaced last so user data is never scanned for placeholders). `</script` is escaped as
@@ -126,7 +126,7 @@ request; the only URL is the footer link to the group site; the only `<link>` is
 
 Source layout: `usageprofile.html` (structure and placeholders), `usageprofile.css` (themes through CSS variables) and one
 namespace per concern in `js/`: `i18n.js` (`I18n`), `format.js` (`Fmt`: formats, colours, phase order), `html.js` (`Html`: tagged template `Html.t` that escapes every interpolated value (`& < > " '`), `Html.raw` for trusted fragments, `Html.join`, `Html.set`; no HTML is concatenated by hand, translations and data are escaped alike), `theme.js`
-(`Theme`), `charts.js` (`Charts`), `graph.js` (`Graph`), `app.js` (`App`, ends with `App.init()`). Plain ES2015, no build
+(`Theme`), `model/profile.js` (`Profile`: read-only queries over the JSON, no DOM and no translations: alternatives with filter, `sorted`, `cheapest`, `idle`, `label`, `costBy` / `matrix` / `costTable` by phase, TJob and cloud object, chart rows in USD or % of the cheapest, `ganttLayout`, `span`, `duration`, `tjobStorage`; the lists of phases, kinds and objects come from `data.meta`, with the previous hard-coded lists as fallback when the JSON has no `meta`), `model/simulation.js` (`Simulation`: the projection formulas, `compute`, `breakEvenRows`, `curves`, limits and defaults; pure), `charts.js` (`Charts`), `graph.js` (`Graph`), `simulator.js` (`Simulator`: the projection view), `app.js` (`App`, ends with `App.init()`). Plain ES2015, no build
 step. The files carry the GIIS notice; ECharts and the SVG logos are third party / assets.
 
 The page must provide:
@@ -175,7 +175,7 @@ The page must provide:
   which reserving is cheaper than paying per execution (`reserved monthly / (days x perRunCost)`, compared with the maximum
   runs per day the VM can run, `floor(86400 / T)`), and a chart of monthly cost against runs per day (the four cheapest
   alternatives, on-demand per run, on-demand always-on and reserved always-on). Inputs are validated (clamped, `aria-invalid`)
-  and the formulas are pure functions (`Simulator.calc`). Without reservations only on-demand is offered.
+  and the formulas are pure functions (`Simulation.calc`). Without reservations only on-demand is offered.
 - **Deep links** through `location.hash`: `#lang=es|en|fr|de&theme=auto|light|dark&node=<tjob id>&alt=<alternative id>&over=0|1&metric=usd|pct&sort=cost|provider|over&cmpgroup=phase|tjob&cmp=all|none|cheapest&runs=&days=&pattern=perRun|always|hours&hours=&disc=&buy=<termYears>-<payment>|od`.
 
 ## Tests
@@ -191,7 +191,7 @@ Not part of the default build (no Node needed for `mvn test`): they run with `mv
   fixtures `usage-containers.csv` + `executionplan.json` with a catalog of two providers, three regions, reservations, a container
   service and two browser services, a fixed SUT (`petclinic`, `main`) and plan `FixturePlan`: it is deterministic.
 - `*.test.mjs` (`node --test`): pure logic, loading the scripts of `js/` in a `vm` context with browser stubs
-  (`helpers/load.mjs`): formats and escaping (`format.test.mjs`), HTML escaping with `<"'&>` (`html.test.mjs`) and the simulator formulas (`simulator.test.mjs`).
+  (`helpers/load.mjs`): formats and escaping (`format.test.mjs`), HTML escaping with `<"'&>` (`html.test.mjs`) the model queries (`profile.test.mjs`: filters, costs by phase / object / TJob, chart rows, Gantt layout with placeholder, shared image counted once, `meta` fallback) and the simulator formulas (`simulation.test.mjs`).
 - `smoke.mjs`: opens the fixture page in headless Chrome / Edge through the DevTools protocol (no dependency but `axe-core`; it is
   skipped, exit 0, when there is no browser unless `SMOKE_REQUIRE=1`; `BROWSER` and `AXE_CORE` override the executables). Checks: no
   exception or `console.error`; every chart, table and the list of TJobs render; title and header; usage chart and execution graph
