@@ -5,11 +5,10 @@
 package giis.retorch.profiling.usageprofile.pricing;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,12 +20,12 @@ import java.util.Set;
 
 /**
  * Prices of Azure from the public Retail Prices API: VMs (with their reservations), Container Instances and the
- * Standard SSD E10 disk. Azure gives no vCPU/RAM, so the VM sizes considered are a fixed list.
+ * Standard SSD E10 disk. Azure gives no vCPU/RAM, so the VM sizes considered are a fixed list. Only the Azure specific
+ * parsing lives here; the plumbing is in {@link AbstractPriceProvider}.
  */
-public final class AzurePrices implements PriceProvider {
+public final class AzurePrices extends AbstractPriceProvider {
 
     static final String PROVIDER = "Azure";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String AZURE_URL = "https://prices.azure.com/api/retail/prices?$filter=";
     private static final double E10_DISK_GB = 128;
     private static final String RETAIL_PRICE = "retailPrice";
@@ -44,25 +43,12 @@ public final class AzurePrices implements PriceProvider {
             {"Standard_F2s_v2", 2, 4}, {"Standard_F4s_v2", 4, 8}, {"Standard_F8s_v2", 8, 16},
             {"Standard_F16s_v2", 16, 32}};
 
-    private final HttpGet http;
-
     public AzurePrices(HttpGet http) {
-        this.http = http;
+        super(http, "azure", PROVIDER, PROVIDER);
     }
 
     @Override
-    public String id() {
-        return "azure";
-    }
-
-    @Override
-    public String name() {
-        return PROVIDER;
-    }
-
-    @Override
-    public PriceCatalog fetch(String region) throws IOException {
-        PriceCatalog.Builder catalog = PriceCatalog.builder();
+    protected void collect(String region, PriceCatalog.Builder catalog) throws IOException {
         List<String> filters = new ArrayList<>();
         for (Object[] size : VM_SIZES) {
             filters.add("armSkuName eq '" + size[0] + "'");
@@ -77,25 +63,18 @@ public final class AzurePrices implements PriceProvider {
                 region, catalog);
         parseDisks(items("serviceName eq 'Storage' and " + base
                 + "productName eq 'Standard SSD Managed Disks' and skuName eq 'E10 LRS'"), region, catalog);
-        return catalog.build();
     }
 
     private JsonNode[] items(String filter) throws IOException {
-        List<JsonNode> items = new ArrayList<>();
-        String url = AZURE_URL + URLEncoder.encode(filter, "UTF-8").replace("+", "%20");
-        while (url != null && !url.isEmpty()) {
-            try (InputStream in = http.open(url)) {
-                JsonNode page = MAPPER.readTree(in);
-                for (JsonNode item : page.path("Items")) {
-                    items.add(item);
-                }
-                url = page.path("NextPageLink").asText(null);
-            }
+        try {
+            String url = AZURE_URL + URLEncoder.encode(filter, "UTF-8").replace("+", "%20");
+            return pages(url, "Items", "NextPageLink").toArray(new JsonNode[0]);
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
         }
-        return items.toArray(new JsonNode[0]);
     }
 
-    static void parseVms(JsonNode[] items, String region, PriceCatalog.Builder out) {
+    void parseVms(JsonNode[] items, String region, PriceCatalog.Builder out) {
         Map<String, double[]> sizes = new HashMap<>();
         for (Object[] s : VM_SIZES) {
             sizes.put((String) s[0], new double[]{(Integer) s[1], (Integer) s[2]});
@@ -115,7 +94,7 @@ public final class AzurePrices implements PriceProvider {
         }
         for (Map.Entry<String, Double> e : bestPrice.entrySet()) {
             double[] size = sizes.get(e.getKey());
-            out.addVm(new PriceCatalog.VmOffer(PROVIDER, region, e.getKey(), size[0], size[1], e.getValue()));
+            out.addVm(vm(region, e.getKey(), size[0], size[1], e.getValue()));
         }
     }
 
@@ -125,49 +104,45 @@ public final class AzurePrices implements PriceProvider {
      * price of each term wins.
      */
     static void parseReservations(JsonNode[] items, String region, PriceCatalog.Builder out) {
-        Map<String, Double> bestFee = new HashMap<>();
         List<PriceCatalog.VmOffer> current = out.vms();
         Set<String> known = new HashSet<>();
         for (PriceCatalog.VmOffer vm : current) {
-            if (PROVIDER.equals(vm.provider) && region.equals(vm.region)) {
+            if (isOf(vm, region)) {
                 known.add(vm.name);
             }
         }
+        Map<String, List<ReservationOptionDTO>> best = new HashMap<>();
         for (JsonNode item : items) {
             int years = termYears(item.path("reservationTerm").asText());
             String name = item.path("armSkuName").asText();
             if (years > 0 && known.contains(name) && !item.path("productName").asText().contains("Windows")) {
-                bestFee.merge(name + "|" + years, item.path(RETAIL_PRICE).asDouble(), Math::min);
+                List<ReservationOptionDTO> options = best.get(name);
+                if (options == null) {
+                    options = new ArrayList<>();
+                    best.put(name, options);
+                }
+                addCheapest(options, ReservationOptionDTO.allUpfront(years, item.path(RETAIL_PRICE).asDouble()));
             }
         }
         List<PriceCatalog.VmOffer> updated = new ArrayList<>();
         for (PriceCatalog.VmOffer vm : current) {
-            updated.add(known.contains(vm.name) && PROVIDER.equals(vm.provider) && region.equals(vm.region)
-                    ? vm.withReservations(reservationsOf(vm, bestFee)) : vm);
+            if (isOf(vm, region) && best.containsKey(vm.name)) {
+                List<ReservationOptionDTO> all = new ArrayList<>(vm.reservations);
+                all.addAll(best.get(vm.name));
+                sortByTerm(all);
+                updated.add(vm.withReservations(all));
+            } else {
+                updated.add(vm);
+            }
         }
         out.replaceVms(updated);
     }
 
-    private static List<ReservationOptionDTO> reservationsOf(PriceCatalog.VmOffer vm, Map<String, Double> bestFee) {
-        List<ReservationOptionDTO> result = new ArrayList<>(vm.reservations);
-        for (Map.Entry<String, Double> e : bestFee.entrySet()) {
-            String[] key = e.getKey().split("\\|");
-            if (key[0].equals(vm.name)) {
-                result.add(ReservationOptionDTO.allUpfront(Integer.parseInt(key[1]), e.getValue()));
-            }
-        }
-        result.sort((a, b) -> Integer.compare(a.termYears, b.termYears));
-        return result;
+    private static boolean isOf(PriceCatalog.VmOffer vm, String region) {
+        return PROVIDER.equals(vm.provider) && region.equals(vm.region);
     }
 
-    private static int termYears(String reservationTerm) {
-        if ("1 Year".equals(reservationTerm)) {
-            return 1;
-        }
-        return "3 Years".equals(reservationTerm) ? 3 : 0;
-    }
-
-    static void parseContainers(JsonNode[] items, String region, PriceCatalog.Builder out) {
+    void parseContainers(JsonNode[] items, String region, PriceCatalog.Builder out) {
         double cpu = Double.NaN;
         double mem = Double.NaN;
         for (JsonNode item : items) {
@@ -179,14 +154,14 @@ public final class AzurePrices implements PriceProvider {
             }
         }
         if (!Double.isNaN(cpu) && !Double.isNaN(mem)) {
-            out.addContainer(new PriceCatalog.ContainerRate(PROVIDER, region, "Container Instances", cpu, mem));
+            out.addContainer(container(region, "Container Instances", cpu, mem));
         }
     }
 
-    static void parseDisks(JsonNode[] items, String region, PriceCatalog.Builder out) {
+    void parseDisks(JsonNode[] items, String region, PriceCatalog.Builder out) {
         for (JsonNode item : items) {
             if (item.path(METER_NAME).asText().endsWith(" Disk") && item.path(UNIT_OF_MEASURE).asText().contains("Month")) {
-                out.addStorage(new PriceCatalog.StorageRate(PROVIDER, region, "Standard SSD (E10)",
+                out.addStorage(storage(region, "Standard SSD (E10)",
                         item.path(RETAIL_PRICE).asDouble() / E10_DISK_GB));
                 return;
             }
