@@ -19,11 +19,12 @@ const Theme = (function () {
     document.documentElement.setAttribute('data-theme', effective());
   }
 
-  function set(newMode, remember) {
+  /* remember: store the choice; silent: do not call the change callback (the caller renders). */
+  function set(newMode, remember, silent) {
     mode = MODES.indexOf(newMode) >= 0 ? newMode : 'auto';
     if (remember) { try { window.localStorage.setItem(STORE_KEY, mode); } catch (e) { /* storage unavailable */ } }
     applyToPage();
-    onChange();
+    if (!silent) { onChange(); }
   }
 
   /* Reads the colours currently in effect, for ECharts options. */

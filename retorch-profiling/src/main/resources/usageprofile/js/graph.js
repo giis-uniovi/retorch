@@ -209,7 +209,6 @@ const Graph = (function () {
       series: [['graph.layer', 'layerGb', 0], ['graph.imageSize', 'imageGb', 3], ['graph.volumes', 'volumeGb', 2]]},
     {id: 'mem', label: 'graph.sMem', stacked: false, unit: 'GB', series: [['graph.cMemPeak', 'peakMemGb', 1], ['graph.cMemAvg', 'avgMemGb', 4]]},
     {id: 'cpu', label: 'graph.sCpu', stacked: false, unit: 'vCPU', series: [['graph.cCpuPeak', 'peakCpu', 0], ['graph.cCpuAvg', 'avgCpu', 5]]}];
-  let metricId = 'storage'; // kept while the user moves between TJobs
 
   const gb = function (v) { return Fmt.num(v, v > 0 && v < 0.1 ? 3 : 2); };
 
@@ -253,7 +252,7 @@ const Graph = (function () {
   }
 
   /* Always visible, right after the tests executed and before the measurements. */
-  function containerChartSection(n) {
+  function containerChartSection(n, metricId) {
     if (!(n.containers || []).length) { return ''; }
     const picks = METRICS.map(function (m) {
       return Html.t`<label><input type="radio" name="contMetric" value="${m.id}"${m.id === metricId ? Html.raw(' checked') : ''}><span>${I18n.t(m.label)}</span></label>`;
@@ -263,7 +262,7 @@ const Graph = (function () {
 
   /* One bar group per container for the chosen resource: storage stacked (layer + image + volumes), memory and CPU as peak / average.
      The list above holds the same figures. */
-  function renderContainersChart(node) {
+  function renderContainersChart(node, metricId) {
     const box = document.getElementById('graphContChartBox');
     if (!node || !box) { return; } // nodes without containers have no chart
     const list = node.containers;
@@ -287,7 +286,8 @@ const Graph = (function () {
   }
 
   /* node: graph node or null; alt: the selected alternative or null. */
-  function renderPanel(node, alt, label, phases) {
+  /* metricId: the resource of the chart per container; onMetric(id) is called when the user picks another. */
+  function renderPanel(node, alt, label, phases, metricId, onMetric) {
     const panel = document.getElementById('graphPanel');
     if (!node) {
       panel.innerHTML = '';
@@ -297,14 +297,14 @@ const Graph = (function () {
     Html.set(panel, Html.t`<div class="panel-head"><h3 id="graphPanelTitle" tabindex="-1">${node.id}</h3><button type="button" id="graphClose" class="icon" data-i18n-title="graph.close">×</button></div><div class="muted">${
       I18n.t('graph.stage', {n: node.stage})}</div>${measured(node) ? '' : Html.t`<div class="warn small">${I18n.t('graph.noData')}</div>`}${
       node.predecessors.length ? Html.t`<h4>${I18n.t('graph.predecessors')}</h4><div>${chips(node.predecessors)}</div>` : ''}<h4>${I18n.t('graph.resources')}</h4><div>${
-      chips(node.resources)}</div><h4 id="graphTestsTitle">${I18n.t('graph.tests') + ' (' + node.tests.length + ')'}</h4>${testList(node)}${containerChartSection(node)}<h4>${
+      chips(node.resources)}</div><h4 id="graphTestsTitle">${I18n.t('graph.tests') + ' (' + node.tests.length + ')'}</h4>${testList(node)}${containerChartSection(node, metricId)}<h4>${
       I18n.t('graph.measures')}</h4>${measures(node)}${containerSection(node)}<h4>${I18n.t('graph.cost', {alt: label || ''})}</h4>${costRows(items, I18n.t('graph.cost', {alt: label || ''}), phases)}`);
     I18n.apply();
     const box = document.getElementById('graphContChartBox');
     if (box) {
-      renderContainersChart(node);
+      renderContainersChart(node, metricId);
       box.addEventListener('change', function (e) {
-        if (e.target.name === 'contMetric') { metricId = e.target.value; renderContainersChart(node); }
+        if (e.target.name === 'contMetric') { onMetric(e.target.value); }
       });
     }
   }

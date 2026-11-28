@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-/* Projection simulator view: the form, the results, the break-even table and the chart. The formulas are in model/simulation.js. Deep links: #runs=&days=&pattern=perRun|always|hours&hours=&disc=&buy=<termYears>-<payment>|od */
+/* Projection simulator view: the form, the results, the break-even table and the chart. The formulas are in model/simulation.js. */
 const Simulator = (function () {
   const DEFAULTS = Simulation.DEFAULTS;
   const LIMITS = Simulation.LIMITS;
@@ -20,7 +20,6 @@ const Simulator = (function () {
   /* ---- state of the form ---- */
   let data = null;
   let helpers = null;
-  let wantedBuy = DEFAULTS.buy;
   let current = null;
   let timer = null;
   let announceTimer = null;
@@ -48,9 +47,8 @@ const Simulator = (function () {
     const checked = document.querySelector('input[name="simPattern"]:checked');
     const pattern = checked ? checked.value : DEFAULTS.pattern;
     el('simHoursField').hidden = pattern !== 'hours';
-    wantedBuy = el('simBuy').value || 'od';
     return {runs: readNumber('runs'), days: readNumber('days'), hours: readNumber('hours'), disc: readNumber('disc'),
-      pattern: pattern, buy: wantedBuy};
+      pattern: pattern, buy: el('simBuy').value || 'od'};
   }
 
   /* ---- text helpers ---- */
@@ -208,36 +206,30 @@ const Simulator = (function () {
     const keys = ['od'].concat(reservationKeys(data.alternatives));
     const select = el('simBuy');
     Html.set(select, keys.map(function (k) {
-      return Html.t`<option value="${k}"${k === wantedBuy ? Html.raw(' selected') : ''}>${buyLabel(k)}</option>`;
+      return Html.t`<option value="${k}"${k === helpers.get().buy ? Html.raw(' selected') : ''}>${buyLabel(k)}</option>`;
     }));
-    if (keys.indexOf(wantedBuy) < 0) { wantedBuy = 'od'; select.value = 'od'; }
+    if (keys.indexOf(helpers.get().buy) < 0) { select.value = 'od'; }
+  }
+
+  /* Puts the state into the form. An input the user left out of range keeps its text (and its error) while the state holds the clamped
+     value; any other difference (a link, another language) is written to the form. */
+  function syncForm() {
+    const sim = helpers.get();
+    Object.keys(FIELDS).forEach(function (key) {
+      const input = el(FIELDS[key]);
+      if (Simulation.clamp(key, input.value) !== sim[key]) { input.value = String(sim[key]); }
+    });
+    const radio = document.querySelector('input[name="simPattern"][value="' + sim.pattern + '"]');
+    if (radio) { radio.checked = true; }
   }
 
   function render() {
+    syncForm();
     renderOptions();
     recompute();
   }
 
-  /* ---- deep links and live updates ---- */
-  function writeHash(p) {
-    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    [['runs', p.runs], ['days', p.days], ['pattern', p.pattern], ['hours', p.hours], ['disc', p.disc], ['buy', p.buy]].forEach(function (kv) {
-      params.set(kv[0], String(kv[1]));
-    });
-    try { window.history.replaceState(null, '', '#' + params.toString()); } catch (e) { /* not allowed here: the link is just not updated */ }
-  }
-
-  /* Applies the simulator parameters of a hash (URLSearchParams); unknown or out of range values are ignored. */
-  function applyParams(params) {
-    Object.keys(FIELDS).forEach(function (key) {
-      const v = parseFloat(params.get(key));
-      if (isFinite(v) && v >= LIMITS[key][0] && v <= LIMITS[key][1]) { el(FIELDS[key]).value = String(v); }
-    });
-    const pattern = params.get('pattern');
-    if (PATTERNS.indexOf(pattern) >= 0) { document.querySelector('input[name="simPattern"][value="' + pattern + '"]').checked = true; }
-    if (params.get('buy')) { wantedBuy = params.get('buy'); }
-  }
-
+  /* ---- live updates ---- */
   function announceLater() {
     window.clearTimeout(announceTimer);
     announceTimer = window.setTimeout(function () {
@@ -250,20 +242,19 @@ const Simulator = (function () {
     window.clearTimeout(timer);
     timer = window.setTimeout(function () {
       recompute();
-      writeHash(current.p);
+      helpers.set(current.p);
       announceLater();
     }, 120);
   }
 
-  /* data: the page JSON; api: {label(alt), announce(text)}. */
+  /* data: the page JSON; api: {label(alt), announce(text), get() -> the simulator state, set(sim) -> stores it}. */
   function init(pageData, api) {
     data = pageData;
     helpers = api;
-    Object.keys(FIELDS).forEach(function (key) { el(FIELDS[key]).value = String(DEFAULTS[key]); });
     el('simForm').addEventListener('input', onInput);
     el('simForm').addEventListener('change', onInput);
     el('simForm').addEventListener('submit', function (e) { e.preventDefault(); });
   }
 
-  return {init: init, render: render, renderChart: renderChart, applyParams: applyParams, state: function () { return current; }};
+  return {init: init, render: render, renderChart: renderChart, state: function () { return current; }};
 })();

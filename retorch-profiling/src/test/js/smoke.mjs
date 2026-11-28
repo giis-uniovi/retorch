@@ -221,7 +221,7 @@ async function main() {
 
     // deep link: the state of a link is restored and written back
     const alt = await b.ev("document.querySelectorAll('#table [data-select]')[2].getAttribute('data-select')");
-    const link = '#lang=fr&theme=dark&node=tjobb&alt=' + encodeURIComponent(alt) + '&over=0&metric=pct&sort=provider&cmpgroup=tjob&runs=7&days=20&pattern=hours&hours=8&disc=10&buy=od';
+    const link = '#lang=fr&theme=dark&node=tjobb&alt=' + encodeURIComponent(alt) + '&over=0&metric=pct&sort=provider&cmpgroup=tjob&runs=7&days=20&pattern=hours&hours=8&disc=10';
     await b.open(base + link);
     const restored = JSON.parse(await b.ev(`JSON.stringify({lang: document.documentElement.lang, theme: document.documentElement.getAttribute('data-theme'),
       node: (document.querySelector('#tjobList [aria-current]') || {getAttribute: function () { return null; }}).getAttribute('data-node'),
@@ -237,6 +237,46 @@ async function main() {
     const wanted = new URLSearchParams(link.slice(1));
     const same = [...wanted.keys()].every((k) => written.get(k) === wanted.get(k));
     check(same, 'the hash written by the page contains the state of the link: ' + written.toString());
+    // every state key is written to the hash and read back: change everything by hand, reload the hash, compare the page
+    const ui = async (selector, action) => { await b.ev(`(function () { var e = document.querySelector(${JSON.stringify(selector)}); ${action} })()`); await sleep(250); };
+    await b.open(base + '#lang=en&theme=light');
+    await ui('#table [data-select]:not([aria-current])', 'e.click();');
+    await ui('#sort', "e.value = 'over'; e.dispatchEvent(new Event('change', {bubbles: true}));");
+    await ui('#metric', "e.value = 'pct'; e.dispatchEvent(new Event('change', {bubbles: true}));");
+    await ui('#showOver', "e.click();");
+    await ui('#cmpHelpers [data-helper=all]', 'e.click();');
+    await ui('#table [data-cmp]', 'e.click();');
+    await ui('#cmpTabs [data-v=tjob]', 'e.click();');
+    await ui('#tabs [data-v=object]', 'e.click();');
+    await ui('#tjobList li:nth-child(2) button', 'e.click();');
+    await ui('input[name=contMetric][value=cpu]', "e.checked = true; e.dispatchEvent(new Event('change', {bubbles: true}));");
+    await ui('#providerBoxes label:last-child input', 'e.click();');
+    await ui('#kind option:nth-child(2)', "e.parentNode.value = e.value; e.parentNode.dispatchEvent(new Event('change', {bubbles: true}));");
+    await ui('#region option:last-child', "e.parentNode.value = e.value; e.parentNode.dispatchEvent(new Event('change', {bubbles: true}));");
+    await ui('#simRuns', "e.value = '9'; e.dispatchEvent(new Event('input', {bubbles: true}));");
+    await ui('#simPatHours', "e.click();");
+    await ui('#simHours', "e.value = '6'; e.dispatchEvent(new Event('input', {bubbles: true}));");
+    await ui('#simBuy', "e.selectedIndex = e.options.length - 1; e.dispatchEvent(new Event('change', {bubbles: true}));");
+    await sleep(300);
+    const snapshot = `JSON.stringify({lang: document.documentElement.lang, theme: document.documentElement.getAttribute('data-theme'),
+      node: [].map.call(document.querySelectorAll('#tjobList [aria-current]'), function (e) { return e.getAttribute('data-node'); }),
+      alt: [].map.call(document.querySelectorAll('#table [data-select][aria-current]'), function (e) { return e.getAttribute('data-select'); }),
+      over: document.getElementById('showOver').checked, metric: document.getElementById('metric').value, sort: document.getElementById('sort').value,
+      kind: document.getElementById('kind').value, region: document.getElementById('region').value,
+      providers: [].map.call(document.querySelectorAll('#providerBoxes input'), function (e) { return e.checked; }),
+      compared: [].map.call(document.querySelectorAll('#table [data-cmp]:checked'), function (e) { return e.getAttribute('data-cmp'); }),
+      cmpgroup: document.querySelector('#cmpTabs button.on').getAttribute('data-v'), group: document.querySelector('#tabs button.on').getAttribute('data-v'),
+      cont: (document.querySelector('input[name=contMetric]:checked') || {}).value, rows: document.querySelectorAll('#table tbody tr').length,
+      runs: document.getElementById('simRuns').value, days: document.getElementById('simDays').value, pattern: document.querySelector('input[name=simPattern]:checked').value,
+      hours: document.getElementById('simHours').value, disc: document.getElementById('simDisc').value, buy: document.getElementById('simBuy').value})`;
+    const hashAfter = await b.ev('location.hash');
+    const stateAfter = await b.ev(snapshot);
+    check(/sort=over/.test(hashAfter) && /metric=pct/.test(hashAfter) && /group=object/.test(hashAfter) && /cont=cpu/.test(hashAfter) && /runs=9/.test(hashAfter) &&
+      /pattern=hours/.test(hashAfter) && /over=0/.test(hashAfter) && /noprov=/.test(hashAfter) && /kind=/.test(hashAfter) && /region=/.test(hashAfter) &&
+      /cmpgroup=tjob/.test(hashAfter) && /node=/.test(hashAfter) && /alt=/.test(hashAfter) && /buy=/.test(hashAfter), 'every change is written to the hash: ' + hashAfter);
+    await b.open(base + hashAfter);
+    check((await b.ev(snapshot)) === stateAfter, 'reopening the written link restores the same page: ' + stateAfter);
+    check((await b.ev('location.hash')) === hashAfter, 'the link is stable after reopening');
     check(b.problems.length === 0, 'no JavaScript errors after the interactions ' + JSON.stringify(b.problems));
 
     // accessibility

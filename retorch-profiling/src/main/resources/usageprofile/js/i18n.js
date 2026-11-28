@@ -421,5 +421,5 @@ const I18n = (function () {
 
   function init() { set(stored() || detect(), false); }
 
-  return {LANGS: LANGS, NATIVE: NATIVE, t: t, lang: function () { return current; }, set: set, init: init, apply: apply};
+  return {LANGS: LANGS, NATIVE: NATIVE, t: t, lang: function () { return current; }, set: set, init: init, apply: apply, detect: detect};
 })();

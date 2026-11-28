@@ -121,11 +121,11 @@ const Profile = (function () {
     const label = function (a) { return a.provider + ' · ' + a.label + (multiRegion ? ' [' + a.region + ']' : ''); };
     const unique = function (list) { return Array.from(new Set(list)); };
 
-    /* Alternatives that pass the filter {offProviders: Set of hidden providers, kind, region} (empty kind / region = any). */
+    /* Alternatives that pass the filter {offProviders: hidden providers (array or Set), kind, region} (empty kind / region = any). */
     function filtered(filter) {
       const f = filter || {};
       return alts.filter(function (a) {
-        return !(f.offProviders && f.offProviders.has(a.provider)) && (!f.kind || a.kind === f.kind) && (!f.region || a.region === f.region);
+        return !(f.offProviders && Array.from(f.offProviders).indexOf(a.provider) >= 0) && (!f.kind || a.kind === f.kind) && (!f.region || a.region === f.region);
       });
     }
 

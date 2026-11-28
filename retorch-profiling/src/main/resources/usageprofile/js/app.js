@@ -7,12 +7,23 @@ const App = (function () {
   const D = JSON.parse(document.getElementById('data').textContent);
   const el = function (id) { return document.getElementById(id); };
 
-  const S = {
-    selected: D.alternatives.length ? D.alternatives[0].id : null,
-    compared: new Set(), group: 'phase', cmpGroup: 'phase',
-    offProviders: new Set(), kind: '', region: '',
-    showOver: true, metric: 'usd', sort: 'cost', node: null
-  };
+  /* ---- state (model/state.js) and deep links (model/hash.js) ---- */
+  let store = null; // created by init(), once the language is known
+  let ctx = null;
+  const st = function () { return store.get(); };
+  const isCompared = function (id) { return st().compared.indexOf(id) >= 0; };
+
+  /* Applies a change of the state and writes it to the URL, so that a copied link reproduces the page. Returns the changed keys. */
+  function set(patch) {
+    const changed = store.update(patch);
+    if (changed.length) { writeHash(); }
+    return changed;
+  }
+
+  function writeHash() {
+    const text = Hash.serialize(st(), ctx);
+    try { window.history.replaceState(null, '', text ? '#' + text : window.location.pathname + window.location.search); } catch (e) { /* not allowed here: the link is just not updated */ }
+  }
 
   /* ---- data (model/profile.js) ---- */
   const P = Profile.create(D);
@@ -26,9 +37,9 @@ const App = (function () {
   const findAlt = P.find;
   const phaseName = function (p) { return I18n.t('phase.' + p); };
 
-  function visible() { return P.alternatives({offProviders: S.offProviders, kind: S.kind, region: S.region}); }
+  function visible() { return P.alternatives(st().filters); }
 
-  const sorted = function (alts) { return P.sorted(alts, S.sort); };
+  const sorted = function (alts) { return P.sorted(alts, st().sort); };
 
   /* ---- accessibility helpers ---- */
   /* One polite live region for the messages that are not tied to a focus change. */
@@ -73,13 +84,13 @@ const App = (function () {
     syncSegment('langGroup', I18n.lang());
     syncSegment('themeGroup', Theme.mode());
     Html.set(el('providerBoxes'), Html.join(providers.map(function (p) {
-      return Html.t`<label class="chk"><input type="checkbox" value="${p}"${S.offProviders.has(p) ? '' : CHECKED}> ${p}</label>`;
+      return Html.t`<label class="chk"><input type="checkbox" value="${p}"${st().filters.offProviders.indexOf(p) >= 0 ? '' : CHECKED}> ${p}</label>`;
     }), ' '));
-    Html.set(el('kind'), [option('', I18n.t('filter.all'), S.kind)].concat(kinds.map(function (k) { return option(k, I18n.t('kind.' + k), S.kind); })));
-    Html.set(el('region'), [option('', I18n.t('filter.all'), S.region)].concat(regions.map(function (r) { return option(r, r, S.region); })));
-    el('showOver').checked = S.showOver;
-    Html.set(el('metric'), ['usd', 'pct'].map(function (m) { return option(m, I18n.t('metric.' + m), S.metric); }));
-    Html.set(el('sort'), ['cost', 'provider', 'over'].map(function (k) { return option(k, I18n.t('sort.' + k), S.sort); }));
+    Html.set(el('kind'), [option('', I18n.t('filter.all'), st().filters.kind)].concat(kinds.map(function (k) { return option(k, I18n.t('kind.' + k), st().filters.kind); })));
+    Html.set(el('region'), [option('', I18n.t('filter.all'), st().filters.region)].concat(regions.map(function (r) { return option(r, r, st().filters.region); })));
+    el('showOver').checked = st().showOver;
+    Html.set(el('metric'), ['usd', 'pct'].map(function (m) { return option(m, I18n.t('metric.' + m), st().metric); }));
+    Html.set(el('sort'), ['cost', 'provider', 'over'].map(function (k) { return option(k, I18n.t('sort.' + k), st().sort); }));
   }
 
   const tabs = function (current, items) {
@@ -121,14 +132,14 @@ const App = (function () {
   /* ---- sections ---- */
   function renderAlternatives() {
     const alts = sorted(visible());
-    if (alts.length && !alts.some(function (a) { return a.id === S.selected; })) { S.selected = alts[0].id; }
+    if (alts.length && !alts.some(function (a) { return a.id === st().selectedAlt; })) { set({selectedAlt: alts[0].id}); }
     renderAlternativesChart(alts);
     renderTable(alts);
   }
 
   function renderAlternativesChart(alts) {
-    Charts.alternatives(P.chartRows(alts, {showOver: S.showOver, metric: S.metric}), {
-      showOver: S.showOver, pct: S.metric === 'pct',
+    Charts.alternatives(P.chartRows(alts, {showOver: st().showOver, metric: st().metric}), {
+      showOver: st().showOver, pct: st().metric === 'pct',
       onClick: function (index) { select(alts[index].id); }
     });
   }
@@ -140,9 +151,9 @@ const App = (function () {
       cols.map(function (c) { return Html.t`<th scope="col">${I18n.t(c[0])}</th>`; })}</tr></thead>`;
     const cell = function (key, text) { return Html.t`<td data-label="${I18n.t('table.' + key)}">${text}</td>`; };
     const rows = alts.map(function (a) {
-      const picked = a.id === S.selected;
+      const picked = a.id === st().selectedAlt;
       return Html.t`<tr class="alt ${picked ? 'sel' : ''}" data-id="${a.id}"><td class="c-pick"><label class="cell-check"><input type="checkbox" data-cmp="${a.id}" aria-label="${I18n.t('cmp.pick') + ' ' + label(a)}"${
-        S.compared.has(a.id) ? CHECKED : ''}></label></td><th scope="row"><button type="button" class="link" data-select="${a.id}"${
+        isCompared(a.id) ? CHECKED : ''}></label></td><th scope="row"><button type="button" class="link" data-select="${a.id}"${
         picked ? Html.raw(' aria-current="true"') : ''}>${label(a)}</button></th>${cell('type', I18n.t('kind.' + a.kind))}${cell('region', a.region)}${
         cell('total', Fmt.usd(a.total))}${cell('used', Fmt.usd(a.total - idle(a)))}${cell('over', Fmt.usd(idle(a)))}</tr>`;
     });
@@ -159,11 +170,11 @@ const App = (function () {
   }
 
   function renderCompared() {
-    const alts = D.alternatives.filter(function (a) { return S.compared.has(a.id); });
-    Html.set(el('cmpTabs'), tabs(S.cmpGroup, [['phase', 'cmp.byPhase'], ['tjob', 'cmp.byTjob']]));
+    const alts = D.alternatives.filter(function (a) { return isCompared(a.id); });
+    Html.set(el('cmpTabs'), tabs(st().cmpGroup, [['phase', 'cmp.byPhase'], ['tjob', 'cmp.byTjob']]));
     el('cmpCount').textContent = I18n.t('cmp.selected', {n: alts.length});
-    const byPhase = S.cmpGroup === 'phase';
-    const table = P.costTable(alts, S.cmpGroup);
+    const byPhase = st().cmpGroup === 'phase';
+    const table = P.costTable(alts, st().cmpGroup);
     const stacks = table.keys.map(function (k, n) {
       return {name: byPhase ? phaseName(k) : k, color: byPhase ? Fmt.PHASE_COLORS[k] : Fmt.cycleColor(n),
         pattern: byPhase ? Fmt.PHASE_PATTERNS[k] : Charts.cyclePattern(n), values: table.values[k]};
@@ -195,7 +206,7 @@ const App = (function () {
   }
 
   function renderDetail() {
-    const a = findAlt(S.selected);
+    const a = findAlt(st().selectedAlt);
     if (!a) { return; }
     const over = idle(a);
     el('detailTitle').textContent = label(a) + ' (' + a.region + ')';
@@ -209,12 +220,12 @@ const App = (function () {
     const objects = P.costBy(a, 'object').map(function (e) { return e.key; });
     renderPies(a, costPhases, objects);
     renderBreakdown(a, costPhases, objects);
-    Html.set(el('tabs'), tabs(S.group, [['phase', 'detail.tabPhase'], ['object', 'detail.tabObject']]));
+    Html.set(el('tabs'), tabs(st().group, [['phase', 'detail.tabPhase'], ['object', 'detail.tabObject']]));
   }
 
   /* Stacked bars: X = TJob stacked by phase, or X = phase stacked by cloud object. */
   function renderBreakdown(a, costPhases, objects) {
-    const byPhase = S.group === 'phase';
+    const byPhase = st().group === 'phase';
     const categories = byPhase ? P.costBy(a, 'tjob').map(function (e) { return e.key; }) : costPhases;
     const stackKeys = byPhase ? costPhases : objects;
     const grid = byPhase ? P.matrix(a, 'tjob', 'phase', categories, stackKeys) : P.matrix(a, 'phase', 'object', categories, stackKeys);
@@ -235,10 +246,17 @@ const App = (function () {
   function renderGraph() {
     if (!D.graph) { return; }
     el('graphCard').hidden = false;
-    const alt = findAlt(S.selected);
-    Graph.render(D.graph, S.node, selectNode);
-    Graph.renderList(D.graph, S.node, function (id) { selectNode(id, true); });
-    Graph.renderPanel(nodeById(S.node), alt, alt ? label(alt) : '', phases);
+    const alt = findAlt(st().selectedAlt);
+    Graph.render(D.graph, st().node, selectNode);
+    Graph.renderList(D.graph, st().node, function (id) { selectNode(id, true); });
+    renderPanel(alt);
+  }
+
+  function renderPanel(alt) {
+    Graph.renderPanel(nodeById(st().node), alt, alt ? label(alt) : '', phases, st().contMetric, function (metric) {
+      set({contMetric: metric});
+      Graph.renderContainersChart(nodeById(st().node), st().contMetric);
+    });
   }
 
   /* The usage chart and the execution graph share the time axis: the span is the longest of the two. */
@@ -264,11 +282,11 @@ const App = (function () {
   function renderCharts() {
     keepFocus(function () {
       renderTimeCharts();
-      if (D.graph) { Graph.render(D.graph, S.node, selectNode); }
+      if (D.graph) { Graph.render(D.graph, st().node, selectNode); }
       renderAlternatives();
       renderCompared();
       renderDetail();
-      Graph.renderContainersChart(nodeById(S.node));
+      Graph.renderContainersChart(nodeById(st().node), st().contMetric);
       Simulator.renderChart();
     });
   }
@@ -276,7 +294,7 @@ const App = (function () {
   /* ---- actions ---- */
   function select(id) {
     keepFocus(function () {
-      S.selected = id;
+      set({selectedAlt: id});
       renderAlternatives();
       renderDetail();
       renderGraph();
@@ -287,8 +305,8 @@ const App = (function () {
 
   /* id: the TJob to open (null closes); fromList: it was chosen with the keyboard/touch list, so focus goes to the panel heading. */
   function selectNode(id, fromList) {
-    const previous = S.node;
-    S.node = id;
+    const previous = st().node;
+    set({node: id});
     renderGraph();
     const node = nodeById(id);
     announce(node ? I18n.t('graph.selected', {id: node.id, n: node.tests.length}) : I18n.t('graph.closed'));
@@ -304,20 +322,21 @@ const App = (function () {
       none: [],
       cheapest: P.cheapest().map(function (a) { return a.id; })
     }[helper] || [];
-    S.compared = new Set(ids);
+    set({compared: ids});
     keepFocus(function () {
       renderAlternatives();
       renderCompared();
     });
-    announce(I18n.t('cmp.selected', {n: S.compared.size}));
+    announce(I18n.t('cmp.selected', {n: st().compared.length}));
   }
 
   function onTableChange(e) {
     const id = e.target.getAttribute('data-cmp');
     if (!id) { return; }
-    if (e.target.checked) { S.compared.add(id); } else { S.compared.delete(id); }
+    const others = st().compared.filter(function (x) { return x !== id; });
+    set({compared: e.target.checked ? others.concat([id]) : others});
     keepFocus(renderCompared);
-    announce(I18n.t('cmp.selected', {n: S.compared.size}));
+    announce(I18n.t('cmp.selected', {n: st().compared.length}));
   }
 
   function onTableClick(e) {
@@ -359,53 +378,67 @@ const App = (function () {
   }
 
   function bindControls() {
-    bindSegment('langGroup', function (v) { I18n.set(v, true); renderAll(); });
-    bindSegment('themeGroup', function (v) { Theme.set(v, true); });
+    bindSegment('langGroup', function (v) { I18n.set(v, true); set({lang: v}); renderAll(); });
+    bindSegment('themeGroup', function (v) { set({theme: v}); Theme.set(v, true); });
     el('providers').addEventListener('change', function (e) {
-      if (e.target.checked) { S.offProviders.delete(e.target.value); } else { S.offProviders.add(e.target.value); }
+      const others = st().filters.offProviders.filter(function (x) { return x !== e.target.value; });
+      set({filters: {offProviders: e.target.checked ? others : others.concat([e.target.value])}});
       renderAlternatives();
     });
-    [['kind', 'kind'], ['region', 'region'], ['metric', 'metric'], ['sort', 'sort']].forEach(function (pair) {
-      el(pair[0]).addEventListener('change', function (e) { S[pair[1]] = e.target.value; renderAlternatives(); });
+    ['kind', 'region'].forEach(function (key) {
+      el(key).addEventListener('change', function (e) { const filters = {}; filters[key] = e.target.value; set({filters: filters}); renderAlternatives(); });
     });
-    el('showOver').addEventListener('change', function (e) { S.showOver = e.target.checked; renderAlternatives(); });
-    bindTabs('tabs', function (v) { S.group = v; renderDetail(); });
-    bindTabs('cmpTabs', function (v) { S.cmpGroup = v; renderCompared(); });
+    ['metric', 'sort'].forEach(function (key) {
+      el(key).addEventListener('change', function (e) { const patch = {}; patch[key] = e.target.value; set(patch); renderAlternatives(); });
+    });
+    el('showOver').addEventListener('change', function (e) { set({showOver: e.target.checked}); renderAlternatives(); });
+    bindTabs('tabs', function (v) { set({group: v}); renderDetail(); });
+    bindTabs('cmpTabs', function (v) { set({cmpGroup: v}); renderCompared(); });
     el('table').addEventListener('change', onTableChange);
     el('table').addEventListener('click', onTableClick);
     el('cmpHelpers').addEventListener('click', onTableClick);
     el('graphPanel').addEventListener('click', function (e) { if (e.target.closest('#graphClose')) { closePanel(); } });
     document.addEventListener('keydown', function (e) {
       const inside = el('graphCard').contains(document.activeElement) || document.activeElement === document.body;
-      if (e.key === 'Escape' && S.node && inside) { closePanel(); }
+      if (e.key === 'Escape' && st().node && inside) { closePanel(); }
     });
     bindResize();
-    window.addEventListener('hashchange', function () { applyHash(); renderAll(); });
+    window.addEventListener('hashchange', onHashChange);
   }
 
   /* ---- deep links ---- */
-  function applyHash() {
-    const p = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    if (p.get('lang')) { I18n.set(p.get('lang'), false); }
-    if (p.get('theme')) { Theme.set(p.get('theme'), false); }
-    if (p.get('alt') && findAlt(p.get('alt'))) { S.selected = p.get('alt'); }
-    if (p.get('node') && nodeById(p.get('node'))) { S.node = p.get('node'); }
-    if (p.get('over')) { S.showOver = p.get('over') !== '0'; }
-    if (p.get('metric') === 'pct' || p.get('metric') === 'usd') { S.metric = p.get('metric'); }
-    if (['cost', 'provider', 'over'].indexOf(p.get('sort')) >= 0) { S.sort = p.get('sort'); }
-    if (p.get('cmpgroup') === 'tjob' || p.get('cmpgroup') === 'phase') { S.cmpGroup = p.get('cmpgroup'); }
-    if (['all', 'none', 'cheapest'].indexOf(p.get('cmp')) >= 0) { S.compared = new Set(); setCompared(p.get('cmp')); }
-    Simulator.applyParams(p);
+  /* The language and the theme of a link are applied but not remembered (only the user's own choice is). */
+  function applyPreferences(changed) {
+    if (changed.indexOf('lang') >= 0) { I18n.set(st().lang, false); }
+    if (changed.indexOf('theme') >= 0) { Theme.set(st().theme, false, true); }
+  }
+
+  /* The link the user navigated to: what it does not say is the default, the user's language and theme stay. */
+  function onHashChange() {
+    const changed = store.update(State.resolve(Hash.parse(window.location.hash, ctx), ctx, {lang: st().lang, theme: st().theme}));
+    if (changed.length) {
+      applyPreferences(changed);
+      renderAll();
+    }
   }
 
   function init() {
     I18n.init();
     Theme.init(function () { renderAll(); });
-    S.compared = new Set(P.cheapest().map(function (a) { return a.id; }));
-    Simulator.init(D, {label: label, announce: announce});
-    applyHash();
-    bindControls();
+    ctx = {
+      langs: I18n.LANGS, themes: Theme.MODES, altIds: D.alternatives.map(function (a) { return a.id; }),
+      nodeIds: P.nodes().map(function (n) { return n.id; }), providers: providers, kinds: kinds, regions: regions,
+      cheapestIds: P.cheapest().map(function (a) { return a.id; }), buyKeys: Simulation.reservationKeys(D.alternatives),
+      lang: I18n.lang(), defaultLang: I18n.detect()
+    };
+    store = State.create(ctx);
+    // 1. the link, 2. one render, 3. the events (the link never renders half a page)
+    const all = ['lang', 'theme'];
+    store.update(State.resolve(Hash.parse(window.location.hash, ctx), ctx, {lang: I18n.lang(), theme: Theme.mode()}));
+    applyPreferences(all);
+    Simulator.init(D, {label: label, announce: announce, get: function () { return st().sim; }, set: function (sim) { set({sim: sim}); }});
     renderAll();
+    bindControls();
   }
 
   return {init: init};

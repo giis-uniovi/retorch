@@ -27,7 +27,7 @@ export function load(files, names, options) {
     document: documentStub,
     navigator: {language: opts.language || 'en'},
     getComputedStyle: () => ({fontSize: '16px', getPropertyValue: () => ''}),
-    console
+    console, URLSearchParams, encodeURIComponent, decodeURIComponent
   };
   sandbox.window.document = documentStub;
   const context = vm.createContext(sandbox);
