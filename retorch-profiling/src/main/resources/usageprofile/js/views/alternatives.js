@@ -6,7 +6,7 @@
    chart with the cost of every alternative shown. The controls are synchronised, never rebuilt unless their texts change, so a render
    does not take the keyboard focus away from the control that triggered it.
    vm: {providers: [{name, on}], kinds: [kind], regions: [region], filters: {kind, region}, showOver, metric, sort,
-   rows: [{label, provider, used, over}] (the chart, in the order shown), ids: [alternative id] (same order), onSelect(id): click on a bar}. */
+   rows: [{label, provider, kind, used, over}] (the chart, in the order shown), ids: [alternative id] (same order), onSelect(id): click on a bar}. */
 const AlternativesView = (function () {
   let root = null;
 

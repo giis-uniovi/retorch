@@ -85,7 +85,7 @@ const Controller = (function () {
   function compareModel() {
     const alts = D.alternatives.filter(function (a) { return isCompared(a.id); });
     const table = P.costTable(alts, st().cmpGroup);
-    return {count: alts.length, group: st().cmpGroup, labels: alts.map(label), providers: alts.map(function (a) { return a.provider; }), keys: table.keys, values: table.values};
+    return {count: alts.length, group: st().cmpGroup, labels: alts.map(label), providers: alts.map(function (a) { return a.provider; }), kinds: alts.map(function (a) { return a.kind; }), keys: table.keys, values: table.values};
   }
 
   function detailModel() {
@@ -109,7 +109,7 @@ const Controller = (function () {
   function panelModel() {
     const alt = P.find(st().selectedAlt);
     const node = P.node(st().node);
-    return {node: node, label: alt ? label(alt) : '', provider: alt ? alt.provider : '', items: node ? P.tjobItems(alt, node.id) : [], phases: P.meta.phases, contMetric: st().contMetric};
+    return {node: node, label: alt ? label(alt) : '', provider: alt ? alt.provider : '', kind: alt ? alt.kind : '', items: node ? P.tjobItems(alt, node.id) : [], phases: P.meta.phases, contMetric: st().contMetric};
   }
 
   function simModel() {

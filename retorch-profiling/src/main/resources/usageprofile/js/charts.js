@@ -242,7 +242,7 @@ const Charts = (function () {
     return chart;
   }
 
-  /* rows: [{label, provider, used, over}] already sorted and converted to the metric; opts: {showOver, pct, onClick(index)}. */
+  /* rows: [{label, provider, kind, used, over}] already sorted and converted to the metric; opts: {showOver, pct, onClick(index)}. */
   function alternatives(rows, opts) {
     const f = fonts('compare');
     const formatter = opts.pct ? Fmt.pct : Fmt.usd;
@@ -261,7 +261,7 @@ const Charts = (function () {
       xAxis: axis(f, {type: 'value', name: I18n.t(opts.pct ? 'alt.axisPct' : 'alt.axisUsd'), nameLocation: 'middle', nameGap: f.root * 1.8}),
       yAxis: axis(f, {type: 'category', inverse: true, data: rows.map(function (r) { return r.label; }), splitLine: {show: false},
         axisLabel: Object.assign({color: Theme.colors().muted, fontSize: f.text, width: Math.min(f.w * 0.45, f.root * 22), overflow: 'truncate'},
-          Icons.rich(rows.map(function (r) { return r.provider; })))}),
+          Icons.rich(rows.map(function (r) { return r.provider; }), rows.map(function (r) { return r.kind; })))}),
       series: series
     }, I18n.t('alt.title') + '. ' + I18n.t('desc.compare', {n: rows.length, min: formatter(Math.min.apply(null, totals.concat([0]))),
       max: formatter(Math.max.apply(null, totals.concat([0])))}));
@@ -285,13 +285,13 @@ const Charts = (function () {
     }, title + '. ' + I18n.t('desc.pie', {parts: parts}));
   }
 
-  /* Stacked bars. spec: {categories:[label], providers:[provider of every category, optional: gives the icons], stacks:[{name,color,pattern,values[]}], horizontal, description, axisName (default USD), format (default Fmt.usd)} */
+  /* Stacked bars. spec: {categories:[label], providers, kinds:[provider and kind of every category, optional: give the icons], stacks:[{name,color,pattern,values[]}], horizontal, description, axisName (default USD), format (default Fmt.usd)} */
   function stacked(id, spec) {
     const f = fonts(id);
     const valueAxis = axis(f, {type: 'value', name: spec.axisName || 'USD', nameLocation: spec.horizontal ? 'middle' : 'end', nameGap: f.root * 1.8});
     const categoryAxis = axis(f, {type: 'category', data: spec.categories, splitLine: {show: false}, inverse: !!spec.horizontal,
       axisLabel: Object.assign({color: Theme.colors().muted, fontSize: f.text, width: Math.min(f.w * 0.45, f.root * 22), overflow: 'truncate', hideOverlap: !spec.horizontal},
-        spec.providers ? Icons.rich(spec.providers) : {})});
+        spec.providers ? Icons.rich(spec.providers, spec.kinds) : {})});
     return mk(id, {
       aria: ARIA_DECAL,
       tooltip: {trigger: 'axis', axisPointer: {type: 'shadow'}, valueFormatter: spec.format || Fmt.usd}, legend: legend(f, {top: 0}),

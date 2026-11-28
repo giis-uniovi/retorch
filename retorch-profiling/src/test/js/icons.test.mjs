@@ -16,10 +16,14 @@ const SVGS = {
   Azure: `<svg viewBox="0 0 10 10"><path fill="${BLUE}" d="M0 0"/><path fill="#000" d="M1 1"/></svg>`,
   'Odd & <Name>': '<svg viewBox="0 0 1 1"><path fill="#ffffff" d="M0 0"/></svg>'
 };
+const KINDS = {
+  VM: '<svg viewBox="0 0 10 10"><path fill="#5288c8" d="M0 0"/><path fill="#ffffff" d="M1 1"/></svg>',
+  DARK: '<svg viewBox="0 0 10 10"><path fill="#1a1a1a" d="M0 0"/></svg>'
+};
 const VARS = {'--fg': '#e8eaf0'};
 
-function page(svgs) {
-  return load(['html.js', 'theme.js', 'icons.js'], ['Html', 'Theme', 'Icons'], {vars: VARS, elements: svgs === null ? {} : {icons: {textContent: JSON.stringify(svgs || SVGS)}}});
+function page(block) {
+  return load(['html.js', 'theme.js', 'icons.js'], ['Html', 'Theme', 'Icons'], {vars: VARS, elements: block === null ? {} : {icons: {textContent: JSON.stringify(block || {providers: SVGS, kinds: KINDS})}}});
 }
 const decode = (uri) => decodeURIComponent(uri.slice('data:image/svg+xml,'.length));
 
@@ -103,4 +107,46 @@ test('rich() gives one image style per provider with an icon and a formatter by 
   assert.equal(r.formatter('AWS · m6', 2), '{i_0|} AWS · m6');
   assert.equal(r.formatter('Nobody · x', 3), 'Nobody · x');
   assert.equal(r.formatter('out of range', 9), 'out of range');
+});
+
+test('kinds: hasKind, kindUri and kindImg behave as the provider ones and VM/unknown kinds do not mix with providers', () => {
+  const {Icons, Theme} = page();
+  Theme.set('light', false, true);
+  assert.equal(Icons.hasKind('VM'), true);
+  assert.equal(Icons.hasKind('BROWSER_SERVICE'), false, 'a kind without icon shows none');
+  assert.equal(Icons.hasKind('AWS'), false);
+  assert.equal(Icons.has('VM'), false);
+  assert.equal(decode(Icons.kindUri('VM')), KINDS.VM);
+  assert.equal(Icons.kindUri('BROWSER_SERVICE'), '');
+  assert.match(String(Icons.kindImg('VM')), /^<img class="prov-icon" src="data:image\/svg\+xml,[^"]+" alt="" width="16" height="16">$/);
+  assert.equal(String(Icons.kindImg('BROWSER_SERVICE')), '');
+});
+
+test('both() gives the provider icon and then the kind icon, whichever exists', () => {
+  const {Icons, Theme} = page();
+  Theme.set('light', false, true);
+  const html = String(Icons.both('AWS', 'VM'));
+  assert.equal((html.match(/<img /g) || []).length, 2);
+  assert.ok(html.indexOf(encodeURIComponent('#252f3e')) < html.indexOf(encodeURIComponent('#5288c8')));
+  assert.equal((String(Icons.both('Nobody', 'VM')).match(/<img /g) || []).length, 1);
+  assert.equal(String(Icons.both('Nobody', 'BROWSER_SERVICE')), '');
+});
+
+test('dark theme: kind icons are recoloured with the same rule (dark neutral ink only)', () => {
+  const {Icons, Theme} = page();
+  Theme.set('dark', false, true);
+  const vm = decode(Icons.kindUri('VM'));
+  assert.ok(vm.includes('#5288c8') && vm.includes('#ffffff'));
+  assert.equal(decode(Icons.kindUri('DARK')), KINDS.DARK.replace('#1a1a1a', VARS['--fg']));
+});
+
+test('rich() with kinds adds the k_<n> image styles and the formatter puts provider then kind before the text', () => {
+  const {Icons, Theme} = page();
+  Theme.set('light', false, true);
+  const r = Icons.rich(['AWS', 'Azure', 'Nobody'], ['VM', 'BROWSER_SERVICE', 'VM']);
+  assert.deepEqual(plain(Object.keys(r.rich)), ['i_0', 'i_1', 'k_0']);
+  assert.equal(r.rich.k_0.backgroundColor.image, Icons.kindUri('VM'));
+  assert.equal(r.formatter('a', 0), '{i_0|} {k_0|} a');
+  assert.equal(r.formatter('b', 1), '{i_1|} b');
+  assert.equal(r.formatter('c', 2), '{k_0|} c');
 });

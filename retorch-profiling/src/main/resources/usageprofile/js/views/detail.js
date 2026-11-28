@@ -4,7 +4,7 @@
  */
 /* View: the breakdown of the selected alternative: key figures, stacked bars (TJob x phase, or phase x cloud object) with their
    tabs, and the donut charts by phase and by cloud object, each with its data table.
-   vm: {alt, label, (the provider of alt gives the icon of the title) over: oversubscription cost, group: 'phase'|'object' (the tab), phases: [{key, cost}] (only the ones with cost),
+   vm: {alt, label, (provider and kind of alt give the icons of the title) over: oversubscription cost, group: 'phase'|'object' (the tab), phases: [{key, cost}] (only the ones with cost),
    objects: [{key, cost}], categories: [key] and stackKeys: [key] of the bars, values: [[cost per category] per stack key]}. */
 const DetailView = (function () {
   let root = null;
@@ -55,7 +55,7 @@ const DetailView = (function () {
 
   function render(vm) {
     if (!vm.alt) { return; }
-    Html.set(View.$(root, 'detailTitle'), Html.t`${Icons.img(vm.alt.provider)}${vm.label} (${vm.alt.region})`);
+    Html.set(View.$(root, 'detailTitle'), Html.t`${Icons.both(vm.alt.provider, vm.alt.kind)}${vm.label} (${vm.alt.region})`);
     kpis(vm);
     pies(vm);
     breakdown(vm);

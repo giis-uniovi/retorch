@@ -3,7 +3,7 @@
  * All intellectual property rights on this file belong to GIIS.
  */
 /* View: the comparison of the selected alternatives, stacked by phase or by TJob, with its data table.
-   vm: {count: number of alternatives compared, group: 'phase'|'tjob', labels: [label of every alternative], providers: [provider of every alternative, for the icon], keys: [phase or TJob],
+   vm: {count: number of alternatives compared, group: 'phase'|'tjob', labels: [label of every alternative], providers, kinds: [provider and kind of every alternative, for the icons], keys: [phase or TJob],
    values: {key: [cost of every alternative]}} (the keys without any cost are not drawn, the colours follow the position of the key). */
 const CompareView = (function () {
   let root = null;
@@ -25,7 +25,7 @@ const CompareView = (function () {
     const shown = stacks(vm);
     const fonts = Charts.fonts('cmpChart');
     Charts.setHeight('cmpChart', Math.max(fonts.root * 14, vm.labels.length * fonts.root * 2.4 + fonts.root * 6));
-    Charts.stacked('cmpChart', {categories: vm.labels, providers: vm.providers, stacks: shown, horizontal: true,
+    Charts.stacked('cmpChart', {categories: vm.labels, providers: vm.providers, kinds: vm.kinds, stacks: shown, horizontal: true,
       description: I18n.t('cmp.title') + '. ' + I18n.t('desc.cmp', {n: vm.count})});
     View.stackTable('cmpData', I18n.t('cmp.title'), I18n.t('table.alt'), vm.labels, shown);
   }
