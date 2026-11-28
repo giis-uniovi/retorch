@@ -55,14 +55,7 @@ public class UsageProfileTests {
     }
 
     private static PriceCatalog.VmOffer vm(String provider, String name, double vcpu, double mem, double hourly) {
-        PriceCatalog.VmOffer v = new PriceCatalog.VmOffer();
-        v.provider = provider;
-        v.region = "r1";
-        v.name = name;
-        v.vcpu = vcpu;
-        v.memGb = mem;
-        v.hourly = hourly;
-        return v;
+        return new PriceCatalog.VmOffer(provider, "r1", name, vcpu, mem, hourly);
     }
 
     private static boolean hasItem(Alternative alt, String object, String tjob, String phase) {
@@ -92,23 +85,14 @@ public class UsageProfileTests {
     }
 
     private static PriceCatalog smallCatalog() {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.fetchedAtEpochMs = 1700000000000L;
-        catalog.vms.add(vm("P", "big", 4, 8, 3.6));
-        PriceCatalog.ContainerRate rate = new PriceCatalog.ContainerRate();
-        rate.provider = "P";
-        rate.region = "r1";
-        rate.service = "Serverless";
-        rate.vcpuHour = 1;
-        rate.gbHour = 1;
-        catalog.containers.add(rate);
-        PriceCatalog.StorageRate disk = new PriceCatalog.StorageRate();
-        disk.provider = "P";
-        disk.region = "r1";
-        disk.name = "ssd";
-        disk.gbMonth = 0.1;
-        catalog.storage.add(disk);
-        return catalog;
+        return smallCatalogBuilder().build();
+    }
+
+    private static PriceCatalog.Builder smallCatalogBuilder() {
+        return PriceCatalog.builder().fetchedAt(1700000000000L)
+                .addVm(vm("P", "big", 4, 8, 3.6))
+                .addContainer(new PriceCatalog.ContainerRate("P", "r1", "Serverless", 1, 1))
+                .addStorage(new PriceCatalog.StorageRate("P", "r1", "ssd", 0.1));
     }
 
     private static JsonNode embeddedJson(String html) throws IOException {
@@ -225,16 +209,11 @@ public class UsageProfileTests {
 
     @Test
     public void testVmCostIsFullyDistributedAndShowsOversubscription() throws IOException {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.vms.add(vm("P", "big", 4, 8, 3.6));
-        catalog.vms.add(vm("P", "small", 2, 2, 1.8));
-        catalog.vms.add(vm("P", "tiny", 1, 1, 0.5)); // cannot hold the peak, must be discarded
-        PriceCatalog.StorageRate disk = new PriceCatalog.StorageRate();
-        disk.provider = "P";
-        disk.region = "r1";
-        disk.name = "ssd";
-        disk.gbMonth = 0.1;
-        catalog.storage.add(disk);
+        PriceCatalog catalog = PriceCatalog.builder()
+                .addVm(vm("P", "big", 4, 8, 3.6))
+                .addVm(vm("P", "small", 2, 2, 1.8))
+                .addVm(vm("P", "tiny", 1, 1, 0.5)) // cannot hold the peak, must be discarded
+                .addStorage(new PriceCatalog.StorageRate("P", "r1", "ssd", 0.1)).build();
 
         CostReport report = new CostCalculator().calculate(timeline(), catalog);
 
@@ -258,14 +237,9 @@ public class UsageProfileTests {
 
     @Test
     public void testContainerCostIsPayPerUse() throws IOException {
-        PriceCatalog catalog = new PriceCatalog();
-        PriceCatalog.ContainerRate rate = new PriceCatalog.ContainerRate();
-        rate.provider = "P";
-        rate.region = "r1";
-        rate.service = "Serverless";
-        rate.vcpuHour = 3600; // 1 USD per vCPU-second makes the expectation easy to compute
-        rate.gbHour = 0;
-        catalog.containers.add(rate);
+        // 1 USD per vCPU-second makes the expectation easy to compute
+        PriceCatalog catalog = PriceCatalog.builder()
+                .addContainer(new PriceCatalog.ContainerRate("P", "r1", "Serverless", 3600, 0)).build();
 
         Alternative alt = new CostCalculator().calculate(timeline(), catalog).alternatives.get(0);
 
@@ -284,8 +258,7 @@ public class UsageProfileTests {
 
     @Test
     public void testNoVmFitsProducesWarning() throws IOException {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.vms.add(vm("P", "tiny", 1, 1, 0.5));
+        PriceCatalog catalog = PriceCatalog.builder().addVm(vm("P", "tiny", 1, 1, 0.5)).build();
         CostReport report = new CostCalculator().calculate(timeline(), catalog);
         assertTrue(report.alternatives.isEmpty());
         assertEquals(1, report.warnings.size());
@@ -297,21 +270,21 @@ public class UsageProfileTests {
                 "{\"skuName\":\"Standard_D2s_v5\",\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"Virtual Machines Dsv5 Series\",\"unitOfMeasure\":\"1 Hour\",\"retailPrice\":0.115}," +
                 "{\"skuName\":\"Standard_D2s_v5 Spot\",\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"Virtual Machines Dsv5 Series\",\"unitOfMeasure\":\"1 Hour\",\"retailPrice\":0.02}," +
                 "{\"skuName\":\"Standard_D2s_v5\",\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"Virtual Machines Dsv5 Series Windows\",\"unitOfMeasure\":\"1 Hour\",\"retailPrice\":0.2}]");
-        PriceCatalog out = new PriceCatalog();
-        PricingFetcher.parseAzureVms(toArray(items), "westeurope", out);
-        assertEquals(1, out.vms.size());
-        assertEquals(0.115, out.vms.get(0).hourly, 1e-9);
-        assertEquals(8, out.vms.get(0).memGb, 1e-9);
+        PriceCatalog.Builder out = PriceCatalog.builder();
+        AzurePrices.parseVms(toArray(items), "westeurope", out);
+        assertEquals(1, out.build().vms.size());
+        assertEquals(0.115, out.build().vms.get(0).hourly, 1e-9);
+        assertEquals(8, out.build().vms.get(0).memGb, 1e-9);
 
         JsonNode aci = MAPPER.readTree("[{\"meterName\":\"Standard vCPU Duration\",\"retailPrice\":0.0466}," +
                 "{\"meterName\":\"Standard Memory Duration\",\"retailPrice\":0.00511},{\"meterName\":\"Standard Windows Software Duration\",\"retailPrice\":1}]");
-        PricingFetcher.parseAzureContainers(toArray(aci), "westeurope", out);
-        assertEquals(0.0466, out.containers.get(0).vcpuHour, 1e-9);
+        AzurePrices.parseContainers(toArray(aci), "westeurope", out);
+        assertEquals(0.0466, out.build().containers.get(0).vcpuHour, 1e-9);
 
         JsonNode disks = MAPPER.readTree("[{\"meterName\":\"E10 LRS Disk Mount\",\"unitOfMeasure\":\"1/Month\",\"retailPrice\":1.183}," +
                 "{\"meterName\":\"E10 LRS Disk\",\"unitOfMeasure\":\"1/Month\",\"retailPrice\":9.6}]");
-        PricingFetcher.parseAzureDisks(toArray(disks), "westeurope", out);
-        assertEquals(0.075, out.storage.get(0).gbMonth, 1e-9);
+        AzurePrices.parseDisks(toArray(disks), "westeurope", out);
+        assertEquals(0.075, out.build().storage.get(0).gbMonth, 1e-9);
     }
 
     private static JsonNode[] toArray(JsonNode array) {
@@ -331,10 +304,11 @@ public class UsageProfileTests {
                 "\"S2\":{\"S2.T\":{\"priceDimensions\":{\"S2.T.R\":{\"unit\":\"Hrs\",\"pricePerUnit\":{\"USD\":\"0.2\"}}}}}," +
                 "\"S3\":{\"S3.T\":{\"priceDimensions\":{\"S3.T.R\":{\"unit\":\"GB-Mo\",\"pricePerUnit\":{\"USD\":\"0.08\"}}}}}}," +
                 "\"Reserved\":{}}}";
-        Map<JsonNode, Double> offer = PricingFetcher.readOffer(
+        Map<JsonNode, Double> offer = AwsPrices.readOffer(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), p -> p.path("attributes").path("operatingSystem").asText("Linux").equals("Linux"));
-        PriceCatalog out = new PriceCatalog();
-        PricingFetcher.parseAwsEc2(offer, "eu-west-1", out);
+        PriceCatalog.Builder builder = PriceCatalog.builder();
+        AwsPrices.parseEc2(offer, "eu-west-1", builder);
+        PriceCatalog out = builder.build();
         assertEquals(1, out.vms.size());
         assertEquals(0.096, out.vms.get(0).hourly, 1e-9);
         assertEquals(8, out.vms.get(0).memGb, 1e-9);
@@ -344,8 +318,9 @@ public class UsageProfileTests {
     @Test
     public void testReservationsAreInTheJsonOfAVmAlternativeAndEmptyForContainers() throws IOException {
         PriceCatalog catalog = smallCatalog();
-        catalog.vms.get(0).reservations.add(new ReservationOption(1, ReservationOption.Payment.NO_UPFRONT, 0.5));
-        catalog.vms.get(0).reservations.add(ReservationOption.allUpfront(3, 8760 * 3 * 0.25));
+        catalog = smallCatalogBuilder().replaceVms(Arrays.asList(catalog.vms.get(0).withReservations(Arrays.asList(
+                new ReservationOption(1, ReservationOption.Payment.NO_UPFRONT, 0.5),
+                ReservationOption.allUpfront(3, 8760 * 3 * 0.25))))).build();
         CostReport report = new CostCalculator().calculate(timeline(), catalog);
         TimelineSeries series = new TimelineSeries(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1),
                 Arrays.asList(0.0));
@@ -376,16 +351,15 @@ public class UsageProfileTests {
 
     @Test
     public void testAzureReservationsAreAllUpfrontPerTerm() throws IOException {
-        PriceCatalog out = new PriceCatalog();
-        out.vms.add(vm("Azure", "Standard_D2s_v5", 2, 8, 0.1));
-        out.vms.get(0).region = "westeurope";
+        PriceCatalog.Builder builder = PriceCatalog.builder()
+                .addVm(new PriceCatalog.VmOffer("Azure", "westeurope", "Standard_D2s_v5", 2, 8, 0.1));
         JsonNode items = MAPPER.readTree("[" +
                 "{\"reservationTerm\":\"1 Year\",\"retailPrice\":876.0,\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"Virtual Machines Dsv5 Series\",\"unitOfMeasure\":\"1 Hour\",\"type\":\"Reservation\"}," +
                 "{\"reservationTerm\":\"3 Years\",\"retailPrice\":1752.0,\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"Virtual Machines Dsv5 Series\",\"unitOfMeasure\":\"1 Hour\",\"type\":\"Reservation\"}," +
                 "{\"reservationTerm\":\"5 Years\",\"retailPrice\":1,\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"x\"}," +
                 "{\"reservationTerm\":\"1 Year\",\"retailPrice\":5,\"armSkuName\":\"Other\",\"productName\":\"x\"}]");
-        PricingFetcher.parseAzureReservations(toArray(items), "westeurope", out);
-        List<ReservationOption> r = out.vms.get(0).reservations;
+        AzurePrices.parseReservations(toArray(items), "westeurope", builder);
+        List<ReservationOption> r = builder.build().vms.get(0).reservations;
         assertEquals(2, r.size());
         assertEquals(1, r.get(0).termYears);
         assertEquals(ReservationOption.Payment.ALL_UPFRONT, r.get(0).payment);
@@ -409,12 +383,13 @@ public class UsageProfileTests {
                 + "," + term("F", "1yr", "No Upfront", "convertible", "0.07", null)
                 + "},\"S9\":{" + term("G", "1yr", "No Upfront", "standard", "0.1", null) + "}}}}";
         Map<JsonNode, List<ReservationOption>> reserved = new HashMap<>();
-        Map<JsonNode, Double> offer = PricingFetcher.readOffer(
+        Map<JsonNode, Double> offer = AwsPrices.readOffer(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)),
                 p -> "Linux".equals(p.path("attributes").path("operatingSystem").asText("Linux"))
                         && p.path("attributes").has("instanceType"), reserved);
-        PriceCatalog out = new PriceCatalog();
-        PricingFetcher.parseAwsEc2(offer, reserved, "eu-west-1", out);
+        PriceCatalog.Builder builder = PriceCatalog.builder();
+        AwsPrices.parseEc2(offer, reserved, "eu-west-1", builder);
+        PriceCatalog out = builder.build();
         assertEquals(1, out.vms.size());
         List<ReservationOption> r = out.vms.get(0).reservations;
         assertEquals(4, r.size());
@@ -453,10 +428,9 @@ public class UsageProfileTests {
         } catch (IOException expected) {
             assertTrue(expected.getMessage().contains("No prices"));
         }
-        PriceCatalog current = new PriceCatalog();
         File cache = new File(tmp.getRoot(), "v.json");
-        current.vms.add(vm("P", "x", 1, 1, 1));
-        current.vms.get(0).reservations.add(ReservationOption.allUpfront(1, 8760));
+        PriceCatalog current = PriceCatalog.builder().addVm(vm("P", "x", 1, 1, 1)
+                .withReservations(Arrays.asList(ReservationOption.allUpfront(1, 8760)))).build();
         current.save(cache);
         PriceCatalog loaded = PriceCatalog.load(cache);
         assertEquals(PriceCatalog.SCHEMA_VERSION, loaded.schemaVersion);
@@ -465,10 +439,8 @@ public class UsageProfileTests {
 
     @Test
     public void testFreshCacheAvoidsTheNetwork() throws IOException {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.fetchedAtEpochMs = System.currentTimeMillis();
-        catalog.regionsKey = "azure=x;aws=y";
-        catalog.vms.add(vm("P", "cached", 1, 1, 1));
+        PriceCatalog catalog = PriceCatalog.builder().fetchedAt(System.currentTimeMillis()).regionsKey("azure=x;aws=y")
+                .addVm(vm("P", "cached", 1, 1, 1)).build();
         File cache = new File(tmp.getRoot(), "prices.json");
         catalog.save(cache);
         PriceCatalog loaded = new PricingFetcher().fetchOrLoad("x", "y", cache, 3600_000L);
@@ -477,10 +449,8 @@ public class UsageProfileTests {
 
     @Test
     public void testPriceSourceUsesTheCacheForTheSameRegions() throws IOException {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.fetchedAtEpochMs = System.currentTimeMillis();
-        catalog.regionsKey = "azure=westeurope;aws=eu-west-1";
-        catalog.vms.add(vm("P", "cached", 1, 1, 1));
+        PriceCatalog catalog = PriceCatalog.builder().fetchedAt(System.currentTimeMillis())
+                .regionsKey("azure=westeurope;aws=eu-west-1").addVm(vm("P", "cached", 1, 1, 1)).build();
         File cache = new File(tmp.getRoot(), "source-prices.json");
         catalog.save(cache);
         PriceCatalog loaded = new PriceSource("westeurope", "eu-west-1", cache.getPath(), 1).load();
@@ -677,9 +647,7 @@ public class UsageProfileTests {
 
     @Test
     public void testUsageProfileIsSelfContained() throws IOException {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.fetchedAtEpochMs = 1700000000000L;
-        catalog.vms.add(vm("P", "big", 4, 8, 3.6));
+        PriceCatalog catalog = PriceCatalog.builder().fetchedAt(1700000000000L).addVm(vm("P", "big", 4, 8, 3.6)).build();
         String out = new File(tmp.getRoot(), "out/usageprofile.html").getPath();
 
         new UsageProfilerToolBox().generateUsageProfile("MyPlan", DATA + "usage.csv", out, catalog);
@@ -701,9 +669,7 @@ public class UsageProfileTests {
 
     @Test
     public void testTheProfileIsOneSingleFileWithNoExternalReferences() throws IOException {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.fetchedAtEpochMs = 1700000000000L;
-        catalog.vms.add(vm("P", "big", 4, 8, 3.6));
+        PriceCatalog catalog = PriceCatalog.builder().fetchedAt(1700000000000L).addVm(vm("P", "big", 4, 8, 3.6)).build();
         File outDir = new File(tmp.getRoot(), "single");
         String out = new File(outDir, "usageprofile.html").getPath();
 
@@ -815,8 +781,9 @@ public class UsageProfileTests {
             terms.append(terms.length() == 0 ? "" : ",").append(parts[1]);
         }
         JsonNode offer = MAPPER.readTree("{\"products\":{" + products + "},\"terms\":{\"OnDemand\":{" + terms + "}}}");
-        PriceCatalog catalog = new PriceCatalog();
-        PricingFetcher.parseDeviceFarm(offer, catalog);
+        PriceCatalog.Builder builder = PriceCatalog.builder();
+        DeviceFarmPrices.parse(offer, builder);
+        PriceCatalog catalog = builder.build();
 
         assertEquals(2, catalog.browsers.size());
         assertEquals("Chrome", catalog.browsers.get(0).name);
@@ -828,14 +795,8 @@ public class UsageProfileTests {
 
     @Test
     public void testBrowserServiceAddsBrowserMinutesToTheCheapestAlternative() throws IOException {
-        PriceCatalog catalog = smallCatalog();
-        PriceCatalog.BrowserRate rate = new PriceCatalog.BrowserRate();
-        rate.provider = "AWS";
-        rate.region = "us-west-2";
-        rate.service = "AWS Device Farm";
-        rate.name = "Chrome";
-        rate.minuteUsd = 0.6;
-        catalog.browsers.add(rate);
+        PriceCatalog catalog = smallCatalogBuilder()
+                .addBrowser(new PriceCatalog.BrowserRate("AWS", "us-west-2", "AWS Device Farm", "Chrome", 0.6)).build();
         CostReport plain = new CostCalculator().calculate(timeline(), catalog);
         Alternative cheapest = plain.alternatives.get(0);
 
