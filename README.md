@@ -440,7 +440,10 @@ Without it the pipeline does not measure anything and has no `Usage-Profile` sta
 
 Prices are fetched from the public price lists (Azure Retail Prices API and AWS Price List) and cached for 24 hours in
 `$HOME/.retorch/prices.json`; the first download of the AWS EC2 list is large (hundreds of MB per region) and is parsed
-in streaming. Google Cloud is not supported yet.
+in streaming. Google Cloud is not supported yet. Two more providers are opt-in (they need no credentials): Oracle Cloud
+(public Cost Estimator API, prices are global, region `global`) and IBM Cloud (public Global Catalog, Virtual Server Flex
+profiles per IBM region such as `us-south` or `eu-de`). They are enabled with the system properties
+`-Dusageprofile-regions-oracle=global` and `-Dusageprofile-regions-ibm=us-south,eu-de` of the java call.
 
 ### Requirements in Jenkins
 
@@ -459,6 +462,8 @@ java -jar retorch-profiling-<version>-cli.jar <planName> <usageCsv> <outputHtml>
 - `usageCsv`: the usage file described above.
 - `azureRegions`, `awsRegions`: comma separated regions (an empty string disables the provider).
 - `priceCacheFile`: JSON file where the prices are cached.
+- Optional providers: `java -Dusageprofile-regions-oracle=global -Dusageprofile-regions-ibm=us-south,eu-de -jar ...`
+  (disabled when the properties are not set).
 - `executionPlanJson` (optional): `.retorch/executionplan.json`; without it the execution graph is not shown.
 
 ### Test the dashboard

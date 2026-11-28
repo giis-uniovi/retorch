@@ -1,0 +1,47 @@
+{
+ "deployment_id": "4579dbd3-80bb-43dc-a645-ba3b03335cc9:eu-de97809",
+ "deployment_location": "eu-de",
+ "deployment_region": "eu-de",
+ "origin": "pricing_catalog",
+ "type": "Paid",
+ "url": "https://globalcatalog.cloud.ibm.com/api/v1/4579dbd3-80bb-43dc-a645-ba3b03335cc9:eu-de97809/pricing",
+ "starting_price": {},
+ "effective_from": "2026-11-01T00:00:00Z",
+ "effective_until": "2026-11-30T23:59:59.999Z",
+ "metrics": [
+  {
+   "part_ref": "",
+   "metric_id": "is.volume.generalpurpose.GB",
+   "tier_model": "Linear Tier",
+   "resource_display_name": "GIGABYTE_HOURS",
+   "charge_unit_display_name": "Gigabytes of Storage",
+   "charge_unit_name": "GIGABYTE_HOURS",
+   "charge_unit": "Gigabyte-Hour",
+   "charge_unit_quantity": 1,
+   "amounts": [
+    {
+     "country": "USA",
+     "currency": "USD",
+     "prices": [
+      {
+       "quantity_tier": 1,
+       "price": 0.00013949
+      }
+     ]
+    }
+   ],
+   "usage_cap_qty": 0,
+   "display_cap": 0,
+   "effective_from": "2026-11-01T00:00:00Z",
+   "effective_until": "2026-11-30T23:59:59.999Z",
+   "additional_properties": {
+    "included_quantities": {
+     "account": 0,
+     "instance": 0
+    }
+   },
+   "scope": "DEFAULT"
+  }
+ ],
+ "scope": "DEFAULT"
+}

@@ -48,12 +48,28 @@ public class PriceSource {
         return fetcher.fetchOrLoad(regions, cacheFile, maxAgeHours * MILLIS_PER_HOUR);
     }
 
+    /** System property prefix of the regions of an opt-in provider: {@code usageprofile-regions-<id>}. */
+    static final String REGIONS_PROPERTY_PREFIX = "usageprofile-regions-";
+
+    /** {@code base} plus, for each opt-in provider of the registry, the regions of its system property if it is not blank. */
+    static ProviderRegions regionsFromSystemProperties(ProviderRegions base, PriceProviderRegistry registry) {
+        ProviderRegions result = base;
+        for (PriceProvider p : registry.providers()) {
+            String value = p.optional() ? System.getProperty(REGIONS_PROPERTY_PREFIX + p.configId()) : null;
+            if (value != null && !value.trim().isEmpty()) {
+                result = result.with(p.configId(), value);
+            }
+        }
+        return result;
+    }
+
     /** Builder of a {@link PriceSource} for any set of providers. */
     public static final class Builder {
         private ProviderRegions regions = ProviderRegions.none();
         private File cacheFile = new File("prices-cache.json");
         private int maxAgeHours = 24;
         private PriceProviderRegistry registry;
+        private boolean systemPropertyRegions;
 
         /** The regions (comma separated; blank = disabled) of provider {@code providerId}. */
         public Builder regions(String providerId, String commaSeparatedRegions) {
@@ -77,7 +93,21 @@ public class PriceSource {
             return this;
         }
 
+        /**
+         * Also reads, for every registered opt-in provider, its regions from the system property
+         * {@code usageprofile-regions-<id>} (e.g. {@code -Dusageprofile-regions-ibm=us-south,eu-de}); a property that is
+         * not set or blank leaves the provider as configured by {@link #regions}.
+         */
+        public Builder systemPropertyRegions() {
+            this.systemPropertyRegions = true;
+            return this;
+        }
+
         public PriceSource build() {
+            if (systemPropertyRegions) {
+                PriceProviderRegistry used = registry == null ? PriceProviderRegistry.standard(HttpGet.standard()) : registry;
+                return new PriceSource(regionsFromSystemProperties(regions, used), cacheFile, maxAgeHours, registry);
+            }
             return new PriceSource(regions, cacheFile, maxAgeHours, registry);
         }
     }

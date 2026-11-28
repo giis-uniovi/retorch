@@ -1,0 +1,95 @@
+{
+ "offset": 50,
+ "limit": 50,
+ "count": 7,
+ "resources": [
+  {
+   "id": "0ce0e7e6-3830-41b7-993b-56a5f59966d4",
+   "name": "mxf-4x32",
+   "kind": "plan",
+   "geo_tags": [
+    "au-syd",
+    "br-sao",
+    "ca-mon",
+    "ca-tor",
+    "eu-de",
+    "eu-es",
+    "eu-gb",
+    "in-che",
+    "in-mum",
+    "jp-osa",
+    "jp-tok",
+    "us-east",
+    "us-south"
+   ],
+   "pricing_tags": [
+    "paid",
+    "paid_only",
+    "allow_internal_users"
+   ]
+  },
+  {
+   "id": "e5197e83-5ddb-4c81-9dd2-18353e1878bc",
+   "name": "bxf-64x256",
+   "kind": "plan",
+   "geo_tags": [
+    "au-syd",
+    "br-sao",
+    "ca-mon",
+    "ca-tor",
+    "eu-de",
+    "eu-es",
+    "eu-gb",
+    "in-che",
+    "in-mum",
+    "jp-osa",
+    "jp-tok",
+    "us-east",
+    "us-south"
+   ],
+   "pricing_tags": [
+    "paid",
+    "paid_only",
+    "allow_internal_users"
+   ]
+  },
+  {
+   "id": "b2cfd5f2-7227-4f96-a540-1d12e3b60bdf",
+   "name": "bx4-4x16",
+   "kind": "plan",
+   "geo_tags": [
+    "us-south"
+   ],
+   "pricing_tags": [
+    "paid",
+    "paid_only",
+    "allow_internal_users"
+   ]
+  },
+  {
+   "id": "63914630-34db-4ca1-97da-996834114f6d",
+   "name": "bxf-4x16",
+   "kind": "plan",
+   "geo_tags": [
+    "au-syd",
+    "br-sao",
+    "ca-mon",
+    "ca-tor",
+    "eu-de",
+    "eu-es",
+    "eu-gb",
+    "in-che",
+    "in-mum",
+    "jp-osa",
+    "jp-tok",
+    "us-east",
+    "us-south"
+   ],
+   "pricing_tags": [
+    "paid",
+    "paid_only",
+    "allow_internal_users"
+   ]
+  }
+ ]
+}

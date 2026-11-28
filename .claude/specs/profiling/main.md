@@ -18,6 +18,9 @@ Instance JSON model) has been removed.
   classifier):
   `java -jar retorch-profiling-<version>-cli.jar <planName> <usageCsv> <outputHtml> <azureRegions> <awsRegions> <priceCacheFile> [executionPlanJson]`.
   It builds a `UsageProfileRequest`. The 7th argument is optional. Wrong argument count (not 6 or 7): usage error logged, exit code 1. The price cache lifetime is 24 hours.
+  The opt-in price providers (Oracle Cloud `oracle`, IBM Cloud `ibm`) are enabled with system properties, `-Dusageprofile-regions-oracle=global`
+  and `-Dusageprofile-regions-ibm=us-south,eu-de` (comma separated; unset or blank = disabled, the default): `UsageProfileMain` builds its
+  `PriceSource` with `PriceSource.builder()...systemPropertyRegions()`.
 
 ## Dependencies
 No dependency on the other modules. Jackson, commons-csv and slf4j; `logback-classic` is a runtime dependency so the

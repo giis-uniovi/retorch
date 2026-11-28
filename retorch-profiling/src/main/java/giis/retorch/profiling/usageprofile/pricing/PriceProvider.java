@@ -24,6 +24,14 @@ public interface PriceProvider {
         return id();
     }
 
+    /**
+     * An opt-in provider is part of the cache key only when it has regions, so enabling nothing leaves the key (and the
+     * caches already written) as it was. Default: false.
+     */
+    default boolean optional() {
+        return false;
+    }
+
     /** The regions to fetch for this configuration; empty = the provider is disabled. */
     default List<String> regionsFor(ProviderRegions config) {
         return config.regions(configId());

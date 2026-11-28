@@ -1,0 +1,83 @@
+{
+ "offset": 0,
+ "limit": 50,
+ "count": 7,
+ "next": "https://globalcatalog.cloud.ibm.com/api/v1/is.instance/plan?languages=en&_offset=50",
+ "resources": [
+  {
+   "id": "4d370244-45c7-4e65-a070-6e29b042f7a3",
+   "name": "bxf-2x8",
+   "kind": "plan",
+   "geo_tags": [
+    "au-syd",
+    "br-sao",
+    "ca-mon",
+    "ca-tor",
+    "eu-de",
+    "eu-es",
+    "eu-gb",
+    "in-che",
+    "in-mum",
+    "jp-osa",
+    "jp-tok",
+    "us-east",
+    "us-south"
+   ],
+   "pricing_tags": [
+    "paid",
+    "paid_only",
+    "allow_internal_users"
+   ]
+  },
+  {
+   "id": "63914630-34db-4ca1-97da-996834114f6d",
+   "name": "bxf-4x16",
+   "kind": "plan",
+   "geo_tags": [
+    "au-syd",
+    "br-sao",
+    "ca-mon",
+    "ca-tor",
+    "eu-de",
+    "eu-es",
+    "eu-gb",
+    "in-che",
+    "in-mum",
+    "jp-osa",
+    "jp-tok",
+    "us-east",
+    "us-south"
+   ],
+   "pricing_tags": [
+    "paid",
+    "paid_only",
+    "allow_internal_users"
+   ]
+  },
+  {
+   "id": "e562c9e9-bbc3-4297-a0b7-7019494f94e6",
+   "name": "cxf-4x8",
+   "kind": "plan",
+   "geo_tags": [
+    "au-syd",
+    "br-sao",
+    "ca-mon",
+    "ca-tor",
+    "eu-de",
+    "eu-es",
+    "eu-gb",
+    "in-che",
+    "in-mum",
+    "jp-osa",
+    "jp-tok",
+    "us-east",
+    "us-south"
+   ],
+   "pricing_tags": [
+    "paid",
+    "paid_only",
+    "allow_internal_users"
+   ]
+  }
+ ]
+}
