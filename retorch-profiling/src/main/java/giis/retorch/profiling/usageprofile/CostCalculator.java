@@ -10,6 +10,7 @@ import giis.retorch.profiling.usageprofile.ExecutionMeasurements.Timeline;
 import giis.retorch.profiling.usageprofile.dto.Alternative;
 import giis.retorch.profiling.usageprofile.dto.CostItem;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
+import giis.retorch.profiling.usageprofile.dto.Phase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,13 +41,13 @@ import java.util.function.ToDoubleFunction;
  */
 public class CostCalculator {
 
-    public static final String COMPUTE = "compute";
-    public static final String STORAGE = "storage";
-    public static final String BROWSER = "browser";
-    private static final String TEST_EXECUTION = "tjob-testexec";
+    public static final String COMPUTE = CostItem.OBJECT_COMPUTE;
+    public static final String STORAGE = CostItem.OBJECT_STORAGE;
+    public static final String BROWSER = CostItem.OBJECT_BROWSER;
+    private static final String TEST_EXECUTION = Phase.TJOB_TESTEXEC.label();
     public static final String COI = "COI";
     public static final String IDLE = "(idle)";
-    public static final String OVERSUBSCRIPTION = "oversubscription";
+    public static final String OVERSUBSCRIPTION = Phase.OVERSUBSCRIPTION.label();
     private static final int VMS_PER_PROVIDER = 3;
     private static final double SECONDS_PER_MONTH = 30.0 * 86400;
 

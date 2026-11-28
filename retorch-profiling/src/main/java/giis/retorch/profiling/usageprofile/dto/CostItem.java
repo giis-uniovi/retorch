@@ -6,7 +6,12 @@ package giis.retorch.profiling.usageprofile.dto;
 
 /** The cost of one (cloud object, TJob, lifecycle phase) combination of an {@link Alternative}. */
 public final class CostItem {
-    /** The cloud object that is billed: {@code compute} or {@code storage}. */
+    public static final String OBJECT_COMPUTE = "compute";
+    public static final String OBJECT_STORAGE = "storage";
+    /** A browser or device rented by the minute. */
+    public static final String OBJECT_BROWSER = "browser";
+
+    /** The cloud object that is billed: {@link #OBJECT_COMPUTE}, {@link #OBJECT_STORAGE} or {@link #OBJECT_BROWSER}. */
     public final String object;
     /** The TJob charged, or {@code COI} / {@code (idle)} for the cost that belongs to no TJob. */
     public final String tjob;

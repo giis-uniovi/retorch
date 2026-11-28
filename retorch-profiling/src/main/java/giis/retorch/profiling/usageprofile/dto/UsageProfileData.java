@@ -25,6 +25,8 @@ public final class UsageProfileData {
     public final ExecutionGraph graph;
     /** SUT and branch shown in the header (empty strings when unknown). */
     public final SutInfo sut;
+    /** The vocabulary of phases, kinds and objects, so the page does not repeat it. */
+    public final Meta meta;
 
     /** Without SUT information. */
     public UsageProfileData(String plan, long pricesFetchedAt, CostReport report, TimelineSeries timeline,
@@ -45,5 +47,6 @@ public final class UsageProfileData {
         this.timeline = timeline;
         this.graph = graph;
         this.sut = sut;
+        this.meta = Meta.standard();
     }
 }

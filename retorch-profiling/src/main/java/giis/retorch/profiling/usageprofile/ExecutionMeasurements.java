@@ -5,6 +5,7 @@
 package giis.retorch.profiling.usageprofile;
 
 import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
+import giis.retorch.profiling.usageprofile.dto.Phase;
 import giis.retorch.profiling.utils.CsvConstants;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -32,8 +33,8 @@ import java.util.TreeSet;
  */
 public class ExecutionMeasurements {
 
-    public static final String COI_SETUP = CsvConstants.COI_SETUP_LABEL;
-    public static final String COI_TEARDOWN = CsvConstants.COI_TEARDOWN_LABEL;
+    public static final String COI_SETUP = Phase.COI_SETUP.label();
+    public static final String COI_TEARDOWN = Phase.COI_TEARDOWN.label();
     private static final double MILLIS_THRESHOLD = 1e11; // epoch seconds are ~1.7e9, epoch ms ~1.7e12
     private static final double GB = 1024.0 * 1024 * 1024;
     private static final String KIND_PHASE = "phase";
@@ -133,9 +134,9 @@ public class ExecutionMeasurements {
 
         String phaseAt(double t) {
             if (t < bounds[0] || t > bounds[3]) return null;
-            if (t < bounds[1]) return CsvConstants.TJOB_SETUP_LABEL;
-            if (t < bounds[2]) return CsvConstants.TJOB_TEST_EXEC_LABEL;
-            return CsvConstants.TJOB_TEARDOWN_LABEL;
+            if (t < bounds[1]) return Phase.TJOB_SETUP.label();
+            if (t < bounds[2]) return Phase.TJOB_TESTEXEC.label();
+            return Phase.TJOB_TEARDOWN.label();
         }
     }
 
@@ -261,9 +262,9 @@ public class ExecutionMeasurements {
             coiTeardownEnd = coi.get(COI_TEARDOWN)[1];
         }
         for (Map.Entry<String, Map<String, double[]>> e : phases.entrySet()) {
-            double[] setup = e.getValue().get(CsvConstants.TJOB_SETUP_LABEL);
-            double[] exec = e.getValue().get(CsvConstants.TJOB_TEST_EXEC_LABEL);
-            double[] teardown = e.getValue().get(CsvConstants.TJOB_TEARDOWN_LABEL);
+            double[] setup = e.getValue().get(Phase.TJOB_SETUP.label());
+            double[] exec = e.getValue().get(Phase.TJOB_TESTEXEC.label());
+            double[] teardown = e.getValue().get(Phase.TJOB_TEARDOWN.label());
             if (setup == null || exec == null || teardown == null) {
                 throw new IOException("Incomplete lifecycle phases for " + e.getKey() + " in " + source);
             }

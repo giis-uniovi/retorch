@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,6 +71,14 @@ public class UsageProfileTests {
             if (object.equals(i.object) && tjob.equals(i.tjob) && phase.equals(i.phase)) return true;
         }
         return false;
+    }
+
+    private static List<String> texts(JsonNode array) {
+        List<String> out = new ArrayList<>();
+        for (JsonNode n : array) {
+            out.add(n.asText());
+        }
+        return out;
     }
 
     private static Set<String> names(JsonNode node) {
@@ -121,7 +130,12 @@ public class UsageProfileTests {
                 new UsageProfileData("MyPlan", catalog.fetchedAtEpochMs, report, series, null)));
 
         assertEquals(set("plan", "pricesFetchedAt", "durationSec", "peakCpu", "peakMemGb", "peakDiskGb", "warnings",
-                "alternatives", "timeline", "graph", "sut"), names(json));
+                "alternatives", "timeline", "graph", "sut", "meta"), names(json));
+        assertEquals(set("phases", "kinds", "objects"), names(json.get("meta")));
+        assertEquals(Arrays.asList("COI-setup", "tjob-setup", "tjob-testexec", "tjob-teardown", "coi-teardown",
+                "oversubscription"), texts(json.get("meta").get("phases")));
+        assertEquals(Arrays.asList("VM", "CONTAINER", "BROWSER_SERVICE"), texts(json.get("meta").get("kinds")));
+        assertEquals(Arrays.asList("compute", "storage", "browser"), texts(json.get("meta").get("objects")));
         assertTrue(json.has("graph") && json.get("graph").isNull());
         assertEquals("MyPlan", json.get("plan").asText());
         assertTrue(json.get("warnings").isArray());
