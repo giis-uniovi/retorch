@@ -6,7 +6,8 @@ JSON cache, and holds them in an immutable `PriceCatalog`. Network is never used
 
 ## Public API
 `PriceCatalog` (and its nested `VmOffer`, `ContainerRate`, `StorageRate`, `BrowserRate`, `Builder`), `PriceSource`,
-`PricingFetcher`, `PriceProvider`, `AzurePrices`, `AwsPrices`, `DeviceFarmPrices` and `HttpGet`. `PriceCache` and
+`PricingFetcher`, `PriceProvider`, `AbstractPriceProvider`, `PriceProviderRegistry`, `ProviderRegions`, `AzurePrices`,
+`AwsPrices`, `DeviceFarmPrices` and `HttpGet`. `PriceCache` and
 `AwsReservations` are package-private. Other packages only need `PriceCatalog` (cost, report, plan tests and
 `main.UsageProfileRequest`) and `PriceSource` (`main`).
 
@@ -20,19 +21,55 @@ JSON cache, and holds them in an immutable `PriceCatalog`. Network is never used
   (Jackson through `@JsonCreator`; missing lists are empty). `VmOffer.reservations` is a list of `dto.ReservationOptionDTO`
   (empty if there is no data). A file without `schemaVersion` loads as 0.
 
+## Design: providers are pluggable
+Patterns: **Strategy** (`PriceProvider`), **Template Method** (`AbstractPriceProvider`) and **Registry/Factory**
+(`PriceProviderRegistry`). `PricingFetcher`, `PriceSource`, `PriceCache`, the CLI argument handling and `PriceCatalog` know
+no concrete provider; adding one never edits them.
+- `PriceProvider` (Strategy): `id()` (unique, e.g. `azure`, `aws`, `aws-devicefarm`; the key of its regions), `name()` (used in
+  warnings), `configId()` (the region setting it reads; default `id()`; Device Farm returns `aws`), `regionsFor(ProviderRegions)`
+  (default: the regions of `configId()`; empty = disabled; Device Farm overrides it: `[global]` only if AWS has regions),
+  `fetch(region)` and `describe(region)` (warning text).
+- `ProviderRegions`: immutable map provider id -> regions (`none()`, `of(azure, aws)`, `with(id, "r1,r2")`, `regions(id)`);
+  comma separated lists, blanks ignored, blank = disabled.
+- `AbstractPriceProvider` (Template Method): `fetch(region)` is final (builds the catalog around the abstract
+  `collect(region, builder)`); shared plumbing: `open`, `readJson`, `pages(url, itemsField, nextLinkField)` (paged APIs),
+  `readOffer` / `attr` / `firstUsdPrice` (streaming of the AWS-style offer files with sections `products`, `terms.OnDemand`,
+  `terms.Reserved`), `number(text, fallback)` (safe parsing of "8 GiB", "1,024", else the fallback: an EC2 type with
+  non-numeric vCPU/memory is skipped instead of failing the region), reservation helpers (`termYears` for "1 Year"/"3yr" ->
+  1 or 3 else 0, `addCheapest` per (term, payment), `sortByTerm`) and the factories `vm`, `container`, `storage`, `browser`
+  that label the entries with the provider label given to the constructor (`id`, `name`, `catalogProvider`; Device Farm's
+  entries are labelled `AWS`). A concrete provider contains only its own filters and mapping.
+- `PriceProviderRegistry`: ordered list of providers (`register(provider)`, unique `id`, `providers()`) and
+  `standard(HttpGet)` = Azure, AWS, Device Farm (the only place that lists them; explicit list, no `ServiceLoader`, which is
+  fragile in the shaded CLI jar). `regionsKey(ProviderRegions)` builds the cache key generically: one `id=r1,r2` entry per
+  distinct `configId()` in registration order, joined with `;`: `azure=a,b;aws=c` (same as before, so caches keep working
+  and `SCHEMA_VERSION` stays 3); a registered extra provider appends `;id=regions` and so invalidates older caches.
+- Recipe to add a provider (e.g. GCP): 1. `final class GcpPrices extends AbstractPriceProvider` with a constructor calling
+  `super(http, "gcp", "GCP", "GCP")` and `collect(region, out)` that reads with `pages`/`readJson`/`readOffer` and adds entries
+  built with `vm/container/storage/browser`; 2. `.register(new GcpPrices(http))` in `PriceProviderRegistry.standard`;
+  3. a test with canned HTTP (see `PriceProviderExtensibilityTests`). Regions are then given with
+  `PriceSource.builder().regions("gcp", "europe-west1")` (the CLI keeps its two region arguments; wiring a CLI argument for a
+  new provider is a `main` change).
+- Invariants: no concrete provider outside the registry's `standard` factory; ids are unique; a provider with no regions is
+  not called; a failing provider or region only adds a warning and never affects the others; the catalog JSON layout does not
+  depend on the provider.
+
 ## Providers and fetching
-- Price access is split in `PriceProvider` (`name()`, `fetch(region)`), implemented by `AzurePrices`, `AwsPrices` and
-  `DeviceFarmPrices` (the last one global: its region argument is ignored), plus `PriceCache` (the JSON file: returns the
-  cache only if it has the current schema version and the same regions key) and `HttpGet` (`open(url)` -> `InputStream`,
-  `HttpGet.standard()` = the real HTTP). `new PricingFetcher(HttpGet)` wires the three providers; the package-private
-  constructor takes the three providers, so every flow is tested with canned responses or fakes.
-- `PricingFetcher.fetchOrLoad(azureRegions, awsRegions, cacheFile, maxAgeMs)`: regions are comma separated lists
-  (`PricingFetcher.split`), blank disables a provider. The cache is used only if younger than `maxAgeMs`, built for the same
+- Providers `AzurePrices`, `AwsPrices` and `DeviceFarmPrices` (the last one global: its region argument is ignored) extend
+  `AbstractPriceProvider`; `PriceCache` is the JSON file (returns the cache only if it has the current schema version and the
+  same regions key) and `HttpGet` (`open(url)` -> `InputStream`, `HttpGet.standard()` = the real HTTP). `new
+  PricingFetcher(HttpGet)` uses `PriceProviderRegistry.standard(http)`; `new PricingFetcher(PriceProviderRegistry)` takes any
+  registry, so every flow is tested with canned responses or fakes.
+- `PricingFetcher.fetchOrLoad(ProviderRegions, cacheFile, maxAgeMs)` (and the classic `fetchOrLoad(azureRegions, awsRegions,
+  cacheFile, maxAgeMs)`, which delegates with `ProviderRegions.of`): regions are comma separated lists
+  (`PricingFetcher.split` = `ProviderRegions.split`), blank disables a provider; each registered provider is asked for the
+  regions it declares in `regionsFor`, in registration order. The cache is used only if younger than `maxAgeMs`, built for the same
   regions **and** with the current `schemaVersion` (an old cache is ignored and the prices are fetched again); if every
   provider fails and a cache exists, the cache is returned with a warning; if nothing is available it throws `IOException`
   ("No prices ..."). A failing provider/region only adds a warning.
 - `PriceSource(azureRegions, awsRegions, cacheFile, maxAgeHours).load()` bundles those four settings (used by the toolbox and
-  `UsageProfileMain`).
+  `UsageProfileMain`). `PriceSource.builder().regions(providerId, "r1,r2")...cacheFile(path).maxAgeHours(h)
+  .providers(registry).build()` is the generic form (default registry = standard, default cache lifetime 24 h).
 - Azure: Retail Prices API (public). VM sizes come from a fixed list in the class (the API gives no vCPU/RAM); Spot, Low
   Priority and Windows prices are ignored. Container Instances vCPU/GB-hour; Standard SSD E10 disk -> GB-month.
   Reservations: a second query with `priceType eq 'Reservation'` for the same sizes; each item has `reservationTerm`
@@ -59,3 +96,8 @@ JSON cache, and holds them in an immutable `PriceCatalog`. Network is never used
 - `PricingFetcherTests`: fresh cache without provider calls, expired cache refetched and saved, cache of other regions
   ignored, all providers failing falls back to the expired cache with warnings, nothing available throws, one failing region
   only warns, Device Farm only with AWS and once, Azure with canned HTTP responses, HTTP failure as warnings.
+- `PriceProviderExtensibilityTests`: a fake provider (one class extending `AbstractPriceProvider`) registered next to the
+  standard ones contributes VMs, browser rates and warnings; a failing region/provider does not affect the others; it is part
+  of the cache key (and a cache of other regions is ignored); it is not called when it declares no regions; `PriceSource`
+  builder with a custom registry; duplicated ids rejected; Device Farm follows the AWS regions; helpers: `pages`, streaming
+  `readOffer`, `number`, `termYears` / `addCheapest` / `sortByTerm`, entry factories.

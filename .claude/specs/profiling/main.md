@@ -12,7 +12,7 @@ Instance JSON model) has been removed.
   null or a file that does not exist means the usage profile has no execution graph, while an existing file with an empty plan gives a graph without nodes) and the
   `browserResourcePattern` (case-insensitive text a resource name of the plan contains to make its TJob a browser user; default `browser`, taken from the system
   property `usageprofile-browser-resources` when the builder is created, overridable with `browserResourcePattern(...)`, blank = default).
-  `PriceSource` holds the regions (comma separated lists), the price cache file and its maximum age in hours.
+  `PriceSource` holds the regions (comma separated lists; `PriceSource.builder().regions(providerId, ...)` for any registered price provider), the price cache file and its maximum age in hours.
   The four `generateUsageProfile(...)` overloads (PriceSource or PriceCatalog, with or without `executionPlanJson`) are `@Deprecated` and delegate to `generate`.
 - `UsageProfileMain` (Main-Class of `retorch-profiling-<version>-cli.jar`, built by the shade plugin with the `cli`
   classifier):
