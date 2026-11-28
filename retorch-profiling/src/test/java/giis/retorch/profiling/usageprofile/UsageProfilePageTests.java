@@ -193,4 +193,34 @@ public class UsageProfilePageTests {
             assertEquals(translations(language), inlined.get(language));
         }
     }
+
+    // ---- the list of scripts ----
+
+    private static void collectScripts(java.io.File dir, String prefix, Set<String> found) {
+        for (java.io.File f : dir.listFiles()) {
+            if (f.isDirectory()) {
+                collectScripts(f, prefix + f.getName() + "/", found);
+            } else if (f.getName().endsWith(".js")) {
+                found.add(prefix + f.getName());
+            }
+        }
+    }
+
+    @Test
+    public void testEveryScriptFileIsListedExactlyOnceAndEveryListedScriptExists() throws IOException {
+        String root = "src/main/resources/usageprofile/js/";
+        List<String> listed = new java.util.ArrayList<>();
+        for (String resource : UsageProfileGenerator.appScripts()) {
+            listed.add(resource.substring("usageprofile/js/".length()));
+        }
+        Set<String> files = new TreeSet<>();
+        collectScripts(new java.io.File(root), "", files);
+        assertEquals("a script is listed twice: " + listed, new TreeSet<>(listed).size(), listed.size());
+        assertEquals("scripts.txt and the .js files under js/ differ", files, new TreeSet<>(listed));
+        assertEquals("i18n.js", listed.get(0));
+        assertEquals("app.js", listed.get(listed.size() - 1));
+        for (String name : listed) {
+            assertTrue(name + " is listed but does not exist", Files.exists(Paths.get(root + name)));
+        }
+    }
 }
