@@ -119,7 +119,7 @@ project has it (`$WORKSPACE/.retorch/executionplan.json`, versioned with the pro
   writable layer of the container; `container` rows: one per container, written the first time the sampler sees it,
   with its `image`, the size in bytes of that image (`docker image inspect`) and the total size of the volumes it
   mounts (`docker inspect` + `docker system df -v`, 0 if none)). The storage used by a TJob is therefore the writable
-  layers plus the volumes plus the images (see `profiling/usageprofile.md`). The lifecycle file written by `savetjoblifecycledata.sh` is consumed
+  layers plus the volumes plus the images (see `profiling/measurement.md`). The lifecycle file written by `savetjoblifecycledata.sh` is consumed
   and removed, so no other `artifacts/*.csv` of the execution remains.
 - `basecoi-teardown.sh` must append the COI tear-down timestamps to `COI.data` **before** running
   `savetjoblifecycledata.sh`.
