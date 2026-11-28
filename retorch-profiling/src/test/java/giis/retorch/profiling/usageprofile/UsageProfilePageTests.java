@@ -41,66 +41,34 @@ public class UsageProfilePageTests {
     static final String SMOKE_PAGE = "target/usageprofile-smoke/usageprofile.html";
 
     private static PriceCatalog.VmOffer vm(String provider, String region, String name, double vcpu, double mem, double hourly) {
-        PriceCatalog.VmOffer v = new PriceCatalog.VmOffer();
-        v.provider = provider;
-        v.region = region;
-        v.name = name;
-        v.vcpu = vcpu;
-        v.memGb = mem;
-        v.hourly = hourly;
-        return v;
+        return new PriceCatalog.VmOffer(provider, region, name, vcpu, mem, hourly);
     }
 
     /** Two providers, two regions of the first one, VMs with reservations, a container service and two browser services. */
     private static PriceCatalog richCatalog() {
-        PriceCatalog catalog = new PriceCatalog();
-        catalog.fetchedAtEpochMs = 1700000000000L;
-        PriceCatalog.VmOffer small = vm("Azure", "westeurope", "D2s", 2, 8, 0.1);
-        small.reservations.add(ReservationOption.allUpfront(1, 600));
-        small.reservations.add(ReservationOption.allUpfront(3, 1500));
-        PriceCatalog.VmOffer big = vm("Azure", "westeurope", "D4s", 4, 16, 0.2);
-        big.reservations.add(ReservationOption.allUpfront(1, 1200));
-        PriceCatalog.VmOffer east = vm("Azure", "eastus", "D2s", 2, 8, 0.09);
-        PriceCatalog.VmOffer aws = vm("AWS", "eu-west-1", "m5.large", 2, 8, 0.11);
-        aws.reservations.add(new ReservationOption(1, ReservationOption.Payment.NO_UPFRONT, 0.07));
-        catalog.vms.addAll(Arrays.asList(small, big, east, aws));
+        PriceCatalog.Builder catalog = PriceCatalog.builder().fetchedAt(1700000000000L);
+        catalog.addVm(vm("Azure", "westeurope", "D2s", 2, 8, 0.1).withReservations(Arrays.asList(
+                ReservationOption.allUpfront(1, 600), ReservationOption.allUpfront(3, 1500))));
+        catalog.addVm(vm("Azure", "westeurope", "D4s", 4, 16, 0.2).withReservations(Arrays.asList(
+                ReservationOption.allUpfront(1, 1200))));
+        catalog.addVm(vm("Azure", "eastus", "D2s", 2, 8, 0.09));
+        catalog.addVm(vm("AWS", "eu-west-1", "m5.large", 2, 8, 0.11).withReservations(Arrays.asList(
+                new ReservationOption(1, ReservationOption.Payment.NO_UPFRONT, 0.07))));
         for (String[] r : new String[][]{{"Azure", "westeurope"}, {"AWS", "eu-west-1"}}) {
-            PriceCatalog.ContainerRate rate = new PriceCatalog.ContainerRate();
-            rate.provider = r[0];
-            rate.region = r[1];
-            rate.service = "Serverless containers";
-            rate.vcpuHour = 0.05;
-            rate.gbHour = 0.006;
-            catalog.containers.add(rate);
-            PriceCatalog.StorageRate disk = new PriceCatalog.StorageRate();
-            disk.provider = r[0];
-            disk.region = r[1];
-            disk.name = "ssd";
-            disk.gbMonth = 0.1;
-            catalog.storage.add(disk);
+            catalog.addContainer(new PriceCatalog.ContainerRate(r[0], r[1], "Serverless containers", 0.05, 0.006));
+            catalog.addStorage(new PriceCatalog.StorageRate(r[0], r[1], "ssd", 0.1));
         }
-        PriceCatalog.StorageRate east1 = new PriceCatalog.StorageRate();
-        east1.provider = "Azure";
-        east1.region = "eastus";
-        east1.name = "ssd";
-        east1.gbMonth = 0.1;
-        catalog.storage.add(east1);
+        catalog.addStorage(new PriceCatalog.StorageRate("Azure", "eastus", "ssd", 0.1));
         for (String browser : new String[]{"Chrome", "Firefox"}) {
-            PriceCatalog.BrowserRate rate = new PriceCatalog.BrowserRate();
-            rate.provider = "AWS";
-            rate.region = "us-west-2";
-            rate.service = "AWS Device Farm";
-            rate.name = browser;
-            rate.minuteUsd = 0.005;
-            catalog.browsers.add(rate);
+            catalog.addBrowser(new PriceCatalog.BrowserRate("AWS", "us-west-2", "AWS Device Farm", browser, 0.005));
         }
-        return catalog;
+        return catalog.build();
     }
 
     /** Writes the page of the test fixtures (containers, plan with a browser TJob) with a fixed SUT, so it is deterministic. */
     static Path writeFixturePage(Path output) throws IOException {
         ExecutionMeasurements measurements = ExecutionMeasurements.read(Paths.get(DATA + "usage-containers.csv"));
-        ExecutionMeasurements.Timeline timeline = measurements.toTimeline();
+        Timeline timeline = measurements.toTimeline();
         List<ExecutionPlanReader.PlanNode> plan = ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json"));
         PriceCatalog catalog = richCatalog();
         CostReport report = new CostCalculator().calculate(timeline, catalog, new HashSet<>(Arrays.asList("TJOBB")));
