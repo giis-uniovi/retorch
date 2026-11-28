@@ -19,6 +19,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
   properties ignored). The profiling module has its own small classes for it (no dependency on the orchestration module).
 
 ## Components
+- Reading is split in three package-private collaborators behind the facade `ExecutionMeasurements` (same public API): `UsageCsvReader` (parsing and validation, produces `UsageData`), `TimelineBuilder` (resampling and storage rule) and `TJobMetricsCalculator` (TJob metrics and container usage). `Load`, `Slice`, `Timeline` and `TJobMetrics` are immutable top-level public classes of the package (public final fields, unmodifiable lists).
 - `ExecutionMeasurements.read(usageFile).toTimeline()`: resamples at 1 second. Each container holds its last
   sample; a sample is assigned to the phase its TJob is in at that second (setup / testexec / teardown, by start
   boundaries). `Slice.coiPhase` is `COI-setup` or `coi-teardown` while the COI lifecycle is running.
@@ -31,9 +32,10 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
 - `ExecutionPlanReader.read(file)` -> `List<PlanNode>` (id, stage, resources, tests, predecessors).
 - `ExecutionGraphBuilder.build(planNodes, metrics[, containerUsage])` -> `ExecutionGraph`: the plan is the source of truth for the nodes; a TJob
   of the plan without measurements keeps `null` in the six measured fields; measured TJobs not in the plan are ignored; the `containers` of a node come from `containerUsage` (empty list if none).
-- `PriceCatalog`: `schemaVersion` (constant `SCHEMA_VERSION`, now 3), `vms`, `containers`, `storage`, `browsers` (`BrowserRate(provider, region, service, name, minuteUsd)`: a browser or device rented by the minute), `warnings`, `fetchedAtEpochMs`, `regionsKey`; JSON
-  load/save. `VmOffer.reservations` is a list of `ReservationOption` (empty if there is no data). A file without `schemaVersion`
+- `PriceCatalog`: immutable (public final fields, unmodifiable lists, nested `VmOffer`, `ContainerRate`, `StorageRate`, `BrowserRate` also immutable); built with `PriceCatalog.builder()` (`fetchedAt`, `regionsKey`, `addVm/addContainer/addStorage/addBrowser/addWarning`, `merge`, `replaceVms`, `build`); `merge(other)` and `withWarnings(list)` return a new catalog. Fields: `schemaVersion` (constant `SCHEMA_VERSION`, now 3, unchanged: the JSON layout did not change), `vms`, `containers`, `storage`, `browsers` (`BrowserRate(provider, region, service, name, minuteUsd)`: a browser or device rented by the minute), `warnings`, `fetchedAtEpochMs`, `regionsKey`; JSON
+  load/save (Jackson through `@JsonCreator`; missing lists are empty). `VmOffer.reservations` is a list of `ReservationOption` (empty if there is no data). A file without `schemaVersion`
   loads as 0.
+- Price access is split in `PriceProvider` (`name()`, `fetch(region)`), implemented by `AzurePrices`, `AwsPrices` and `DeviceFarmPrices` (the last one global: its region argument is ignored), plus `PriceCache` (the JSON file: returns the cache only if it has the current schema version and the same regions key) and `HttpGet` (`open(url)` -> `InputStream`, `HttpGet.standard()` = the real HTTP). `new PricingFetcher(HttpGet)` wires the three providers; the package-private constructor takes the three providers, so every flow is tested with canned responses or fakes.
 - `PricingFetcher.fetchOrLoad(azureRegions, awsRegions, cacheFile, maxAgeMs)`: regions are comma separated lists, blank
   disables a provider. The cache is used only if younger than `maxAgeMs`, built for the same regions **and** with the current `schemaVersion` (an old
   cache is ignored and the prices are fetched again); if every
@@ -80,8 +82,11 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
     `origin/`, else `<workspace>/.git/HEAD`); the workspace is `WORKSPACE` or the current directory. The URL is normalised to a plain
     `https://host/org/repo` (no credentials, no `.git`, `git@host:` and `ssh://` converted; anything else, e.g. a local path, gives an empty URL);
     the name is its last segment.
-  - `UsageProfileData(plan, pricesFetchedAt, report, timeline, graph[, sut])`: exactly what the page receives; `graph` is nullable, `sut` defaults to `SutInfo.none()`.
-- `CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `CostReport` (peaks, duration, alternatives sorted by total, warnings):
+  - `Phase` (enum: `label()`, `order()`, `isCoi()`): the lifecycle phases in display order; the label is the exact string of the usage file and of `CostItem.phase`. It replaces the
+    string literals of the previous `CsvConstants`, `ExecutionMeasurements` and `CostCalculator`. Constants of the kinds (`Alternative.KIND_*`) and of the objects (`CostItem.OBJECT_*`).
+  - `Meta` (`phases, kinds, objects`): built from them, always `Meta.standard()`.
+  - `UsageProfileData(plan, pricesFetchedAt, report, timeline, graph[, sut])`: exactly what the page receives; `graph` is nullable, `sut` defaults to `SutInfo.none()`; `meta` is always set.
+- `CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `CostReport` (peaks, duration, alternatives sorted by total, warnings). It only orchestrates: one `AlternativeCost` strategy per kind (`VmCost`, `ContainerCost`, `BrowserServiceCost`, package-private, sharing a `CostContext` and a `CostAccumulator`); the browser strategy runs last, over the already sorted alternatives. A new kind of alternative is a new strategy:
   - VM alternatives carry the reservations of the chosen VM (`Alternative.reservations`); container alternatives have none.
   - VM alternatives: per provider+region, the cheapest 3 VMs of distinct shape that fit the peak CPU and memory;
     none fits -> warning. Per second the VM costs `hourly/3600`; COI seconds are charged to that COI phase; otherwise
@@ -95,7 +100,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
     plus one browser session per TJob of `browserTjobs` during its `tjob-testexec` phase, billed `minuteUsd / 60` per second under the cloud object
     `browser`. The measured browser containers (Selenoid/Chrome) are not subtracted. Without `browserTjobs` (or without any other alternative) no
     browser alternative is added and a warning says so. `UsageProfilerToolBox` takes `browserTjobs` from the execution plan: TJobs with a
-    resource whose name contains `browser` (case-insensitive). The projection simulator treats these alternatives as pay-per-use.
+    resource whose name contains the browser pattern (case-insensitive; default `browser`, property `usageprofile-browser-resources`, see `profiling/main.md`). The projection simulator treats these alternatives as pay-per-use.
   - Cost items are unique per (cloud object, tjob, phase). The sum of items equals the total.
 - `UsageProfileGenerator.generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfo.detect()`): one self-contained HTML
   (no external requests). It fills `resources/usageprofile/usageprofile.html` by replacing `/*CSS*/` with `usageprofile.css`, `/*ECHARTS*/`
@@ -119,6 +124,17 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
   - `timeline`: `t, cpu, memGb, diskGb` (parallel arrays of equal length);
   - `graph`: always present, `null` without an execution plan, else `{nodes:[{id, stage, resources, tests, predecessors,
     startSec, setupSec, execSec, teardownSec, peakCpu, peakMemGb, containers}]}` (the six measured fields are numbers or `null`; `startSec` is relative to the timeline start; `containers` is an array, empty without container information, of `{name, image, peakCpu, avgCpu, peakMemGb, avgMemGb, layerGb, imageGb, volumeGb, storageGb}` sorted by name).
+
+## Cross-module contracts (fixtures)
+The profiling module has no dependency on the orchestration module, so two contracts are fixed by shared example files under
+`retorch-profiling/src/test/resources/contract/` (the orchestration tests must check that its writers produce exactly these fields and columns):
+- `executionplan.json`, written by `orchestration.ExecutionPlanWriter` and read by `ExecutionPlanReader`: top level only `tjobs`; every TJob has exactly
+  `id` (lower case), `stage` (int), `resources` (names), `tests` (`Class#method`), `predecessors` (TJob ids) (`ExecutionPlanReader.NODE_FIELDS`; unknown properties are ignored when reading).
+- `usage.csv`, written by `resourcemonitor.sh export` and read by `UsageCsvReader`: the header is exactly the 12 columns of `UsageCsvReader.COLUMNS`
+  (`kind;tjobname;stage;item;start;end;cpu_percent;mem_bytes;disk_bytes;image;image_bytes;volume_bytes`), every row has all of them (empty cells
+  for what the kind does not use), kinds `phase`, `sample` and `container`, COI phases under the TJob `COI`.
+`ContractFixturesTests` reads both files (exact fields and columns, readable by the readers, TJobs of the usage file in the plan).
+A change of a field or column means changing the fixture, this spec and both modules in the same change.
 
 ## Front-end (`resources/usageprofile/`)
 Output rule: the profile is **one self-contained HTML file** (CSS, JS, ECharts, data and both logos inlined; no external
@@ -180,4 +196,4 @@ The page must provide:
 
 ## Tests
 `UsageProfileTests` (timeline from synthetic and real Jenkins data, incomplete phases, VM and container cost conservation and oversubscription, no-fit warning, Azure/AWS parsers
-Device Farm parsing (only metered browsers and devices, per-minute price), browser-service alternatives (cheapest alternative + browser minutes of the TJobs given, warning without TJobs), and streaming reader, cache and regions parsing, cache with another or no `schemaVersion` ignored, Azure reservations (all upfront per term), AWS `terms.Reserved` streaming (standard only, No/All Upfront, 1/3 years), `reservations` property in the JSON of VM and container alternatives, self-contained HTML, JSON contract property names incl. `graph` null / non-null, timeline downsampled to at most 600 points, plan reader, TJob metrics, graph merge with nulls, assembled page without leftover placeholders and with both logos and the data-URI icon (the only `<link>`), `SutInfo` from the Jenkins environment (credentials removed, ssh converted) and from `.git` files, `sut` in the JSON, the six scripts in order and the `app.title` key, missing plan file means no graph, 12-column file with `container` rows: peak disk includes images and volumes, shared image counted once per TJob, per-container peaks/averages/storage, `containers` JSON property and field names, 9-column file yields `containers: []`). Fixtures `testdata/usageprofile/usage-containers.csv` (12 columns, container rows), `usage.csv` and `real-run.csv` (9 columns) and `executionplan.json` (TJobs of `usage.csv` plus a gateway node). Network is never used in tests.
+Device Farm parsing (only metered browsers and devices, per-minute price), browser-service alternatives (cheapest alternative + browser minutes of the TJobs given, warning without TJobs), and streaming reader, cache and regions parsing, cache with another or no `schemaVersion` ignored, Azure reservations (all upfront per term), AWS `terms.Reserved` streaming (standard only, No/All Upfront, 1/3 years), `reservations` property in the JSON of VM and container alternatives, self-contained HTML, JSON contract property names incl. `meta` (phases in order, kinds, objects) and `graph` null / non-null, timeline downsampled to at most 600 points, plan reader, TJob metrics, graph merge with nulls, assembled page without leftover placeholders and with both logos and the data-URI icon (the only `<link>`), `ContractFixturesTests` (the shared plan and usage fixtures), `PricingFetcherTests` (fresh cache without provider calls, expired cache refetched and saved, cache of other regions ignored, all providers failing falls back to the expired cache with warnings, nothing available throws, one failing region only warns, Device Farm only with AWS and once, Azure with canned HTTP responses, HTTP failure as warnings), `SutInfo` from the Jenkins environment (credentials removed, ssh converted) and from `.git` files, `sut` in the JSON, the six scripts in order and the `app.title` key, missing plan file means no graph, 12-column file with `container` rows: peak disk includes images and volumes, shared image counted once per TJob, per-container peaks/averages/storage, `containers` JSON property and field names, 9-column file yields `containers: []`). Fixtures `testdata/usageprofile/usage-containers.csv` (12 columns, container rows), `usage.csv` and `real-run.csv` (9 columns) and `executionplan.json` (TJobs of `usage.csv` plus a gateway node). Network is never used in tests.

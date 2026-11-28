@@ -34,7 +34,7 @@ public final class UsageProfileMain {
             java.lang.System.exit(1);
         }
         PriceSource prices = new PriceSource(args[3], args[4], args[5], PRICE_CACHE_HOURS);
-        new UsageProfilerToolBox().generateUsageProfile(args[0], args[1], args[2], prices,
-                args.length == MAX_ARGS ? args[MAX_ARGS - 1] : null);
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder(args[0], args[1], args[2]).prices(prices)
+                .executionPlan(args.length == MAX_ARGS ? args[MAX_ARGS - 1] : null).build());
     }
 }
