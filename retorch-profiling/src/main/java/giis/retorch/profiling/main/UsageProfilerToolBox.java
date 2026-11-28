@@ -4,7 +4,7 @@
  */
 package giis.retorch.profiling.main;
 
-import giis.retorch.profiling.usageprofile.CostCalculator;
+import giis.retorch.profiling.usageprofile.cost.CostCalculator;
 import giis.retorch.profiling.usageprofile.ExecutionGraphBuilder;
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.ExecutionPlanReader;

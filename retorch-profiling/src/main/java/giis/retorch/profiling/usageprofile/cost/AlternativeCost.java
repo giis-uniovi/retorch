@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile;
+package giis.retorch.profiling.usageprofile.cost;
 
 import giis.retorch.profiling.usageprofile.dto.Alternative;
 

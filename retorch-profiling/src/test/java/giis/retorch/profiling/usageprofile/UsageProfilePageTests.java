@@ -14,6 +14,7 @@ import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import giis.retorch.profiling.usageprofile.dto.ReservationOption;
 import giis.retorch.profiling.usageprofile.dto.SutInfo;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
+import giis.retorch.profiling.usageprofile.cost.CostCalculator;
 import org.junit.Test;
 
 import java.io.IOException;
