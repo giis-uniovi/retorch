@@ -7,7 +7,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Resource Usage Profile</title>
+<title>RETORCH Resource Usage Profile</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,/*FAVICON*/">
 <style>/*CSS*/</style>
 </head>
@@ -17,7 +17,7 @@
   <div class="brand">
     <span class="logo-badge" role="img" aria-label="GIIS"><!--HEADER_LOGO_SVG--></span>
     <div class="brand-text">
-      <h1 data-i18n="app.title">Resource Usage Profile</h1>
+      <h1 data-i18n="app.title">RETORCH Resource Usage Profile</h1>
       <p class="facts" id="facts"></p>
       <p class="sub" id="sub"></p>
     </div>
@@ -108,6 +108,14 @@
     <details class="chart-data"><summary data-i18n="a11y.data">Data table</summary><div id="cmpData"></div></details>
   </section>
 
+  <section class="card" id="tableCard">
+    <div class="filters">
+      <h2 data-i18n="table.title">All alternatives</h2>
+      <span class="tabs" id="cmpHelpers" role="group" data-i18n-label="cmp.group"></span>
+    </div>
+    <div class="table-wrapper" role="region" tabindex="0" aria-labelledby="tableCaption"><table id="table"></table></div>
+  </section>
+
   <section class="card" id="detail">
     <div class="filters"><h2 id="detailTitle"></h2></div>
     <dl class="kpis detail-kpis" id="detailKpis"></dl>
@@ -196,19 +204,11 @@
     <h3 data-i18n="sim.chart.title">Monthly cost vs runs per day</h3>
     <div class="chart" id="simChart" role="img"></div>
   </section>
-
-  <section class="card" id="tableCard">
-    <div class="filters">
-      <h2 data-i18n="table.title">All alternatives</h2>
-      <span class="tabs" id="cmpHelpers" role="group" data-i18n-label="cmp.group"></span>
-    </div>
-    <div class="table-wrapper" role="region" tabindex="0" aria-labelledby="tableCaption"><table id="table"></table></div>
-  </section>
 </main>
 
 <footer class="site-footer">
   <hr>
-  <p><a class="footer-logo" href="https://giis.uniovi.es/" target="_blank" rel="noopener" data-i18n-alt="footer.alt"><!--FOOTER_SVG--></a></p>
+  <p><a class="footer-logo" href="https://giis.uniovi.es/" target="_blank" rel="noopener noreferrer"><!--FOOTER_SVG--><span class="vh" data-i18n="footer.alt">GIIS - Software Engineering Research Group, University of Oviedo</span> <span class="vh" data-i18n="head.newTab">(opens in a new tab)</span></a></p>
 </footer>
 
 <div class="vh" id="live" role="status" aria-live="polite" aria-atomic="true"></div>

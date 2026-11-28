@@ -87,7 +87,7 @@
   "alt.axisUsd": "USD de esta ejecución",
   "alt.axisPct": "% de la alternativa más barata",
   "cmp.title": "Comparar alternativas seleccionadas",
-  "cmp.hint": "Marca alternativas en la tabla inferior para compararlas lado a lado.",
+  "cmp.hint": "Marca alternativas en la tabla justo debajo de este gráfico para compararlas lado a lado.",
   "cmp.byPhase": "Por fase",
   "cmp.byTjob": "Por TJob",
   "cmp.all": "Seleccionar todas",

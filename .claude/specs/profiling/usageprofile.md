@@ -147,10 +147,11 @@ Cost panel of a TJob (`PanelView`): rendered apart from the Gantt chart: selecti
 redraws that chart. The files carry the GIIS notice; ECharts and the SVG logos are third party / assets.
 
 The page must provide:
+- **Order of the sections**: header; warnings and key figures; measured usage; execution graph (when there is a plan); alternatives (filters, options and chart); **compare selected alternatives, followed directly by the table of all the alternatives** (its checkboxes feed the comparison, so they sit next to it; the hint of the comparison says so in every language); breakdown of the selected alternative; projection; footer. The static `<title>` and `<h1>` of the HTML are `app.title` ("RETORCH Resource Usage Profile"), so the page is right before the script runs; `<html lang>` is `en` until the script sets the language of the user (the script runs at the end of the body, before the first paint, so no flash is expected and no second inline script is used).
 - **Header** with a large inline GIIS logo, the title "RETORCH Resource Usage Profile" (key `app.title`, the same in every language),
   the **SUT** (name linking to its repository in a new tab, only when the URL is `https://`; `rel="noopener noreferrer"`) and the **branch**
   as pills under the title (hidden when unknown), and the language and theme selectors. **Footer**: horizontal rule and the centered group
-  footer logo linking to https://giis.uniovi.es/ (same as `README.md`). The logos have no box behind them. The header logo keeps its
+  footer logo linking to https://giis.uniovi.es/ (same as `README.md`), which opens in a new tab with `rel="noopener noreferrer"` and a visually hidden text (name of the group and "opens in a new tab", translated) that gives the link its accessible name. The logos have no box behind them. The header logo keeps its
   original colours in both themes; the footer logo is recoloured per theme in CSS (white parts = page background, blue = `--logo-blue`,
   grey text = text colour). The page icon is the
   GIIS logo.
@@ -216,6 +217,6 @@ Not part of the default build (no Node needed for `mvn test`): they run with `mv
   exception or `console.error`; every chart, table and the list of TJobs render; title and header; usage chart and execution graph
   have identical plot areas (x0/x1 in page pixels) before and after selecting a TJob, after zooming and at 390 px, and the zoom is
   linked both ways; the TJob panel is below the chart; the metric selector of the container chart; the keyboard focus stays on the
-  control after a re-render; Escape closes the panel; a small resize only adapts the charts (they are not re-created) and the axes stay aligned after any resize; a `hashchange` applies the new link; a deep link restores the state; selecting an alternative does not re-create the Gantt chart and keeps the open containers open; every change made through the controls is written to the hash and reopening that hash restores the same page and the same hash; axe-core (WCAG 2.x A/AA and best practices) finds
+  control after a re-render; Escape closes the panel; a small resize only adapts the charts (they are not re-created) and the axes stay aligned after any resize; a `hashchange` applies the new link; the static title and h1 are `app.title`, the table of all the alternatives is right below the comparison, the footer link has `noopener noreferrer` and the new-tab note; a deep link restores the state; selecting an alternative does not re-create the Gantt chart and keeps the open containers open; every change made through the controls is written to the hash and reopening that hash restores the same page and the same hash; axe-core (WCAG 2.x A/AA and best practices) finds
   0 violations in light and dark (`--full`: also es, fr, de); no horizontal scroll on a phone. `--shots <dir>` saves
   `wide|narrow-light|dark.png` (deterministic) to compare two versions of the page byte by byte.

@@ -170,6 +170,10 @@ async function main() {
     await b.open(base + '#lang=en&theme=light');
     check(b.problems.length === 0, 'no JavaScript errors while loading ' + JSON.stringify(b.problems));
     await renders(b);
+    const source = fs.readFileSync(pagePath, 'utf8');
+    check(/<title>RETORCH Resource Usage Profile<\/title>/.test(source) && /<h1 data-i18n="app.title">RETORCH Resource Usage Profile<\/h1>/.test(source), 'the static title and h1 are app.title');
+    check(await b.ev("document.getElementById('cmpCard').nextElementSibling.id === 'tableCard'"), 'the table of all the alternatives is right below the comparison');
+    check(await b.ev("(function () { var a = document.querySelector('.footer-logo'); return a.getAttribute('rel') === 'noopener noreferrer' && a.textContent.indexOf('new tab') >= 0; })()"), 'the footer link has noopener noreferrer and the new tab note');
     await aligned(b, 'before selecting a TJob');
 
     // selecting a TJob keeps the axes aligned and opens the panel below the chart
