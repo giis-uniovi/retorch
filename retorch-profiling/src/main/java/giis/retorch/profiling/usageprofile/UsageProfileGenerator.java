@@ -43,7 +43,7 @@ public class UsageProfileGenerator {
             DIR + "js/model/simulation.js", DIR + "js/model/state.js", DIR + "js/model/hash.js", DIR + "js/charts.js",
             DIR + "js/views/common.js", DIR + "js/views/header.js", DIR + "js/views/usage.js", DIR + "js/views/graph.js",
             DIR + "js/views/panel.js", DIR + "js/views/alternatives.js", DIR + "js/views/table.js", DIR + "js/views/compare.js",
-            DIR + "js/views/detail.js", DIR + "js/views/simulator.js", DIR + "js/app.js"));
+            DIR + "js/views/detail.js", DIR + "js/views/simulator.js", DIR + "js/controller.js", DIR + "js/app.js"));
 
     /**
      * @param planName name shown in the usage profile title

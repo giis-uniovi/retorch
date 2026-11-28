@@ -115,6 +115,7 @@ const PanelView = (function () {
      The list of containers holds the same figures. */
   function renderChart(vm) {
     if (!vm.node || !View.$(root, 'graphContChartBox')) { return; } // nodes without containers have no chart
+    Array.prototype.forEach.call(root.querySelectorAll('input[name="contMetric"]'), function (r) { r.checked = r.value === vm.contMetric; });
     const list = vm.node.containers;
     const f = Charts.fonts('graphContChart');
     const m = METRICS.filter(function (x) { return x.id === vm.contMetric; })[0];

@@ -483,7 +483,7 @@ public class UsageProfileTests {
 
     private static final String[] SCRIPTS = {"i18n", "format", "html", "theme", "model/profile", "model/simulation", "model/state",
         "model/hash", "charts", "views/common", "views/header", "views/usage", "views/graph", "views/panel", "views/alternatives",
-        "views/table", "views/compare", "views/detail", "views/simulator", "app"};
+        "views/table", "views/compare", "views/detail", "views/simulator", "controller", "app"};
 
     private static String html(Path out) throws IOException {
         return new String(Files.readAllBytes(out), StandardCharsets.UTF_8);

@@ -288,6 +288,14 @@ async function main() {
     check((await b.ev('location.hash')) === hashAfter, 'the link is stable after reopening');
     check(b.problems.length === 0, 'no JavaScript errors after the interactions ' + JSON.stringify(b.problems));
 
+    // following another link in the same page (hashchange): what the link says is applied, the rest goes back to the default
+    await b.open(base + '#lang=en&theme=light&node=tjoba&metric=pct');
+    await b.ev("location.hash = '#lang=en&theme=light&sort=provider&node=tjobb'");
+    await sleep(600);
+    check(await b.ev("document.getElementById('sort').value === 'provider' && document.getElementById('metric').value === 'usd' && document.querySelector('#tjobList [aria-current]').getAttribute('data-node') === 'tjobb'"),
+      'a hashchange applies the new link and resets what it does not say');
+    check(b.problems.length === 0, 'no JavaScript errors after a hashchange ' + JSON.stringify(b.problems));
+
     // accessibility
     const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
     if (axe) {
@@ -299,6 +307,19 @@ async function main() {
         }
       }
     }
+
+    // a small resize only adapts the charts (they are not re-created); a breakpoint change draws them again; the axes stay aligned
+    await b.view(1300, 1800);
+    await b.open(base + '#lang=en&theme=light&node=tjoba');
+    await b.ev("echarts.getInstanceByDom(document.getElementById('graphChart')).__smoke = 1");
+    await b.view(1260, 1800);
+    await sleep(700);
+    check(await b.ev("echarts.getInstanceByDom(document.getElementById('graphChart')).__smoke === 1"), 'a small resize does not re-create the charts');
+    await aligned(b, 'after a small resize');
+    await b.view(700, 1800);
+    await sleep(700);
+    await aligned(b, 'after a large resize');
+    check(await b.ev("document.getElementById('usage').getBoundingClientRect().width <= 700"), 'the charts follow a large resize');
 
     // narrow screen: no horizontal scroll and the axes still aligned
     await b.view(390, 900);
