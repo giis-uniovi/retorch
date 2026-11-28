@@ -4,11 +4,11 @@
  */
 package giis.retorch.profiling.usageprofile.plan;
 
+import giis.retorch.profiling.usageprofile.dto.measurement.ContainerUsageDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.GraphNodeDTO;
 import giis.retorch.profiling.usageprofile.measurement.TJobMetrics;
 import giis.retorch.profiling.usageprofile.plan.ExecutionPlanReader.PlanNode;
-import giis.retorch.profiling.usageprofile.dto.ContainerUsageDTO;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
-import giis.retorch.profiling.usageprofile.dto.GraphNodeDTO;
 
 import java.util.ArrayList;
 import java.util.Collections;

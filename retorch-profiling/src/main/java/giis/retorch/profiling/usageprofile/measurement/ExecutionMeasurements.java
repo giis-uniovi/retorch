@@ -4,9 +4,9 @@
  */
 package giis.retorch.profiling.usageprofile.measurement;
 
-import giis.retorch.profiling.usageprofile.dto.ContainerUsageDTO;
-import giis.retorch.profiling.usageprofile.dto.Phase;
 
+import giis.retorch.profiling.usageprofile.dto.measurement.ContainerUsageDTO;
+import giis.retorch.profiling.usageprofile.dto.measurement.Phase;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;

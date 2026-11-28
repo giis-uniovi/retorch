@@ -4,6 +4,9 @@
  */
 package giis.retorch.profiling.main;
 
+import giis.retorch.profiling.usageprofile.dto.cost.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.report.SutInfoDTO;
 import giis.retorch.profiling.usageprofile.cost.CostCalculator;
 import giis.retorch.profiling.usageprofile.plan.ExecutionGraphBuilder;
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
@@ -12,9 +15,6 @@ import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.pricing.PriceSource;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 import giis.retorch.profiling.usageprofile.report.UsageProfileGenerator;
-import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
-import giis.retorch.profiling.usageprofile.dto.SutInfoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

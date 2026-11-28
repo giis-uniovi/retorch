@@ -11,36 +11,13 @@ JSON contract** read by the page (see `profiling/report.md`). Jackson serialisat
 page JSON, formerly `UsageProfileData`). The suffix is not part of the JSON: field names are unchanged. `Phase` is an enum, not a data
 class, and keeps its name. A new data class here must end in `DTO`.
 
-## Types
-- `CostItemDTO(object, tjob, phase, cost)`: one billed (cloud object `compute`|`storage`|`browser`, TJob, phase) combination.
-- `AlternativeDTO(id, provider, kind, label, region, hourlyPrice, items)`: one VM, container or browser-service alternative; `kind`
-  is `VM`, `CONTAINER` or `BROWSER_SERVICE`; `total` is computed from the items (the sum of items always equals the total).
-  `reservations` (immutable list of `ReservationOptionDTO`, empty by default) is set with `withReservations(list)`, which returns a
-  copy.
-- `ReservationOptionDTO(termYears, payment, effectiveHourly)`: `termYears` 1 or 3, `payment` `NO_UPFRONT` | `ALL_UPFRONT` (enum,
-  serialized by name), `effectiveHourly` = USD per hour really paid 24x7, running or not (hourly rate, or upfront fee divided
-  by `termYears * 8760`). Factory `allUpfront(termYears, fee)`.
-- `CostReportDTO(peakCpu, peakMemGb, peakDiskGb, durationSec, alternatives, warnings)`: result of the calculation, alternatives
-  sorted by total, cheapest first.
-- `TimelineSeriesDTO(t, cpu, memGb, diskGb)`: total usage over time as parallel lists of equal length.
-- `GraphNodeDTO(id, stage, resources, tests, predecessors, setupSec, execSec, teardownSec, peakCpu, peakMemGb, containers)`: one
-  TJob; the six measured fields (incl. `startSec`) are nullable `Double`; `containers` is a never-null list of `ContainerUsageDTO`
-  (`[]` by default).
-- `ContainerUsageDTO(name, image, peakCpu, avgCpu, peakMemGb, avgMemGb, layerGb, imageGb, volumeGb, storageGb)`: usage of one
-  container of a TJob (cores / GB 1024^3), `storageGb = layerGb + imageGb + volumeGb`.
-- `ExecutionGraphDTO(nodes)`.
-- `SutInfoDTO(name, url, branch)`: SUT and branch shown in the header; empty strings when unknown, never null. `SutInfoDTO.detect()` /
-  `detect(env, workspace)` read `GIT_URL` (else `remote "origin"` of `<workspace>/.git/config`) and `BRANCH_NAME` (else
-  `GIT_BRANCH` without `origin/`, else `<workspace>/.git/HEAD`); the workspace is `WORKSPACE` or the current directory. The URL
-  is normalised to a plain `https://host/org/repo` (no credentials, no `.git`, `git@host:` and `ssh://` converted; anything
-  else, e.g. a local path, gives an empty URL); the name is its last segment.
-- `Phase` (enum: `label()`, `order()`, `isCoi()`): the lifecycle phases in display order; the label is the exact string of the
-  usage file and of `CostItemDTO.phase`. Constants of the kinds (`AlternativeDTO.KIND_*`) and of the objects (`CostItemDTO.OBJECT_*`).
-- `MetaDTO` (`phases, kinds, objects`): built from them, always `MetaDTO.standard()`.
-- `UsageProfileDTO(plan, pricesFetchedAt, report, timeline, graph[, sut])`: exactly what the page receives; `graph` is
-  nullable, `sut` defaults to `SutInfoDTO.none()`; `meta` is always set.
+## Subpackages (one per functionality, like `usageprofile`)
+| Package | Spec | DTOs |
+|---|---|---|
+| `dto.cost` | [dto-cost.md](dto-cost.md) | `CostItemDTO`, `AlternativeDTO`, `ReservationOptionDTO`, `CostReportDTO` |
+| `dto.measurement` | [dto-measurement.md](dto-measurement.md) | `TimelineSeriesDTO`, `ContainerUsageDTO`, `Phase` (enum) |
+| `dto.plan` | [dto-plan.md](dto-plan.md) | `GraphNodeDTO`, `ExecutionGraphDTO` |
+| `dto.report` | [dto-report.md](dto-report.md) | `SutInfoDTO`, `MetaDTO`, `UsageProfileDTO` (the root of the page JSON) |
 
-## Tests (`src/test/java/.../usageprofile/dto`)
-`SutInfoTests`: SUT and branch from the Jenkins environment (credentials removed, ssh converted) and from the `.git` files of the
-workspace; unknown values empty, a local path is not turned into a link. The JSON field names are checked by
-`report.UsageProfileGeneratorTests`.
+The `dto` package itself has no classes: it only groups the four subpackages. A new data class goes to the subpackage of the
+functionality that produces it.

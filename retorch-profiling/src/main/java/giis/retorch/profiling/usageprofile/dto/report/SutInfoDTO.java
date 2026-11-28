@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile.dto;
+package giis.retorch.profiling.usageprofile.dto.report;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

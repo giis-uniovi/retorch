@@ -4,7 +4,7 @@
  */
 package giis.retorch.profiling.usageprofile.measurement;
 
-import giis.retorch.profiling.usageprofile.dto.ContainerUsageDTO;
+import giis.retorch.profiling.usageprofile.dto.measurement.ContainerUsageDTO;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;

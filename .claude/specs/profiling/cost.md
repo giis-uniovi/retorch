@@ -5,7 +5,7 @@ Computes what the measured execution would cost on every deployment alternative 
 split by TJob, lifecycle phase and cloud object.
 
 ## Inputs and output
-`CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `dto.CostReportDTO` (peaks, duration, alternatives sorted by
+`CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `dto.cost.CostReportDTO` (peaks, duration, alternatives sorted by
 total, cheapest first, warnings). Input: a `measurement.Timeline`, a `pricing.PriceCatalog` and optionally the (upper case)
 ids of the TJobs that drive a browser.
 

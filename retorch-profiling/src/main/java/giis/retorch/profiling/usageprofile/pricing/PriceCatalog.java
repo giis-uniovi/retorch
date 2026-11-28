@@ -4,11 +4,11 @@
  */
 package giis.retorch.profiling.usageprofile.pricing;
 
+import giis.retorch.profiling.usageprofile.dto.cost.ReservationOptionDTO;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 
 import java.io.File;
 import java.io.IOException;

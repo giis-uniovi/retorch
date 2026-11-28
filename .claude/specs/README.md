@@ -22,7 +22,11 @@ a package must be reflected in its spec **in the same change**.
 | retorch-profiling | `giis.retorch.profiling.usageprofile.cost` | [profiling/cost.md](profiling/cost.md) |
 | retorch-profiling | `giis.retorch.profiling.usageprofile.plan` | [profiling/plan.md](profiling/plan.md) |
 | retorch-profiling | `giis.retorch.profiling.usageprofile.report` | [profiling/report.md](profiling/report.md) |
-| retorch-profiling | `giis.retorch.profiling.usageprofile.dto` | [profiling/dto.md](profiling/dto.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.dto` (groups the four below) | [profiling/dto.md](profiling/dto.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.dto.cost` | [profiling/dto-cost.md](profiling/dto-cost.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.dto.measurement` | [profiling/dto-measurement.md](profiling/dto-measurement.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.dto.plan` | [profiling/dto-plan.md](profiling/dto-plan.md) |
+| retorch-profiling | `giis.retorch.profiling.usageprofile.dto.report` | [profiling/dto-report.md](profiling/dto-report.md) |
 | retorch-profiling | `giis.retorch.profiling.main` | [profiling/main.md](profiling/main.md) |
 | retorch-profiling | `giis.retorch.profiling.utils` | [profiling/utils.md](profiling/utils.md) |
 

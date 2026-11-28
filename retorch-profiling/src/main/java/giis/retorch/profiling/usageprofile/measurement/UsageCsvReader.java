@@ -4,10 +4,10 @@
  */
 package giis.retorch.profiling.usageprofile.measurement;
 
+import giis.retorch.profiling.usageprofile.dto.measurement.Phase;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.ContainerInfo;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.Sample;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.Window;
-import giis.retorch.profiling.usageprofile.dto.Phase;
 import giis.retorch.profiling.utils.CsvConstants;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;

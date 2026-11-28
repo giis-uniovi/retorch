@@ -4,8 +4,8 @@
  */
 package giis.retorch.profiling.usageprofile.pricing;
 
+import giis.retorch.profiling.usageprofile.dto.cost.ReservationOptionDTO;
 import com.fasterxml.jackson.databind.JsonNode;
-import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;

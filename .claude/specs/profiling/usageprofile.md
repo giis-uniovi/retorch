@@ -12,7 +12,7 @@ and its scripts under `src/main/resources/usageprofile`). The Java side is split
 | `usageprofile.cost` | [cost.md](cost.md) | cost of every alternative (VM, container service, browser service) |
 | `usageprofile.plan` | [plan.md](plan.md) | execution plan reader and execution graph |
 | `usageprofile.report` | [report.md](report.md) | assembles the self-contained HTML; **JSON contract** between Java and the page |
-| `usageprofile.dto` | [dto.md](dto.md) | immutable data exchanged between the packages and written as the page JSON |
+| `usageprofile.dto.*` | [dto.md](dto.md) | immutable data (DTOs) exchanged between the packages and written as the page JSON, grouped like these packages: `cost`, `measurement`, `plan`, `report` |
 
 The page reads the JSON documented in [report.md](report.md); renaming a field there breaks the page.
 

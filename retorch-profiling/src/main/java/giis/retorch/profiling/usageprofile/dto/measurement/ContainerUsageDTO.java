@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile.dto;
+package giis.retorch.profiling.usageprofile.dto.measurement;
 
 /**
  * Resources used by one container (deployed resource) of a TJob. CPU in cores, memory and storage in GB (1024^3).

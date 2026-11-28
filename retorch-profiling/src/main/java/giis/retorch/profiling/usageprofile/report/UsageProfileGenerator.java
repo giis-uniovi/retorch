@@ -4,16 +4,16 @@
  */
 package giis.retorch.profiling.usageprofile.report;
 
+import giis.retorch.profiling.usageprofile.dto.cost.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.measurement.TimelineSeriesDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.report.SutInfoDTO;
+import giis.retorch.profiling.usageprofile.dto.report.UsageProfileDTO;
 import giis.retorch.profiling.usageprofile.measurement.Load;
 import giis.retorch.profiling.usageprofile.measurement.Slice;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
-import giis.retorch.profiling.usageprofile.dto.SutInfoDTO;
-import giis.retorch.profiling.usageprofile.dto.UsageProfileDTO;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
-import giis.retorch.profiling.usageprofile.dto.TimelineSeriesDTO;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.io.ByteArrayOutputStream;

@@ -4,15 +4,15 @@
  */
 package giis.retorch.profiling.usageprofile.report;
 
+import giis.retorch.profiling.usageprofile.dto.cost.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.cost.ReservationOptionDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.report.SutInfoDTO;
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.dto.CostReportDTO;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
-import giis.retorch.profiling.usageprofile.dto.ReservationOptionDTO;
-import giis.retorch.profiling.usageprofile.dto.SutInfoDTO;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.cost.CostCalculator;
 import giis.retorch.profiling.usageprofile.plan.ExecutionGraphBuilder;

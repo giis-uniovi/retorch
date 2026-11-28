@@ -4,10 +4,10 @@
  */
 package giis.retorch.profiling.usageprofile.measurement;
 
+import giis.retorch.profiling.usageprofile.dto.measurement.ContainerUsageDTO;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.ContainerInfo;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.Sample;
 import giis.retorch.profiling.usageprofile.measurement.UsageData.Window;
-import giis.retorch.profiling.usageprofile.dto.ContainerUsageDTO;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -4,8 +4,8 @@
  */
 package giis.retorch.profiling.usageprofile.cost;
 
-import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
 
+import giis.retorch.profiling.usageprofile.dto.cost.AlternativeDTO;
 import java.util.List;
 
 /**

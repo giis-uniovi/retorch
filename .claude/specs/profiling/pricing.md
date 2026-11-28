@@ -18,7 +18,7 @@ JSON cache, and holds them in an immutable `PriceCatalog`. Network is never used
   `withWarnings(list)` return a new catalog. Fields: `schemaVersion` (constant `SCHEMA_VERSION`, now 3, unchanged: the JSON
   layout did not change), `vms`, `containers`, `storage`, `browsers` (`BrowserRate(provider, region, service, name,
   minuteUsd)`: a browser or device rented by the minute), `warnings`, `fetchedAtEpochMs`, `regionsKey`; JSON load/save
-  (Jackson through `@JsonCreator`; missing lists are empty). `VmOffer.reservations` is a list of `dto.ReservationOptionDTO`
+  (Jackson through `@JsonCreator`; missing lists are empty). `VmOffer.reservations` is a list of `dto.cost.ReservationOptionDTO`
   (empty if there is no data). A file without `schemaVersion` loads as 0.
 
 ## Design: providers are pluggable

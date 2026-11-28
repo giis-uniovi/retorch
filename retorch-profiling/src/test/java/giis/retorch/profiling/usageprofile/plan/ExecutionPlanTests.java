@@ -4,9 +4,9 @@
  */
 package giis.retorch.profiling.usageprofile.plan;
 
+import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.GraphNodeDTO;
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
-import giis.retorch.profiling.usageprofile.dto.ExecutionGraphDTO;
-import giis.retorch.profiling.usageprofile.dto.GraphNodeDTO;
 import org.junit.Test;
 
 import java.io.IOException;

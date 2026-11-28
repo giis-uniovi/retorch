@@ -2,8 +2,9 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile.dto;
+package giis.retorch.profiling.usageprofile.dto.measurement;
 
+import giis.retorch.profiling.usageprofile.dto.cost.CostItemDTO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

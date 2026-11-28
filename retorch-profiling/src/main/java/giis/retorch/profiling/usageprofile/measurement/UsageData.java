@@ -4,8 +4,8 @@
  */
 package giis.retorch.profiling.usageprofile.measurement;
 
-import giis.retorch.profiling.usageprofile.dto.Phase;
 
+import giis.retorch.profiling.usageprofile.dto.measurement.Phase;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

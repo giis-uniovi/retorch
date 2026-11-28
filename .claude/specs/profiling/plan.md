@@ -15,7 +15,7 @@ properties ignored). The profiling module has its own small classes for it (no d
 
 ## Behaviour
 - `ExecutionPlanReader.read(file)` -> `List<PlanNode>` (id, stage, resources, tests, predecessors).
-- `ExecutionGraphBuilder.build(planNodes, metrics[, containerUsage])` -> `dto.ExecutionGraphDTO`: the plan is the source of truth
+- `ExecutionGraphBuilder.build(planNodes, metrics[, containerUsage])` -> `dto.plan.ExecutionGraphDTO`: the plan is the source of truth
   for the nodes; a TJob of the plan without measurements keeps `null` in the six measured fields; measured TJobs not in the
   plan are ignored; the `containers` of a node come from `containerUsage` (empty list if none). `metrics` and
   `containerUsage` come from `measurement.ExecutionMeasurements`.

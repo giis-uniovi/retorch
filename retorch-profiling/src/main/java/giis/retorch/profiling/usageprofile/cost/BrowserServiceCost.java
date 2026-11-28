@@ -4,11 +4,11 @@
  */
 package giis.retorch.profiling.usageprofile.cost;
 
+import giis.retorch.profiling.usageprofile.dto.cost.AlternativeDTO;
+import giis.retorch.profiling.usageprofile.dto.cost.CostItemDTO;
+import giis.retorch.profiling.usageprofile.dto.measurement.Phase;
 import giis.retorch.profiling.usageprofile.measurement.Load;
 import giis.retorch.profiling.usageprofile.measurement.Slice;
-import giis.retorch.profiling.usageprofile.dto.AlternativeDTO;
-import giis.retorch.profiling.usageprofile.dto.CostItemDTO;
-import giis.retorch.profiling.usageprofile.dto.Phase;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.util.ArrayList;

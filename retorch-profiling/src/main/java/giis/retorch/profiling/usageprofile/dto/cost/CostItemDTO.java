@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile.dto;
+package giis.retorch.profiling.usageprofile.dto.cost;
 
 /** The cost of one (cloud object, TJob, lifecycle phase) combination of an {@link AlternativeDTO}. */
 public final class CostItemDTO {

@@ -11,8 +11,8 @@ absolute classpath name (`usageprofile/...`), independent of the Java package.
   `main.UsageProfilerToolBox`, which passes `SutInfoDTO.detect()`. Package-private: `toJson`, `appScripts()`, `LANGUAGES`, `SCRIPT_LIST`.
 
 ## Pipeline
-`measurement.Timeline` + `pricing.PriceCatalog` -> `cost.CostCalculator.calculate` -> `dto.CostReportDTO`; the generator builds a
-`dto.TimelineSeriesDTO` and a `dto.UsageProfileDTO` (with the optional `plan.ExecutionGraphDTO`, nullable, and the `SutInfoDTO`) -> Jackson JSON
+`measurement.Timeline` + `pricing.PriceCatalog` -> `cost.CostCalculator.calculate` -> `dto.cost.CostReportDTO`; the generator builds a
+`dto.measurement.TimelineSeriesDTO` and a `dto.report.UsageProfileDTO` (with the optional `dto.plan.ExecutionGraphDTO`, nullable, and the `SutInfoDTO`) -> Jackson JSON
 embedded in the HTML.
 
 ## Page assembly

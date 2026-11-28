@@ -28,7 +28,7 @@ optional: a file with only the first 9 columns, as older runs produced, is still
 ## Behaviour
 - Reading is split behind the facade `ExecutionMeasurements` (`read(usageFile)`): `UsageCsvReader` (parsing and validation,
   produces `UsageData`), `TimelineBuilder` (resampling and storage rule) and `TJobMetricsCalculator` (TJob metrics and
-  container usage). The constants `COI_SETUP` / `COI_TEARDOWN` are the labels of `dto.Phase`.
+  container usage). The constants `COI_SETUP` / `COI_TEARDOWN` are the labels of `dto.measurement.Phase`.
 - `ExecutionMeasurements.read(usageFile).toTimeline()`: resamples at 1 second. Each container holds its last sample; a
   sample is assigned to the phase its TJob is in at that second (setup / testexec / teardown, by start boundaries).
   `Slice.coiPhase` is `COI-setup` or `coi-teardown` while the COI lifecycle is running. `Timeline.peak("cpu"|"mem"|"disk")` =
