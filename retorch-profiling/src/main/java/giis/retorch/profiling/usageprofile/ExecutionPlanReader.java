@@ -19,6 +19,9 @@ import java.util.List;
  */
 public final class ExecutionPlanReader {
 
+    /** The properties of every TJob of the file, the contract with the orchestration module (extra ones are ignored). */
+    public static final List<String> NODE_FIELDS = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList("id", "stage", "resources", "tests", "predecessors"));
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private ExecutionPlanReader() {

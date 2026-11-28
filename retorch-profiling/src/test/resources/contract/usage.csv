@@ -1,0 +1,17 @@
+kind;tjobname;stage;item;start;end;cpu_percent;mem_bytes;disk_bytes;image;image_bytes;volume_bytes
+phase;COI;;COI-setup;1700000000;1700000010;;;;;;
+phase;tjoba;0;tjob-setup;1700000010;1700000020;;;;;;
+phase;tjoba;0;tjob-testexec;1700000020;1700000060;;;;;;
+phase;tjoba;0;tjob-teardown;1700000060;1700000070;;;;;;
+phase;tjobb;0;tjob-setup;1700000010;1700000020;;;;;;
+phase;tjobb;0;tjob-testexec;1700000020;1700000040;;;;;;
+phase;tjobb;0;tjob-teardown;1700000040;1700000050;;;;;;
+phase;COI;;coi-teardown;1700000070;1700000080;;;;;;
+container;tjoba;;web-1;1700000012;;;;;app:1;1073741824;0
+container;tjobb;;cache-1;1700000012;;;;;redis:7;2147483648;0
+container;tjoba;;db-1;1700000022;;;;;app:1;1073741824;536870912
+sample;tjoba;;web-1;1700000012;;100;1073741824;268435456;;;
+sample;tjobb;;cache-1;1700000012;;50;536870912;0;;;
+sample;tjoba;;web-1;1700000022;;200;2147483648;536870912;;;
+sample;tjoba;;db-1;1700000022;;50;536870912;0;;;
+sample;tjoba;;db-1;1700000032;;150;536870912;0;;;
