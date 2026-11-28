@@ -13,7 +13,11 @@ other class hard-codes a `.retorch/...` path or reads a property by name.
 - `RetorchConfig`: `load(paths)` (throws `InvalidConfigurationException` if the file does not exist or required properties are missing, listing all of them; `IOException` if it cannot be read), `validate()`, `withProfiling(Boolean)`
   (copy with the flag forced; `null` keeps it), `agentCIName`, `sutLocation`, `appUrl(tJobName)` (replaces
   `$TJOB_NAME` by the lower case name), `sutWaitHtml`, `testsBasePath` (all required), `sutWaitInterval` (default 5) and `sutWaitLimit` (default 40), positive integers, `profiling` (default `false`),
-  `profilingJarUrl`, `azureRegion`, `awsRegion` (defaults in `orchestration/orchestrator.md`).
+  `profilingJarUrl`, `azureRegion`, `awsRegion` (defaults in `orchestration/orchestrator.md`) and `priceProviders()` (property
+  `price-providers`, optional: ordered map provider id -> comma separated regions parsed from `id=regions` pairs separated by `;`,
+  e.g. `oracle=global;ibm=us-south,eu-de`; blanks ignored; empty map by default; ids `[a-z][a-z0-9-]*` and regions made of letters, digits,
+  `-`, `_`, `.` only because they are written in a shell script; anything else is an `IllegalStateException` naming the property and the
+  file, reported by `validate()` as a problem).
 
 ## Behavior
 - A required property missing when the file is loaded fails with `InvalidConfigurationException` listing all of them.
@@ -26,4 +30,4 @@ other class hard-codes a `.retorch/...` path or reads a property by name.
 
 ## Tests
 `WorkspaceConfigTests` (paths layout, generator running in a temporary folder with the same pipeline as
-`expected_out/outputTestIntegration`, profiling override, missing property and missing file messages).
+`expected_out/outputTestIntegration`, profiling override, missing property and missing file messages, `price-providers` parsing, invalid values rejected, and the generated `generateusageprofile.sh` with and without it).

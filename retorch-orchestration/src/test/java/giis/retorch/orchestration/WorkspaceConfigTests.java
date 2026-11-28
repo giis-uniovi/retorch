@@ -187,4 +187,60 @@ public class WorkspaceConfigTests {
             assertTrue(e.getMessage(), e.getMessage().contains("sut-wait-limit"));
         }
     }
+    @Test
+    public void testPriceProvidersPropertyIsOptionalAndParsed() {
+        assertTrue(new RetorchConfig(new Properties(), "x").priceProviders().isEmpty());
+        Properties props = new Properties();
+        props.setProperty("price-providers", " ");
+        assertTrue(new RetorchConfig(props, "x").priceProviders().isEmpty());
+        props.setProperty("price-providers", "oracle=global; ibm=us-south, eu-de ;");
+        java.util.Map<String, String> providers = new RetorchConfig(props, "x").priceProviders();
+        assertEquals("[oracle, ibm]", providers.keySet().toString());
+        assertEquals("global", providers.get("oracle"));
+        assertEquals("us-south,eu-de", providers.get("ibm"));
+    }
+
+    @Test
+    public void testInvalidPriceProvidersAreRejectedByTheValidation() {
+        for (String bad : new String[] {"oracle", "oracle=", "=global", "ibm=us-south;rm -rf", "Ibm=eu-de",
+                "ibm=eu-de$(x)", "ibm=a,,b"}) {
+            Properties props = new Properties();
+            props.setProperty("price-providers", bad);
+            try {
+                new RetorchConfig(props, "f.properties").priceProviders();
+                fail("must be rejected: " + bad);
+            } catch (IllegalStateException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains("price-providers") && e.getMessage().contains("f.properties"));
+            }
+        }
+    }
+
+    private String usageProfileScript(String extraProperties) throws Exception {
+        Path workspace = tmp.newFolder().toPath();
+        FileUtils.copyDirectory(new File(".retorch/configurations"),
+                workspace.resolve(".retorch/configurations").toFile());
+        Path properties = workspace.resolve(".retorch/configurations/retorchCI.properties");
+        Files.write(properties, (new String(Files.readAllBytes(properties), StandardCharsets.UTF_8)
+                + System.lineSeparator() + "profiling=true" + System.lineSeparator() + extraProperties)
+                .getBytes(StandardCharsets.UTF_8));
+        new OrchestrationGenerator(new RetorchPaths(workspace))
+                .generateJenkinsfile("giis.retorch.orchestration.testdata.integration", SYSTEM, tmp.newFolder().getPath());
+        return new String(Files.readAllBytes(workspace.resolve(".retorch/scripts/generateusageprofile.sh")),
+                StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testPriceProvidersAreForwardedToTheUsageProfileScriptOnlyWhenConfigured() throws Exception {
+        String without = usageProfileScript("price-providers=");
+        assertFalse(without, without.contains("usageprofile-regions") || without.contains("java()"));
+        assertEquals("a property that is absent is the same as an empty one", without, usageProfileScript(""));
+
+        String with = usageProfileScript("price-providers=oracle=global;ibm=us-south,eu-de");
+        assertTrue(with, with.contains("java() { command java -Dusageprofile-regions-oracle=global "
+                + "-Dusageprofile-regions-ibm=us-south,eu-de \"$@\"; }"));
+        assertTrue("defined before the java call", with.indexOf("java() {") < with.indexOf("java -jar"));
+        int start = with.indexOf("# Extra price providers");
+        int end = with.indexOf("java -jar");
+        assertEquals("only that block is added", without, with.substring(0, start) + with.substring(end));
+    }
 }

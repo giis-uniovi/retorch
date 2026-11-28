@@ -12,9 +12,13 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * Typed, read-only view of {@code retorchCI.properties}. Required properties fail with a message that names the
@@ -39,6 +43,11 @@ public class RetorchConfig {
 
     private static final String[] REQUIRED_PROPERTIES =
             {"agentCIName", "sut-location", "app-url", "sut-wait-html", "testsBasePath"};
+
+    /** Optional property with the extra price providers of the usage profile: {@code oracle=global;ibm=us-south,eu-de}. */
+    public static final String PRICE_PROVIDERS_PROPERTY = "price-providers";
+    private static final Pattern PROVIDER_ID = Pattern.compile("[a-z][a-z0-9-]*");
+    private static final Pattern PROVIDER_REGIONS = Pattern.compile("[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*");
 
     private static final String TJOB_NAME_TOKEN = "$TJOB_NAME";
 
@@ -89,6 +98,11 @@ public class RetorchConfig {
             } catch (IllegalStateException e) {
                 problems.add(e.getMessage());
             }
+        }
+        try {
+            priceProviders();
+        } catch (IllegalStateException e) {
+            problems.add(e.getMessage());
         }
         if (!problems.isEmpty()) {
             throw new InvalidConfigurationException("Invalid configuration file " + source, problems);
@@ -169,6 +183,34 @@ public class RetorchConfig {
 
     public String awsRegion() {
         return properties.getProperty("aws-region", "eu-west-1");
+    }
+
+    /**
+     * The extra (opt-in) price providers of the usage profile and their regions, from {@code price-providers}: pairs
+     * {@code id=regions} separated by {@code ;}, regions separated by commas, e.g. {@code oracle=global;ibm=us-south,eu-de}.
+     * Empty (the default) when the property is missing or blank. The ids and regions only accept letters, digits and
+     * {@code - _ .} because they end up in the generated shell script.
+     *
+     * @throws IllegalStateException if an entry is not {@code id=regions} or has forbidden characters
+     */
+    public Map<String, String> priceProviders() {
+        String value = properties.getProperty(PRICE_PROVIDERS_PROPERTY, "");
+        Map<String, String> providers = new LinkedHashMap<>();
+        for (String entry : value.split(";")) {
+            if (entry.trim().isEmpty()) {
+                continue;
+            }
+            int eq = entry.indexOf('=');
+            String id = eq < 0 ? "" : entry.substring(0, eq).trim();
+            String regions = eq < 0 ? "" : entry.substring(eq + 1).replace(" ", "");
+            if (!PROVIDER_ID.matcher(id).matches() || !PROVIDER_REGIONS.matcher(regions).matches()) {
+                throw new IllegalStateException("The property '" + PRICE_PROVIDERS_PROPERTY + "' must be a list of "
+                        + "id=region1,region2 separated by ';' (e.g. oracle=global;ibm=us-south) but has '" + entry.trim()
+                        + "' in " + source);
+            }
+            providers.put(id, regions);
+        }
+        return Collections.unmodifiableMap(providers);
     }
 
     private String required(String name) {

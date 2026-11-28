@@ -247,6 +247,8 @@ The following parameters are optional and only matter for the [usage profile](#r
 - `azure-region`, `aws-region`: cloud regions whose prices are compared, as comma separated lists (e.g.
   `westeurope,northeurope`); defaults `westeurope` and `eu-west-1`; an empty value disables that provider. The
   pipeline can override them with the `AZURE_REGIONS` / `AWS_REGIONS` environment variables.
+- `price-providers` (optional): extra price providers of the usage profile, as `id=regions` pairs separated by `;`, e.g.
+  `oracle=global;ibm=us-south,eu-de` (Oracle Cloud and IBM Cloud, no credentials needed). Without it they are not used.
 - `profiling-jar-url`: where the pipeline downloads the profiling tool (`retorch-profiling-cli.jar`) from the first time
   (default: the latest GitHub release).  A project can prepare the jar itself in the optional
   `custom-usageprofile` snippet (see below).
@@ -440,7 +442,10 @@ Without it the pipeline does not measure anything and has no `Usage-Profile` sta
 
 Prices are fetched from the public price lists (Azure Retail Prices API and AWS Price List) and cached for 24 hours in
 `$HOME/.retorch/prices.json`; the first download of the AWS EC2 list is large (hundreds of MB per region) and is parsed
-in streaming. Google Cloud is not supported yet.
+in streaming. Google Cloud is not supported yet. Two more providers are opt-in (they need no credentials): Oracle Cloud
+(public Cost Estimator API, prices are global, region `global`) and IBM Cloud (public Global Catalog, Virtual Server Flex
+profiles per IBM region such as `us-south` or `eu-de`). They are enabled with the system properties
+`-Dusageprofile-regions-oracle=global` and `-Dusageprofile-regions-ibm=us-south,eu-de` of the java call.
 
 ### Requirements in Jenkins
 
@@ -459,6 +464,8 @@ java -jar retorch-profiling-<version>-cli.jar <planName> <usageCsv> <outputHtml>
 - `usageCsv`: the usage file described above.
 - `azureRegions`, `awsRegions`: comma separated regions (an empty string disables the provider).
 - `priceCacheFile`: JSON file where the prices are cached.
+- Optional providers: `java -Dusageprofile-regions-oracle=global -Dusageprofile-regions-ibm=us-south,eu-de -jar ...`
+  (disabled when the properties are not set).
 - `executionPlanJson` (optional): `.retorch/executionplan.json`; without it the execution graph is not shown.
 
 ### Test the dashboard

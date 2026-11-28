@@ -18,12 +18,14 @@ public final class PriceProviderRegistry {
 
     private final List<PriceProvider> providers = new ArrayList<>();
 
-    /** The providers shipped with RETORCH: Azure, AWS and AWS Device Farm. */
+    /** The providers shipped with RETORCH: Azure, AWS and AWS Device Farm, plus the opt-in Oracle Cloud and IBM Cloud. */
     public static PriceProviderRegistry standard(HttpGet http) {
         return new PriceProviderRegistry()
                 .register(new AzurePrices(http))
                 .register(new AwsPrices(http))
-                .register(new DeviceFarmPrices(http));
+                .register(new DeviceFarmPrices(http))
+                .register(new OracleCloudPrices(http))
+                .register(new IbmCloudPrices(http));
     }
 
     /** Adds a provider; its id must be unique. Returns this, to chain. */
@@ -44,13 +46,15 @@ public final class PriceProviderRegistry {
 
     /**
      * The cache key of a region configuration: {@code azure=a,b;aws=c}, one entry per region setting
-     * ({@link PriceProvider#configId()}) in registration order, so a provider that is added or whose regions change
+     * ({@link PriceProvider#configId()}) in registration order (an {@link PriceProvider#optional() optional} provider only when it has regions), so a provider that is added or whose regions change
      * invalidates the cache.
      */
     public String regionsKey(ProviderRegions config) {
         Set<String> ids = new LinkedHashSet<>();
         for (PriceProvider p : providers) {
-            ids.add(p.configId());
+            if (!p.optional() || !config.regions(p.configId()).isEmpty()) {
+                ids.add(p.configId());
+            }
         }
         List<String> parts = new ArrayList<>();
         for (String id : ids) {
