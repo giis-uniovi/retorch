@@ -13,10 +13,10 @@ activities by stage, `getTJobs()` lists the TJobs with test cases), `ResourceIns
 (resources + test cases of the system under test; named so it does not shadow `java.lang.System`).
 
 ## Invariants
-- `minimalCapacities` of a `Resource` is **optional** (absent or null in the JSON -> empty list, never null). The real `setReplaceable(null)` and `setMinimalCapacities(null)` also give an empty list, never null.
+- `minimalCapacities` of a `Resource` is **optional** (absent or null in the JSON -> empty list, never null). The real
   CPU/memory/disk usage is measured while the pipeline runs (see `orchestration/orchestrator.md`); the property is only
   accepted for compatibility and nothing in the orchestration uses it (`TJob` no longer sums capacities). Existing JSON
-  files that declare it keep working.
+  files that declare it keep working. `setReplaceable(null)` and `setMinimalCapacities(null)` also give an empty list, never null.
 - `TJob.getListTJobLifecyclesNames()` defines the lifecycle phases of a TJob; the lifecycle CSV columns written by the
   scripts and the profiling phases (`profiling.utils.CsvConstants`) must stay aligned with it.
 - Serialized property names (`@JsonProperty`) are part of the JSON configuration format: renaming them breaks users'
