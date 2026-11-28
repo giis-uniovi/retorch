@@ -26,7 +26,8 @@ export function load(files, names, options) {
       addEventListener() {}, location: {hash: ''}, history: {replaceState() {}}},
     document: documentStub,
     navigator: {language: opts.language || 'en'},
-    getComputedStyle: () => ({fontSize: '16px', getPropertyValue: () => ''}),
+    // options.vars: the CSS custom properties the page would have {'--fg': '#000', ...}
+    getComputedStyle: () => ({fontSize: '16px', getPropertyValue: (name) => (opts.vars && opts.vars[name]) || ''}),
     console, URLSearchParams, encodeURIComponent, decodeURIComponent
   };
   sandbox.window.document = documentStub;

@@ -2,22 +2,14 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-/* Constants (colours, patterns; the lists of phases, kinds and objects come from the model) and locale-aware formatting helpers. */
+/* Locale-aware formatting helpers and the fill patterns that tell the phases apart without colour (the colours are in the CSS, see
+   Theme.colors(); the lists of phases, kinds and objects come from the model). */
 const Fmt = (function () {
-  /* All the colours keep at least 3:1 against the white and the dark card (WCAG 1.4.11). */
-  const PHASE_COLORS = {
-    'coi-setup': '#64748b', 'tjob-setup': '#0284c7', 'tjob-testexec': '#16a34a',
-    'tjob-teardown': '#d97706', 'coi-teardown': '#8b5cf6', 'oversubscription': '#dc2626'
-  };
   /* Second, non-colour cue for every phase: a fill pattern (see Charts.decal / Charts.pattern). */
   const PHASE_PATTERNS = {
     'coi-setup': 'dots', 'tjob-setup': 'stripes', 'tjob-testexec': 'solid',
     'tjob-teardown': 'backStripes', 'coi-teardown': 'horizontal', 'oversubscription': 'vertical'
   };
-  const OBJECT_COLORS = {compute: '#2563eb', storage: '#0f9488', browser: '#b45309'};
-  const SERIES_COLORS = {used: '#2563eb', over: '#dc2626', cpu: '#2563eb', mem: '#16a34a', disk: '#d97706'};
-  /* Dark enough for white labels; also used for the TJob stacks and the graph stages. */
-  const CYCLE_COLORS = ['#2563eb', '#0f766e', '#b45309', '#7c3aed', '#be185d', '#4d7c0f', '#0369a1', '#b91c1c', '#475569', '#a16207'];
 
   function lang() { return I18n.lang(); }
 
@@ -47,10 +39,14 @@ const Fmt = (function () {
   }
 
 
-  function cycleColor(index) { return CYCLE_COLORS[index % CYCLE_COLORS.length]; }
+  /* Colour of the n-th item of a categorical series (TJobs, containers, simulator lines): the --cycle-* palette of the theme. */
+  function cycleColor(index) {
+    const cycle = Theme.colors().cycle;
+    return cycle[index % cycle.length];
+  }
 
   return {
-    PHASE_COLORS: PHASE_COLORS, PHASE_PATTERNS: PHASE_PATTERNS, OBJECT_COLORS: OBJECT_COLORS, SERIES_COLORS: SERIES_COLORS,
+    PHASE_PATTERNS: PHASE_PATTERNS,
     num: num, usd: usd, pct: pct, dur: dur, date: date, orDash: orDash, cycleColor: cycleColor
   };
 })();

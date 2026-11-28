@@ -30,6 +30,6 @@ test('orDash shows a dash for a missing measurement', () => {
   assert.equal(Fmt.orDash(2, Fmt.usd), '$2.00');
 });
 
-test('every phase has a colour and a pattern', () => {
-  ['coi-setup', 'tjob-setup', 'tjob-testexec', 'tjob-teardown', 'coi-teardown', 'oversubscription'].forEach((p) => { assert.ok(Fmt.PHASE_COLORS[p], p); assert.ok(Fmt.PHASE_PATTERNS[p], p); });
+test('every phase has a fill pattern, a second cue besides the colour', () => {
+  ['coi-setup', 'tjob-setup', 'tjob-testexec', 'tjob-teardown', 'coi-teardown', 'oversubscription'].forEach((p) => assert.ok(Fmt.PHASE_PATTERNS[p], p));
 });
