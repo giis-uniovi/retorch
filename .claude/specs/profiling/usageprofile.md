@@ -181,3 +181,22 @@ The page must provide:
 ## Tests
 `UsageProfileTests` (timeline from synthetic and real Jenkins data, incomplete phases, VM and container cost conservation and oversubscription, no-fit warning, Azure/AWS parsers
 Device Farm parsing (only metered browsers and devices, per-minute price), browser-service alternatives (cheapest alternative + browser minutes of the TJobs given, warning without TJobs), and streaming reader, cache and regions parsing, cache with another or no `schemaVersion` ignored, Azure reservations (all upfront per term), AWS `terms.Reserved` streaming (standard only, No/All Upfront, 1/3 years), `reservations` property in the JSON of VM and container alternatives, self-contained HTML, JSON contract property names incl. `graph` null / non-null, timeline downsampled to at most 600 points, plan reader, TJob metrics, graph merge with nulls, assembled page without leftover placeholders and with both logos and the data-URI icon (the only `<link>`), `SutInfo` from the Jenkins environment (credentials removed, ssh converted) and from `.git` files, `sut` in the JSON, the six scripts in order and the `app.title` key, missing plan file means no graph, 12-column file with `container` rows: peak disk includes images and volumes, shared image counted once per TJob, per-container peaks/averages/storage, `containers` JSON property and field names, 9-column file yields `containers: []`). Fixtures `testdata/usageprofile/usage-containers.csv` (12 columns, container rows), `usage.csv` and `real-run.csv` (9 columns) and `executionplan.json` (TJobs of `usage.csv` plus a gateway node). Network is never used in tests.
+
+### JS tests (dashboard)
+Not part of the default build (no Node needed for `mvn test`): they run with `mvn test -pl retorch-profiling -am -Pjs-tests`
+(`exec-maven-plugin`: `npm install`, `node --test`, smoke test; Node 22 or later, Chrome or Edge) or by hand from
+`retorch-profiling/src/test/js` (`npm install`, `npm test`, `node smoke.mjs [page] [--full] [--shots dir]`). Everything under
+`src/test/js` is test code and carries the GIIS notice except `package.json` / lock file (data).
+- `UsageProfilePageTests.testFixturePageForTheBrowserSmokeTestIsWritten` writes `target/usageprofile-smoke/usageprofile.html` from the
+  fixtures `usage-containers.csv` + `executionplan.json` with a catalog of two providers, three regions, reservations, a container
+  service and two browser services, a fixed SUT (`petclinic`, `main`) and plan `FixturePlan`: it is deterministic.
+- `*.test.mjs` (`node --test`): pure logic, loading the scripts of `js/` in a `vm` context with browser stubs
+  (`helpers/load.mjs`): formats and escaping (`format.test.mjs`) and the simulator formulas (`simulator.test.mjs`).
+- `smoke.mjs`: opens the fixture page in headless Chrome / Edge through the DevTools protocol (no dependency but `axe-core`; it is
+  skipped, exit 0, when there is no browser unless `SMOKE_REQUIRE=1`; `BROWSER` and `AXE_CORE` override the executables). Checks: no
+  exception or `console.error`; every chart, table and the list of TJobs render; title and header; usage chart and execution graph
+  have identical plot areas (x0/x1 in page pixels) before and after selecting a TJob, after zooming and at 390 px, and the zoom is
+  linked both ways; the TJob panel is below the chart; the metric selector of the container chart; the keyboard focus stays on the
+  control after a re-render; Escape closes the panel; a deep link restores the state; axe-core (WCAG 2.x A/AA and best practices) finds
+  0 violations in light and dark (`--full`: also es, fr, de); no horizontal scroll on a phone. `--shots <dir>` saves
+  `wide|narrow-light|dark.png` (deterministic) to compare two versions of the page byte by byte.
