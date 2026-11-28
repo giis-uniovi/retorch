@@ -13,3 +13,7 @@ org.sonarlint.eclipse.core.prefs
 /retorch-orchestration/.retorch/executionplan.json
 /retorch-orchestration/dependency-reduced-pom.xml
 retorch-profiling/src/test/js/node_modules/
+
+# Local working notes of the assistant: specs and plans are kept out of the repository
+/.claude/specs/
+/.claude/plans/
