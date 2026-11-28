@@ -86,7 +86,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
     string literals of the previous `CsvConstants`, `ExecutionMeasurements` and `CostCalculator`. Constants of the kinds (`Alternative.KIND_*`) and of the objects (`CostItem.OBJECT_*`).
   - `Meta` (`phases, kinds, objects`): built from them, always `Meta.standard()`.
   - `UsageProfileData(plan, pricesFetchedAt, report, timeline, graph[, sut])`: exactly what the page receives; `graph` is nullable, `sut` defaults to `SutInfo.none()`; `meta` is always set.
-- `CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `CostReport` (peaks, duration, alternatives sorted by total, warnings):
+- `CostCalculator.calculate(timeline, catalog[, browserTjobs])` -> `CostReport` (peaks, duration, alternatives sorted by total, warnings). It only orchestrates: one `AlternativeCost` strategy per kind (`VmCost`, `ContainerCost`, `BrowserServiceCost`, package-private, sharing a `CostContext` and a `CostAccumulator`); the browser strategy runs last, over the already sorted alternatives. A new kind of alternative is a new strategy:
   - VM alternatives carry the reservations of the chosen VM (`Alternative.reservations`); container alternatives have none.
   - VM alternatives: per provider+region, the cheapest 3 VMs of distinct shape that fit the peak CPU and memory;
     none fits -> warning. Per second the VM costs `hourly/3600`; COI seconds are charged to that COI phase; otherwise
@@ -100,7 +100,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
     plus one browser session per TJob of `browserTjobs` during its `tjob-testexec` phase, billed `minuteUsd / 60` per second under the cloud object
     `browser`. The measured browser containers (Selenoid/Chrome) are not subtracted. Without `browserTjobs` (or without any other alternative) no
     browser alternative is added and a warning says so. `UsageProfilerToolBox` takes `browserTjobs` from the execution plan: TJobs with a
-    resource whose name contains `browser` (case-insensitive). The projection simulator treats these alternatives as pay-per-use.
+    resource whose name contains the browser pattern (case-insensitive; default `browser`, property `usageprofile-browser-resources`, see `profiling/main.md`). The projection simulator treats these alternatives as pay-per-use.
   - Cost items are unique per (cloud object, tjob, phase). The sum of items equals the total.
 - `UsageProfileGenerator.generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfo.detect()`): one self-contained HTML
   (no external requests). It fills `resources/usageprofile/usageprofile.html` by replacing `/*CSS*/` with `usageprofile.css`, `/*ECHARTS*/`
