@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.JarURLConnection;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,6 +22,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 /**
@@ -92,15 +95,15 @@ public class RetorchClassifier {
         return loadedResources != null ? loadedResources : deserializer.deserializeResources(systemName);
     }
     /**
-     * This method gets the file specified as package, in order to do this, instantiates the classLoader
-     * and gets from it the File, replacing the dots by  the slash. If the file exist returns it, otherwise
-     * returns two types of exception
+     * Finds the classes of a package (and of its sub-packages) in the classpath: in a directory (compiled classes) or
+     * in a jar. Nested classes (names with {@code $}) are skipped.
+     *
      * @param packageName String with the package name
      * @throws IllegalStateException if the classLoader couldn't be found
      * @throws EmptyInputException   if the Package is not in the Classpath
      */
-
-    private static File getPackageSourceDirectory(String packageName) throws EmptyInputException, URISyntaxException {
+    private static List<Class<?>> findClassesOfPackage(String packageName) throws EmptyInputException,
+            URISyntaxException, ClassNotFoundException, IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         if (classLoader == null) {
             throw new IllegalStateException("ClassLoader could not be Loaded");
@@ -110,9 +113,38 @@ public class RetorchClassifier {
             log.error("Package {} not found on classpath.", packageName);
             throw new EmptyInputException("Package " + packageName + " not found on classpath.");
         }
-        URI uri = resourceURL.toURI();
-        Path path = Paths.get(uri);
-        return path.toFile();
+        if ("jar".equals(resourceURL.getProtocol())) {
+            return findClassesInJar(resourceURL, packageName);
+        }
+        return findClasses(Paths.get(resourceURL.toURI()).toFile(), packageName);
+    }
+
+    /**
+     * Lists the classes of a package that is inside a jar: the entries below the package folder, in name order.
+     * @param packageUrl URL of the package folder inside the jar ({@code jar:file:/x.jar!/my/package})
+     * @param packageName String with the package name
+     */
+    private static List<Class<?>> findClassesInJar(URL packageUrl, String packageName) throws IOException,
+            URISyntaxException, ClassNotFoundException {
+        JarURLConnection connection = (JarURLConnection) packageUrl.openConnection();
+        String prefix = packageName.replace('.', '/') + "/";
+        List<String> classNames = new ArrayList<>();
+        try (JarFile jar = new JarFile(new File(connection.getJarFileURL().toURI()))) {
+            Enumeration<JarEntry> entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                String entryName = entries.nextElement().getName();
+                String simpleName = entryName.substring(entryName.lastIndexOf('/') + 1);
+                if (entryName.startsWith(prefix) && entryName.endsWith(".class") && !simpleName.contains("$")) {
+                    classNames.add(entryName.substring(0, entryName.length() - ".class".length()).replace('/', '.'));
+                }
+            }
+        }
+        Collections.sort(classNames);
+        List<Class<?>> classes = new ArrayList<>();
+        for (String className : classNames) {
+            classes.add(Class.forName(className, false, Thread.currentThread().getContextClassLoader()));
+        }
+        return classes;
     }
 
     /**
@@ -166,8 +198,7 @@ public class RetorchClassifier {
             }
         }
         SystemUnderTest systemRetorch = new SystemUnderTest(systemName);
-        File directory = getPackageSourceDirectory(packageName);
-        List<Class<?>> listClassesPackage = findClasses(directory, packageName);
+        List<Class<?>> listClassesPackage = findClassesOfPackage(packageName);
         for (Class<?> currentClass : listClassesPackage) {
             SystemUnderTest temporalSystem = getSystemFromClass(systemName, currentClass, validatedResources);
             addUniqueResources(systemRetorch, temporalSystem);

@@ -15,6 +15,10 @@ Resource Identification phase: turns annotated test classes into a `SystemUnderT
 ## Behavior
 - A resource in the JSON file does not have to declare `minimalCapacities` (the usage is measured at run time); when
   missing it is an empty list.
+- The classes of the package (and its sub-packages) are found in the classpath both when it is a directory of compiled
+  classes and when it is inside a **jar** (`jar:` URL: the entries below the package folder are listed in name order).
+  Nested classes (`$` in the file name) are skipped in both cases. A package that is not on the classpath fails with
+  `EmptyInputException`; a jar must contain the entries of the package folder (what `jar`/Maven produce).
 - Only methods carrying the RETORCH annotations become `TestCase`s; each access mode is bound to the `Resource`
   declared in the JSON file.
 - The resources file path comes from `RetorchPaths` (default: relative to the working directory). `RetorchClassifier`
@@ -30,4 +34,4 @@ Resource Identification phase: turns annotated test classes into a `SystemUnderT
 - `getSystemFromPackage`/`getSystemFromClass` throw `InvalidSystemException` (superclass of `EmptyInputException`).
 
 ## Tests
-`ClassifierTests`, `ClassifierUtils`, `OrchestrationIntegrationTests`.
+`ClassifierTests` (including a package inside a jar built in a `TemporaryFolder`), `ClassifierUtils`, `OrchestrationIntegrationTests`.

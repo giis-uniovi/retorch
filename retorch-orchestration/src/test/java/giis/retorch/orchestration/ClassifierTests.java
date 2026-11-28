@@ -14,12 +14,21 @@ import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.testdata.SyntheticInvalidClassTests;
 import giis.retorch.orchestration.testdata.synteticpackage.insidepackage.SyntheticClassOneTests;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +45,8 @@ public class ClassifierTests {
     private static final String SYSTEM_NAME = "ClassifierUnitTests";
     private final Appender<ILoggingEvent> appender = mock(Appender.class);  //use Mockito's ArgumentCaptor to capture all logging
     // events in your test case
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
     private RetorchClassifier classifier;   //mock the Appender of your Logger object
     private ClassifierUtils utilsClassifier;
 
@@ -107,5 +118,67 @@ public class ClassifierTests {
         assertTrue(listMessages.contains("The AccessModeType in method validationAccessModeAttributes doesn't exist")); // AccessMode Invalid
         assertTrue(listMessages.contains("Invalid Concurrency in method validationAccessModeAttributes: non-shareable resource with concurrency > 1")); // Concurrency Invalid sharing=true && <2 and sharing
         assertTrue(listMessages.contains("Invalid Concurrency in method validationAccessModeAttributes: shareable resource with concurrency < 2")); // Concurrency Invalid
+    }
+
+    private static final String SYNTHETIC_PACKAGE = "giis.retorch.orchestration.testdata.synteticpackage";
+
+    private void addToJar(JarOutputStream out, File directory, String entryPrefix) throws IOException {
+        File[] files = directory.listFiles();
+        for (File file : files) {
+            String name = entryPrefix + file.getName();
+            if (file.isDirectory()) {
+                out.putNextEntry(new JarEntry(name + "/"));
+                out.closeEntry();
+                addToJar(out, file, name + "/");
+            } else {
+                out.putNextEntry(new JarEntry(name));
+                out.write(Files.readAllBytes(file.toPath()));
+                out.closeEntry();
+            }
+        }
+    }
+
+    @Test
+    public void testUnitArchIResValidPackageInsideAJar() throws Exception {
+        File jar = tmp.newFile("tests.jar");
+        String packagePath = SYNTHETIC_PACKAGE.replace('.', '/');
+        try (JarOutputStream out = new JarOutputStream(new FileOutputStream(jar))) {
+            String entryPrefix = "";
+            for (String folder : packagePath.split("/")) {
+                entryPrefix += folder + "/";
+                out.putNextEntry(new JarEntry(entryPrefix));
+                out.closeEntry();
+            }
+            addToJar(out, new File("target/test-classes/" + packagePath), entryPrefix);
+        }
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
+        // the parent hides the package, so the classes can only come from the jar
+        ClassLoader hidingParent = new ClassLoader(original) {
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                if (name.startsWith(SYNTHETIC_PACKAGE)) {
+                    throw new ClassNotFoundException(name);
+                }
+                return super.loadClass(name, resolve);
+            }
+
+            @Override
+            public URL getResource(String name) {
+                return name.startsWith(packagePath) ? null : super.getResource(name);
+            }
+        };
+        try (URLClassLoader jarLoader = new URLClassLoader(new URL[] {jar.toURI().toURL()}, hidingParent)) {
+            Thread.currentThread().setContextClassLoader(jarLoader);
+            SystemUnderTest currentSystem = classifier.getSystemFromPackage(SYSTEM_NAME, SYNTHETIC_PACKAGE);
+            assertEquals(utilsClassifier.generateSystemPackage().toString(), currentSystem.toString());
+            assertTrue(currentSystem.getTestCases().get(0).getTestClass().getClassLoader() == jarLoader);
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+    }
+
+    @Test(expected = EmptyInputException.class)
+    public void testUnitArchIResUnknownPackageFails() throws Exception {
+        classifier.getSystemFromPackage(SYSTEM_NAME, SYNTHETIC_PACKAGE + ".doesnotexist");
     }
 }
