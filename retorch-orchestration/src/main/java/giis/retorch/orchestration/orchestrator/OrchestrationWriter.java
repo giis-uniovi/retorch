@@ -44,17 +44,24 @@ public class OrchestrationWriter {
         }
         Files.deleteIfExists(paths.executionPlanFile()); // never keep the plan of a previous generation
         EnvFileWriter envFileWriter = new EnvFileWriter(paths);
+        String firstTJobName = null;
         for (LinkedList<Activity> stage : new TreeMap<>(activities).values()) {
             for (Activity activity : stage) {
                 TJob tJob = activity.getTJob();
                 if (!JenkinsfileRenderer.isGateway(tJob)) {
                     envFileWriter.write(JenkinsfileRenderer.environmentOf(tJob, config), tJob);
+                    if (firstTJobName == null) {
+                        firstTJobName = JenkinsfileRenderer.idOf(tJob);
+                    }
                 }
             }
         }
+        if (firstTJobName == null) {
+            throw new IllegalArgumentException("The plan has no TJob with test cases");
+        }
         ScriptGenerator scriptGenerator = new ScriptGenerator(config, paths);
         scriptGenerator.generateScriptsTJob();
-        scriptGenerator.generateScriptsCOI();
+        scriptGenerator.generateScriptsCOI(firstTJobName);
         if (config.profiling()) {
             new ExecutionPlanWriter(paths).write(activities);
         }

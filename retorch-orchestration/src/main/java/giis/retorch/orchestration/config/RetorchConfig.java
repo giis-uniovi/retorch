@@ -34,6 +34,9 @@ public class RetorchConfig {
     public static final String DEFAULT_PROFILING_JAR_URL =
             "https://github.com/giis-uniovi/retorch/releases/latest/download/retorch-profiling-cli.jar";
 
+    private static final int DEFAULT_SUT_WAIT_INTERVAL = 5;
+    private static final int DEFAULT_SUT_WAIT_LIMIT = 40;
+
     private static final String[] REQUIRED_PROPERTIES =
             {"agentCIName", "sut-location", "app-url", "sut-wait-html", "testsBasePath"};
 
@@ -80,6 +83,13 @@ public class RetorchConfig {
                 problems.add("The required property '" + name + "' is missing");
             }
         }
+        for (String name : new String[] {"sut-wait-interval", "sut-wait-limit"}) {
+            try {
+                positiveInt(name, 1);
+            } catch (IllegalStateException e) {
+                problems.add(e.getMessage());
+            }
+        }
         if (!problems.isEmpty()) {
             throw new InvalidConfigurationException("Invalid configuration file " + source, problems);
         }
@@ -112,6 +122,33 @@ public class RetorchConfig {
     /** Text the SUT home page contains once it is up (used by {@code waitforSUT.sh}). */
     public String sutWaitHtml() {
         return required("sut-wait-html");
+    }
+
+    /** Seconds between two checks of the SUT ({@code sut-wait-interval}, default 5). */
+    public int sutWaitInterval() {
+        return positiveInt("sut-wait-interval", DEFAULT_SUT_WAIT_INTERVAL);
+    }
+
+    /** Number of checks of the SUT before giving up ({@code sut-wait-limit}, default 40: about 200 seconds). */
+    public int sutWaitLimit() {
+        return positiveInt("sut-wait-limit", DEFAULT_SUT_WAIT_LIMIT);
+    }
+
+    private int positiveInt(String name, int defaultValue) {
+        String value = properties.getProperty(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            if (parsed > 0) {
+                return parsed;
+            }
+        } catch (NumberFormatException e) {
+            // reported below
+        }
+        throw new IllegalStateException("The property '" + name + "' must be a positive integer but is '" + value
+                + "' in " + source);
     }
 
     public String testsBasePath() {

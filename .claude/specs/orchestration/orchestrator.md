@@ -26,6 +26,7 @@ pipeline runs.
 | Property | Meaning | Default |
 |---|---|---|
 | `agentCIName`, `sut-location`, `app-url`, `sut-wait-html`, `testsBasePath` | CI agent and SUT | required |
+| `sut-wait-interval`, `sut-wait-limit` | seconds between two checks of the SUT and number of checks before `waitforSUT.sh` gives up (limit x interval seconds, 200 s by default); positive integers | `5`, `40` |
 | `profiling` | `true` adds resource measurement + usage profile to the pipeline | `false` |
 | `profiling-jar-url` | where `generateusageprofile.sh` downloads `retorch-profiling-cli.jar` from when `$HOME/.retorch/retorch-profiling-cli.jar` does not exist | GitHub `releases/latest/download/retorch-profiling-cli.jar` |
 | `azure-region`, `aws-region` | comma separated cloud regions whose prices are compared; empty disables the provider | `westeurope`, `eu-west-1` |
@@ -57,6 +58,24 @@ plugin; the Jenkins CSP must allow inline scripts for the usage profile to be in
 ## Generated scripts (`.retorch/scripts`, from `generictemplates/base*.sh`)
 Always: `printLog.sh`, `waitforSUT.sh`, `writetime.sh`, `storeContainerLogs.sh`, `savetjoblifecycledata.sh`,
 `tjoblifecycles/tjob-{setup,testexecution,teardown}.sh`, `coilifecycles/coi-{setup,teardown}.sh`.
+Script contracts (lifecycle CSV columns `setup-start, setup-end, testexec-start, testexec-end, teardown-start, teardown-end`
+must always be complete):
+- `tjob-testexecution.sh` captures the Maven status with `mvn ... || MVN_EXIT_CODE=$?`: failing tests never skip the
+  `testexec-end` timestamp; it exits 1 after writing it.
+- `tjob-setup.sh` writes `setup-start`; if `docker compose up` fails **or `waitforSUT.sh` fails** it calls the documented
+  `write_missing_times` (setup-end, testexec-start, testexec-end) and exits 1, so the tests do not run against a dead
+  SUT and `tjob-teardown.sh` still fills the last two columns.
+- `waitforSUT.sh` checks the page at the URL for `sut-wait-html` `sut-wait-limit` times, `sut-wait-interval` seconds apart,
+  then stores the container logs, tears the TJob down and exits 1.
+- `coi-teardown.sh` collects the volumes of **every** `tjob*` container (one `docker inspect` per container) before
+  removing the containers, then removes those volumes.
+- `coi-setup.sh` is generic: system information, directories, the `custom-coi-setup` hook and building the SUT images with
+  the env file of the **first TJob of the plan** (`generateScriptsCOI(firstTJobName)`). The Selenium/Selenoid checks
+  (`selenium-hub`, `chrome-video`, `chrome-node` running) and the cleaning of `/opt/selenoid` were removed from the
+  template: a project that needs them puts them in `custom-coi-setup`, e.g.
+  `for c in selenium-hub chrome-video chrome-node; do [ -n "$(docker ps --filter "name=$c" --filter status=running -q)" ] || { echo "$c is not running"; exit 1; }; done`
+  and `find /opt/selenoid/video -mindepth 1 -maxdepth 1 -mtime +15 -exec rm -rf {} \;`.
+
 Only with profiling: `resourcemonitor.sh`, `generateusageprofile.sh`. `generateusageprofile.sh` runs `$HOME/.retorch/retorch-profiling-cli.jar` on the usage file and writes `artifacts/usageprofile/usageprofile.html`. If the jar does not exist it is downloaded from `profiling-jar-url`. Before that check it inserts the optional `custom-usageprofile` snippet, where a project can prepare the jar by other means; the demonstrators use it as a **temporary** solution (clone the repository, build the profiling module with `-Dmaven.test.skip=true` and copy the jar) until a release publishes the jar. Deleting that file is all that is needed to switch to the download. The snippet is inserted in the script, so it may use `fail` and `$PROFILING_JAR` and must not `exit` on success.
 
 Placeholders: `${KEY}` tokens are replaced line by line. A line that contains only a `${PROFILING_*}` placeholder

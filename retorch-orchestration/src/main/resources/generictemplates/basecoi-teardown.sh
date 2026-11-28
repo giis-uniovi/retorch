@@ -23,9 +23,11 @@ if [ -n "$container_ids" ]; then
         "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "COI-tear-down" "Failed to stop containers: $container_ids"
         exit 1
     fi
-    # Collect volumes used by the containers
-    volumes_to_prune=$(docker ps -a --filter id="$container_ids" --format '{{.Mounts}}' | \
-                        grep -oP '(?<=type=volume,destination=\/)[^,]+')
+    # Collect the volumes used by the containers, one container at a time (a single filter cannot take several ids)
+    volumes_to_prune=""
+    for container_id in $container_ids; do
+        volumes_to_prune="$volumes_to_prune $(docker inspect --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}} {{end}}{{end}}' "$container_id")"
+    done
     # Remove the containers
     if docker rm $container_ids; then
         "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "COI-tear-down" "Successfully removed containers: $container_ids"

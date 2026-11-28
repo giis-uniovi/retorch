@@ -151,4 +151,40 @@ public class WorkspaceConfigTests {
                     && e.getMessage().contains("noplaceholder"));
         }
     }
+
+    @Test
+    public void testWaitForSutLimitAndIntervalAreProperties() throws Exception {
+        Path workspace = tmp.newFolder("workspace").toPath();
+        FileUtils.copyDirectory(new File(".retorch/configurations"),
+                workspace.resolve(".retorch/configurations").toFile());
+        Path properties = workspace.resolve(".retorch/configurations/retorchCI.properties");
+        Files.write(properties, (new String(Files.readAllBytes(properties), StandardCharsets.UTF_8)
+                + System.lineSeparator() + "sut-wait-limit=7" + System.lineSeparator() + "sut-wait-interval=2")
+                .getBytes(StandardCharsets.UTF_8));
+        new OrchestrationGenerator(new RetorchPaths(workspace))
+                .generateJenkinsfile("giis.retorch.orchestration.testdata.integration", SYSTEM,
+                        tmp.newFolder("out").getPath());
+        String script = new String(Files.readAllBytes(workspace.resolve(".retorch/scripts/waitforSUT.sh")),
+                StandardCharsets.UTF_8);
+        assertTrue(script, script.contains("WAIT_LIMIT=7") && script.contains("WAIT_INTERVAL=2"));
+        String coiSetup = new String(Files.readAllBytes(workspace.resolve(".retorch/scripts/coilifecycles/coi-setup.sh")),
+                StandardCharsets.UTF_8);
+        assertTrue("the images are built with the env file of the first TJob", coiSetup.contains("/envfiles/tjoba.env"));
+    }
+
+    @Test
+    public void testInvalidWaitPropertiesAreRejected() throws Exception {
+        Path workspace = tmp.newFolder("bad").toPath();
+        Files.createDirectories(workspace.resolve(".retorch/configurations"));
+        Files.write(workspace.resolve(".retorch/configurations/retorchCI.properties"),
+                ("agentCIName=a" + System.lineSeparator() + "sut-location=b" + System.lineSeparator() + "app-url=c"
+                        + System.lineSeparator() + "sut-wait-html=d" + System.lineSeparator() + "testsBasePath=e"
+                        + System.lineSeparator() + "sut-wait-limit=0").getBytes(StandardCharsets.UTF_8));
+        try {
+            RetorchConfig.load(new RetorchPaths(workspace));
+            fail("the limit must be positive");
+        } catch (InvalidConfigurationException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("sut-wait-limit"));
+        }
+    }
 }

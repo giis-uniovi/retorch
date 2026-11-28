@@ -86,6 +86,8 @@ public class ScriptGenerator {
         checkFolderExists(paths.tjobScriptsDir());
         Map<String, String> mapValues = new HashMap<>();
         mapValues.put("${SUT-WAIT-HTML}", config.sutWaitHtml());
+        mapValues.put("${SUT-WAIT-INTERVAL}", String.valueOf(config.sutWaitInterval()));
+        mapValues.put("${SUT-WAIT-LIMIT}", String.valueOf(config.sutWaitLimit()));
         mapValues.put("${PROFILING_JAR_URL_PLACEHOLDER}", config.profilingJarUrl());
         mapValues.put("${CUSTOM_USAGEPROFILE_COMMANDS}", getCustomContent(CustomHook.USAGE_PROFILE));
         mapValues.put("${AZURE_REGION_PLACEHOLDER}", config.azureRegion());
@@ -98,9 +100,14 @@ public class ScriptGenerator {
         generate(Phase.TJOB, mapValues);
     }
 
-    public void generateScriptsCOI() throws IOException {
+    /**
+     * @param firstTJobName name (lower case) of the first TJob of the plan: the images of the SUT are built with its
+     *                      environment file
+     */
+    public void generateScriptsCOI(String firstTJobName) throws IOException {
         checkFolderExists(paths.coiScriptsDir());
         Map<String, String> mapValues = new HashMap<>();
+        mapValues.put("${FIRST_TJOB_NAME}", firstTJobName);
         mapValues.put("${CUSTOM_SETUP_COI_COMMANDS}", getCustomContent(CustomHook.COI_SETUP));
         mapValues.put("${CUSTOM_TEARDOWN_COI_COMMANDS}", getCustomContent(CustomHook.COI_TEARDOWN));
         mapValues.put("${PROFILING_EXPORT_COMMAND}", config.profiling()

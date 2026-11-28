@@ -11,6 +11,15 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
+# The lifecycle row of a TJob has six timestamps: set-up start/end, test execution start/end and tear-down start/end.
+# When the set-up fails the test execution never runs, so this writes the three that would be missing (set-up end and
+# the two of the test execution); the tear-down script writes the last two and every column stays in its place.
+write_missing_times() {
+    "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1" # set-up end
+    "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1" # test execution start
+    "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1" # test execution end
+}
+
 # Execute the script to write timestamp
 "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
 
@@ -25,21 +34,20 @@ echo "This TJOB dont have any kind of specific commands"
 # Deploy containers
 cd "$SUT_LOCATION"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Deploying containers for TJOB $1"
-docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$1.env" --ansi never -p "$1" up -d
-
-if [ $? -ne 0 ]; then
-    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "Docker compose failed,writing end time of the set-up"
-    "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
-    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "Docker compose failed,writing end time of the test execution"
-    "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
-    "$SCRIPTS_FOLDER/writetime.sh" "$2" "$1"
+if ! docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$1.env" --ansi never -p "$1" up -d; then
+    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "Docker compose failed, the test execution will not run"
+    write_missing_times "$1" "$2"
     "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "Exiting"
     exit 1
-else
-   "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Docker compose successful!"
 fi
+"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Docker compose successful!"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Waiting for the system to be up..."
-"$SCRIPTS_FOLDER/waitforSUT.sh" "$3" "$1"
+if ! "$SCRIPTS_FOLDER/waitforSUT.sh" "$3" "$1"; then
+    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "The system did not come up, the test execution will not run"
+    write_missing_times "$1" "$2"
+    "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "$1-set-up" "Exiting"
+    exit 1
+fi
 cd "$WORKSPACE"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "System READY!! Test execution can start!"
 # Execute the script to write timestamp again

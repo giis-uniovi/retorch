@@ -1,23 +1,25 @@
 #!/bin/bash
 # Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
 # All intellectual property rights on this file belong to GIIS.
-# The waitforSUT.sh script waits until a given container reaches the 'healthy' state. It polls every 5 seconds
-# for up to 200 seconds. If the container is not healthy after this period, all containers are torn down.
+# The waitforSUT.sh script waits until the SUT is up: the page at the given URL must contain the text configured in
+# sut-wait-html. It polls every 5 seconds, at most 40 times (sut-wait-interval and
+# sut-wait-limit in retorchCI.properties). If the SUT is not up after that, it stores the container logs, tears the
+# TJob containers down and exits with 1.
 
 if [ "$#" -ne 2 ]; then
   "$SCRIPTS_FOLDER/printLog.sh" "ERROR" "TJob-$1-set-up"  "Usage: $0 <URL> <TJOB_NAME>"
   exit 1
 fi
-DOCKER_HOST_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
 COUNTER=0
 WAIT_LIMIT=40
+WAIT_INTERVAL=5
 
 while ! curl --insecure -s "$1" | grep -q "<div class=\"esh-catalog-item col-md-4\">"; do
-  "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$2-set-up" "Waiting $COUNTER seconds for $1"
-  sleep 5
+  "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$2-set-up" "Waiting for $1 (attempt $COUNTER of $WAIT_LIMIT)"
+  sleep "$WAIT_INTERVAL"
   ((COUNTER++))
 
-  if ((COUNTER > WAIT_LIMIT)); then
+  if ((COUNTER >= WAIT_LIMIT)); then
     "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$2 set-up" "SUT is down, making a preventive tear-down and storing the logs"
     "$WORKSPACE/.retorch/scripts/storeContainerLogs.sh" "$2"
     # Tearing down the system.
