@@ -8,7 +8,6 @@ import giis.retorch.orchestration.classifier.EmptyInputException;
 import giis.retorch.orchestration.config.RetorchConfig;
 import giis.retorch.orchestration.model.ExecutionPlan;
 import giis.retorch.orchestration.orchestrator.JenkinsfileRenderer;
-import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -35,7 +34,7 @@ public class JenkinsfileRendererTests {
 
     @Test
     public void testRenderMatchesTheExpectedPipeline() throws Exception {
-        ExecutionPlan plan = new ExecutionPlan("plan", new OrchestratorUtils().getListSimpleActivities());
+        ExecutionPlan plan = ExecutionPlan.fromActivities("plan", new OrchestratorUtils().getListSimpleActivities());
         String pipeline = new JenkinsfileRenderer().render(plan, config(false));
         new OrchestratorUtils().compareOutputToFile(EXPECTED_OUTPUT_PATH + "outputTestUnitArchOrchValidSimpleGraph",
                 pipeline);
@@ -44,7 +43,7 @@ public class JenkinsfileRendererTests {
 
     @Test
     public void testRenderWithProfilingAndCustomPostSteps() throws Exception {
-        ExecutionPlan plan = new ExecutionPlan("plan", new OrchestratorUtils().getListSimpleActivities());
+        ExecutionPlan plan = ExecutionPlan.fromActivities("plan", new OrchestratorUtils().getListSimpleActivities());
         String pipeline = new JenkinsfileRenderer("        junit 'x.xml'\n").render(plan, config(true));
         assertTrue(pipeline.contains("stage('Usage-Profile')"));
         assertTrue(pipeline.contains("        junit 'x.xml'\n        archiveArtifacts artifacts: 'target/testlogs"));
@@ -52,7 +51,7 @@ public class JenkinsfileRendererTests {
 
     @Test(expected = IllegalStateException.class)
     public void testRenderFailsWithAMissingRequiredProperty() throws Exception {
-        ExecutionPlan plan = new ExecutionPlan("plan", new OrchestratorUtils().getListSimpleActivities());
+        ExecutionPlan plan = ExecutionPlan.fromActivities("plan", new OrchestratorUtils().getListSimpleActivities());
         new JenkinsfileRenderer().render(plan, new RetorchConfig(new Properties(), "in memory"));
     }
 }

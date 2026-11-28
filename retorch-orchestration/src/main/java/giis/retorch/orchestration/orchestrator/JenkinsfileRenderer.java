@@ -104,6 +104,11 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
         return stringBuilder.toString();
     }
 
+    /** The identifier of the TJob as it appears in the pipeline, the env files and the usage file: lower case. */
+    public static String idOf(TJob tJob) {
+        return tJob.getIdTJob().toLowerCase(Locale.ROOT);
+    }
+
     /** A gateway activity joins the branches of the plan: it has neither resources nor test cases. */
     public static boolean isGateway(TJob tJob) {
         return tJob.getListResourceClasses().isEmpty() && tJob.getListTestCases().isEmpty();
@@ -122,20 +127,21 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
             for (Resource res : tJob.getListResourceClasses()) {
                 resourceIDBuilder.append(res.getResourceID()).append(" ");
             }
+            String id = idOf(tJob);
             stringBuilder.append("        stage('")
-                    .append(tJob.getIdTJob())
+                    .append(id)
                     .append(" IdResource: ")
                     .append(resourceIDBuilder)
                     .append("') {\n          steps {\n");
 
-            String appUrl = config.appUrl(tJob.getIdTJob());
+            String appUrl = config.appUrl(id);
             stringBuilder.append("            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {\n    ")
                     .append(generateResourceDeploymentDirective(tJob, false, appUrl, stage)).append("    ")
                     .append(generateTestCaseExecutionDirective(tJob, appUrl, stage))
-                    .append("            }// EndExecutionStageError").append(tJob.getIdTJob()).append("\n  ")
+                    .append("            }// EndExecutionStageError").append(id).append("\n  ")
                     .append(generateResourceDeploymentDirective(tJob, true, appUrl, stage))
-                    .append("          }// EndSteps").append(tJob.getIdTJob()).append("\n")
-                    .append("        }// EndStage").append(tJob.getIdTJob());
+                    .append("          }// EndSteps").append(id).append("\n")
+                    .append("        }// EndStage").append(id);
         }
         return stringBuilder.toString();
     }
@@ -143,7 +149,7 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
     /** The command that executes the test cases of the TJob. */
     String generateTestCaseExecutionDirective(TJob tJob, String appUrl, int stage) {
         StringBuilder strBuilder = new StringBuilder();
-        String tJobId = tJob.getIdTJob().toLowerCase(Locale.ROOT);
+        String tJobId = idOf(tJob);
         strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh");
         strBuilder.append(" ").append(tJobId).append(" ").append(stage).append(" ")
                 .append(appUrl).append(" \"");
@@ -164,7 +170,7 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
     /** The command that sets up (or, with {@code disposal}, tears down) the resources of the TJob. */
     String generateResourceDeploymentDirective(TJob tJob, boolean disposal, String appUrl, int stage) {
         StringBuilder strBuilder = new StringBuilder();
-        String tJobId = tJob.getIdTJob().toLowerCase(Locale.ROOT);
+        String tJobId = idOf(tJob);
         if (disposal) {
             strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh").append(" ")
                     .append(tJobId).append(" ").append(stage).append("'\n");
@@ -189,7 +195,7 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
             String[] placeHolderWithImage = res.getDockerImage().split(";");
             placeHoldersAndImages.put(placeHolderWithImage[0], placeHolderWithImage[1]);
         }
-        String tJobNameLower = tJob.getIdTJob().toLowerCase(Locale.ROOT);
+        String tJobNameLower = idOf(tJob);
         Map<String, String> mapData = new HashMap<>();
         mapData.put("tjob_name", tJobNameLower);
         mapData.put(TJOB_BASE_PATH, config.testsBasePath());

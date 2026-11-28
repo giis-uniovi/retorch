@@ -5,126 +5,182 @@
 package giis.retorch.orchestration.model;
 
 import giis.retorch.orchestration.classifier.EmptyInputException;
-import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
+import giis.retorch.orchestration.exception.InvalidPlanException;
 
-
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * The {@code ExecutionPlan} class represents a series of TJobs ordered.
- * It contains a name for the {@code ExecutionPlan} and a list of {@code TJobClass} objects with their
- * respective {@code Resource}s and their sequentiation through a list of  {@code Activity}.
+ * The {@code ExecutionPlan} class represents the execution of a series of TJobs: a validated graph of
+ * {@code Activity} (a TJob and the activities that must finish before it) grouped by stage. Build it with
+ * {@link #fromActivities(String, List)}, which validates the graph and numbers its TJobs.
  */
-public class ExecutionPlan {
+public final class ExecutionPlan {
 
-    private String name;
-    private List<TJob> tJobEntityList;
-    private Map<Integer, LinkedList<Activity>> sortedActivities;
-    private List<Activity> listActivities;
+    private final String name;
+    private final List<TJob> tJobs;
+    private final Map<Integer, LinkedList<Activity>> sortedActivities;
 
-    public ExecutionPlan(String name, List<?> listActivities) throws NoFinalActivitiesException, EmptyInputException {
-        if (listActivities == null || listActivities.isEmpty()){
-            throw  new EmptyInputException("The provided list of activities is empty");
-        }
-        if (listActivities.get(0).getClass().equals(Activity.class)){
-            this.name = name;
-            validateListActivities((List<Activity>) listActivities);
-            this.listActivities= (List<Activity>) listActivities;
-            sortedActivities=generateSortedActivityGraph();
-        }
-        else{
-            this.name = name;
-            this.tJobEntityList = (List<TJob>) listActivities;
-        }
+    private ExecutionPlan(String name, List<TJob> tJobs, Map<Integer, LinkedList<Activity>> sortedActivities) {
+        this.name = name;
+        this.tJobs = tJobs;
+        this.sortedActivities = sortedActivities;
+    }
 
+    /**
+     * Validates the activities, groups them by stage (an activity is in the stage after the last of its predecessors)
+     * and gives the TJobs their stage and identifier (see {@link PlanNumbering}).
+     *
+     * @throws EmptyInputException  if there are no activities
+     * @throws InvalidPlanException if the graph is not valid: a predecessor that is not in the list, a cycle or no
+     *                              activity without predecessors; the message lists every problem
+     */
+    public static ExecutionPlan fromActivities(String name, List<Activity> activities)
+            throws EmptyInputException, InvalidPlanException {
+        if (activities == null || activities.isEmpty()) {
+            throw new EmptyInputException("The provided list of activities is empty");
+        }
+        validate(activities);
+        Map<Integer, LinkedList<Activity>> sorted = sortByStage(activities);
+        List<TJob> tJobs = PlanNumbering.assign(sorted);
+        return new ExecutionPlan(name, tJobs, sorted);
     }
 
     public String getName() {
         return name;
     }
-    public List<TJob> gettJobClassList() {
-        return tJobEntityList;
+
+    /** The TJobs that execute test cases (gateway activities excluded), in numbering order. */
+    public List<TJob> getTJobs() {
+        return Collections.unmodifiableList(tJobs);
     }
+
+    /** The activities by stage, starting at 0. */
     public Map<Integer, LinkedList<Activity>> getSortedActivities() {
         return this.sortedActivities;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-    public void settJobClassList(List<TJob> tJobEntityList) {
-        this.tJobEntityList = tJobEntityList;
-    }
-
     /**
-     * Method that validates the list of {@code Activity}. Checks that there are final and initial {@code Activity}
-     * @param listActivities List with the {@code Activity} to check
+     * Checks that the activities form a DAG with at least one initial activity. Activities are compared by identity:
+     * a predecessor must be one of the listed instances.
      */
-    private void validateListActivities(List<Activity> listActivities) throws EmptyInputException,
-            NoFinalActivitiesException {
-        if (listActivities.isEmpty()) {
-            throw new EmptyInputException("The activities List is empty");
-        }
-        List<List<Activity>> listAllPredecessors = listActivities.stream()
-                .map(Activity::getListPredecessors).collect(Collectors.toList());
-        List<Activity> listWithNoRepeatedPredecessors = listAllPredecessors.stream()
-                .flatMap(Collection::stream)
-                .distinct().collect(Collectors.toList());
-        boolean thereIsAInitialActivity = listActivities.stream().anyMatch(act -> act.getListPredecessors().isEmpty());
-        if (listActivities.size() <= listWithNoRepeatedPredecessors.size() || !thereIsAInitialActivity) {
-            throw new NoFinalActivitiesException(String.format(
-                    "The number of different predecessors is %d and activities %d and there is %b initial activities",
-                    listActivities.size(), listWithNoRepeatedPredecessors.size(), thereIsAInitialActivity));
-        }
-    }
-
-    /**
-     * Method that generates the sorted {@code Activity} graph.
-     */
-    public Map<Integer, LinkedList<Activity>> generateSortedActivityGraph() {
-        HashMap<Integer, LinkedList<Activity>> setOfOrderedActivities = new HashMap<>();
-        List<Activity> listOfNonSortedActivities = new LinkedList<>(this.listActivities);
-        List<Activity> allPassedActivities = new LinkedList<>();
-        tJobEntityList = new LinkedList<>();
-        int numberOfAddedActivities = this.listActivities.size();
-        int timeMoment = 0;
-        while (numberOfAddedActivities > 0) {
-            Iterator<Activity> iterator = listOfNonSortedActivities.iterator();
-            LinkedList<Activity> currentListActivities = new LinkedList<>();
-            while (iterator.hasNext()) {
-                Activity currentActivityEntity = iterator.next();
-                if ((timeMoment == 0) && (currentActivityEntity.getListPredecessors().isEmpty()) || new HashSet<>(allPassedActivities).containsAll(currentActivityEntity.getListPredecessors())) {
-                    addTJob(currentActivityEntity, timeMoment);
-                    currentListActivities.add(currentActivityEntity);
-                    numberOfAddedActivities--;
+    private static void validate(List<Activity> activities) throws InvalidPlanException {
+        Set<Activity> known = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
+        known.addAll(activities);
+        List<String> problems = new ArrayList<>();
+        boolean thereIsAnInitialActivity = false;
+        for (Activity activity : activities) {
+            if (activity.getListPredecessors().isEmpty()) {
+                thereIsAnInitialActivity = true;
+            }
+            for (Activity predecessor : activity.getListPredecessors()) {
+                if (!known.contains(predecessor)) {
+                    problems.add(String.format("%s has the predecessor %s that is not part of the plan",
+                            describe(activity), describe(predecessor)));
                 }
             }
+        }
+        if (!thereIsAnInitialActivity) {
+            problems.add("There is no initial activity (every activity has predecessors)");
+        }
+        List<Activity> unreachable = unreachableActivities(activities, known);
+        if (!unreachable.isEmpty() && problems.isEmpty()) {
+            StringBuilder cycle = new StringBuilder();
+            for (Activity activity : unreachable) {
+                cycle.append(cycle.length() == 0 ? "" : ", ").append(describe(activity));
+            }
+            problems.add("The activities form a cycle or depend on one: " + cycle);
+        }
+        if (!problems.isEmpty()) {
+            throw new InvalidPlanException("The execution plan is not valid", problems);
+        }
+    }
 
-            setOfOrderedActivities.put(timeMoment, currentListActivities);
-            allPassedActivities.addAll(currentListActivities);
-            listOfNonSortedActivities.removeAll(currentListActivities);
-            timeMoment++;
+    /** Activities that can never start: those on a cycle or that depend on one. */
+    private static List<Activity> unreachableActivities(List<Activity> activities, Set<Activity> known) {
+        Map<Activity, Integer> stage = computeStages(activities, known);
+        List<Activity> unreachable = new ArrayList<>();
+        for (Activity activity : activities) {
+            if (!stage.containsKey(activity)) {
+                unreachable.add(activity);
+            }
         }
-        return setOfOrderedActivities;
+        return unreachable;
     }
-    public void addTJob(Activity activity, int timeMoment) {
-        activity.getTJob().setStage(timeMoment);
-        activity.getTJob().setIdTJob(activity.getTJob().getListTestCases().isEmpty() ? "GatewayActivity" : "TJob" + getIdentifier(tJobEntityList.size()));
-        if (!activity.getTJob().getListTestCases().isEmpty()) {tJobEntityList.add(activity.getTJob());}
-    }
+
     /**
-     * Generates an alphabetical identifier for a {@code TJob} according to the number of TJob:
-     * e.g. A,B,C..., AA,AB,AC... BA,BB,BC...
+     * The stage of every activity that can start: 0 without predecessors, otherwise one more than the highest stage of
+     * its predecessors. Activities on a cycle (or depending on one) get no stage.
      */
-    public static String getIdentifier(int index) {
-        StringBuilder result = new StringBuilder();
-        while (index >= 0) {
-            // Calculate the character to append
-            result.insert(0, (char) ('A' + (index % 26)));
-            // Decrease the index and move to the next "digit"
-            index = index / 26 - 1;
+    private static Map<Activity, Integer> computeStages(List<Activity> activities, Set<Activity> known) {
+        Map<Activity, Integer> stage = new IdentityHashMap<>();
+        boolean progress = true;
+        while (progress) {
+            progress = false;
+            for (Activity activity : activities) {
+                if (!stage.containsKey(activity)) {
+                    Integer level = levelOf(activity, stage, known);
+                    if (level != null) {
+                        stage.put(activity, level);
+                        progress = true;
+                    }
+                }
+            }
         }
-        return result.toString();
+        return stage;
+    }
+
+    /** One more than the highest stage of the predecessors, or null while one of them has no stage yet. */
+    private static Integer levelOf(Activity activity, Map<Activity, Integer> stage, Set<Activity> known) {
+        int level = 0;
+        for (Activity predecessor : activity.getListPredecessors()) {
+            Integer predecessorStage = known.contains(predecessor) ? stage.get(predecessor) : null;
+            if (predecessorStage == null) {
+                return null;
+            }
+            level = Math.max(level, predecessorStage + 1);
+        }
+        return level;
+    }
+
+    private static Map<Integer, LinkedList<Activity>> sortByStage(List<Activity> activities) {
+        Set<Activity> known = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
+        known.addAll(activities);
+        Map<Activity, Integer> stage = computeStages(activities, known);
+        Map<Integer, LinkedList<Activity>> byStage = new HashMap<>();
+        for (Activity activity : activities) {
+            int level = stage.get(activity);
+            if (!byStage.containsKey(level)) {
+                byStage.put(level, new LinkedList<Activity>());
+            }
+            byStage.get(level).add(activity);
+        }
+        return byStage;
+    }
+
+    private static String describe(Activity activity) {
+        TJob tJob = activity.getTJob();
+        if (tJob.getListTestCases().isEmpty()) {
+            return "the gateway activity of the resources " + resourceIds(tJob);
+        }
+        List<String> tests = new ArrayList<>();
+        for (TestCase testCase : tJob.getListTestCases()) {
+            tests.add(testCase.getName());
+        }
+        return "the activity with the tests " + tests;
+    }
+
+    private static List<String> resourceIds(TJob tJob) {
+        List<String> ids = new ArrayList<>();
+        for (Resource resource : tJob.getListResourceClasses()) {
+            ids.add(resource.getResourceID());
+        }
+        return ids;
     }
 }

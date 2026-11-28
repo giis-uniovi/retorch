@@ -131,6 +131,6 @@ public class OrchestrationGenerator {
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
         RetorchScheduler scheduler = new RetorchScheduler(tGroupsOutputAggregator, lenient);
         List<Activity> listActivities = scheduler.generateActivities();
-        return new ExecutionPlan("defaultName", listActivities);
+        return ExecutionPlan.fromActivities("defaultName", listActivities);
     }
 }

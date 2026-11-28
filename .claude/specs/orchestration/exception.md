@@ -13,7 +13,8 @@ generation fails, and the message lists **every** problem found, not only the fi
     fails the aggregator validation, tests that cannot be loaded. Subclasses: `classifier.EmptyInputException`,
     `scheduler.NotValidSystemException`.
   - `SchedulingException`: a TJob that cannot be placed, an invalid activity graph. Subclasses:
-    `scheduler.NoTGroupsInTheSchedulerException`, `orchestrator.NoFinalActivitiesException`.
+    `scheduler.NoTGroupsInTheSchedulerException`, `InvalidPlanException` (the activities are not a valid execution graph: cycle, predecessor outside the plan, no initial
+    activity).
 - `OrchestrationGenerator` declares only `RetorchException` and `IOException`.
 
 ## Lenient mode

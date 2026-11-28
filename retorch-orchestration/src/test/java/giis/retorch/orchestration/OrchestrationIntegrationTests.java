@@ -13,7 +13,6 @@ import giis.retorch.orchestration.config.RetorchConfig;
 import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.ExecutionPlan;
 import giis.retorch.orchestration.orchestrator.OrchestrationWriter;
-import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
 import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
 import giis.retorch.orchestration.scheduler.NotValidSystemException;
 import giis.retorch.orchestration.scheduler.RetorchAggregator;
@@ -71,7 +70,7 @@ public class OrchestrationIntegrationTests {
         assertEquals(listExpectedActivities.toString(), listActivities.toString());
         RetorchPaths paths = new RetorchPaths();
         String executionPipeline = new OrchestrationWriter(paths).generate(
-                new ExecutionPlan("defaultName", listActivities), RetorchConfig.load(paths));
+                ExecutionPlan.fromActivities("defaultName", listActivities), RetorchConfig.load(paths));
         testStringAgainstPath(EXPECTED_OUTPUT_PATH+"outputTestIntegration", executionPipeline);
         checkTJobEnvFiles(7);
     }
