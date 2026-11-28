@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile;
+package giis.retorch.profiling.usageprofile.report;
 
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
@@ -19,6 +19,7 @@ import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.cost.CostCalculator;
 import giis.retorch.profiling.usageprofile.plan.ExecutionGraphBuilder;
 import giis.retorch.profiling.usageprofile.plan.ExecutionPlanReader;
+import giis.retorch.profiling.usageprofile.report.UsageProfileGenerator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -30,9 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static giis.retorch.profiling.usageprofile.TestFixtures.*;
 import static org.junit.Assert.assertEquals;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class UsageProfileTests {
+public class UsageProfileGeneratorTests {
 
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
@@ -279,40 +278,6 @@ public class UsageProfileTests {
             assertTrue("unexpected URL: " + rest.substring(0, Math.min(70, rest.length())),
                     !(rest.startsWith("http://") || rest.startsWith("https://")) || isAllowedUrl(rest));
         }
-    }
-
-    @Test
-    public void testSutAndBranchComeFromTheJenkinsEnvironmentWithoutCredentials() {
-        Map<String, String> env = new HashMap<>();
-        env.put("GIT_URL", "https://user:secret-token@github.com/giis-uniovi/retorch-st-petclinic.git");
-        env.put("BRANCH_NAME", "feature-x");
-        SutInfo sut = SutInfo.detect(env, tmp.getRoot().toPath());
-        assertEquals("retorch-st-petclinic", sut.name);
-        assertEquals("https://github.com/giis-uniovi/retorch-st-petclinic", sut.url);
-        assertEquals("feature-x", sut.branch);
-
-        env.clear();
-        env.put("GIT_URL", "git@github.com:giis-uniovi/retorch-st-fullteaching.git");
-        env.put("GIT_BRANCH", "origin/main");
-        sut = SutInfo.detect(env, tmp.getRoot().toPath());
-        assertEquals("https://github.com/giis-uniovi/retorch-st-fullteaching", sut.url);
-        assertEquals("main", sut.branch);
-    }
-
-    @Test
-    public void testSutAndBranchComeFromTheWorkspaceGitFilesWhenThereIsNoEnvironment() throws IOException {
-        File git = tmp.newFolder("ws", ".git");
-        Files.write(new File(git, "config").toPath(), ("[core]\n\tbare = false\n[remote \"origin\"]\n\turl = ssh://git@github.com:22/giis-uniovi/shop.git\n"
-                + "\tfetch = +refs/heads/*:refs/remotes/origin/*\n").getBytes(StandardCharsets.UTF_8));
-        Files.write(new File(git, "HEAD").toPath(), "ref: refs/heads/dev\n".getBytes(StandardCharsets.UTF_8));
-        SutInfo sut = SutInfo.detect(new HashMap<String, String>(), git.getParentFile().toPath());
-        assertEquals("shop", sut.name);
-        assertEquals("https://github.com/giis-uniovi/shop", sut.url);
-        assertEquals("dev", sut.branch);
-        // unknown values are empty, never null, and a local path is not turned into a link
-        SutInfo none = SutInfo.detect(new HashMap<String, String>(), tmp.newFolder("empty").toPath());
-        assertEquals("", none.name + none.url + none.branch);
-        assertEquals("", new SutInfo("x", "/local/path", null).branch);
     }
 
     @Test

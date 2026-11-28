@@ -11,7 +11,7 @@ import giis.retorch.profiling.usageprofile.plan.ExecutionPlanReader;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.pricing.PriceSource;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
-import giis.retorch.profiling.usageprofile.UsageProfileGenerator;
+import giis.retorch.profiling.usageprofile.report.UsageProfileGenerator;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import giis.retorch.profiling.usageprofile.dto.SutInfo;

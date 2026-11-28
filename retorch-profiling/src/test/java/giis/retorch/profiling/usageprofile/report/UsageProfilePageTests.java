@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile;
+package giis.retorch.profiling.usageprofile.report;
 
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
@@ -17,6 +17,7 @@ import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.cost.CostCalculator;
 import giis.retorch.profiling.usageprofile.plan.ExecutionGraphBuilder;
 import giis.retorch.profiling.usageprofile.plan.ExecutionPlanReader;
+import giis.retorch.profiling.usageprofile.report.UsageProfileGenerator;
 import org.junit.Test;
 
 import java.io.IOException;
