@@ -1,0 +1,4 @@
+# Alternative kind (alternatives[].kind) = icon file of this folder. A kind without a line shows no icon (BROWSER_SERVICE has none).
+# New kind icon: 1. add kinds/<id>.svg  2. add a line here.
+VM=vm.svg
+CONTAINER=container.svg

@@ -1,0 +1,5 @@
+{"tjobs":[
+  {"id":"tjoba","stage":0,"resources":["executor"],"tests":["LoginTest#loginOk","LoginTest#loginKo"],"predecessors":[]},
+  {"id":"tjobb","stage":1,"resources":["executor","browser"],"tests":["CartTest#addItem"],"predecessors":["tjoba"]},
+  {"id":"tjobgate","stage":1,"resources":[],"tests":[],"predecessors":["tjoba"]}
+]}

@@ -16,6 +16,14 @@ fi
 # Store docker logs
 "$SCRIPTS_FOLDER/storeContainerLogs.sh" "$1"
 
+# START Custom tear-down commands: they run BEFORE the containers are removed (e.g. to collect coverage data)
+"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-tear-down" "Start executing custom commands"
+# The custom-tjob-teardown file specifies the custom commands-scripting code that need to be executed into the TJob teardown, personalize
+# it in the /.retorch/customsscriptscode/custom-tjob-teardown.
+echo "This TJOB dont have any kind of specific commands"
+"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-tear-down" "End executing custom commands"
+# END Custom tear-down commands
+
 # Change to SUT location
 cd "$SUT_LOCATION"
 
@@ -25,14 +33,6 @@ docker compose -f docker-compose.yml --env-file "$WORKSPACE/.retorch/envfiles/$1
 
 # Return to the original working directory
 cd "$WORKSPACE"
-
-# START Custom Set-up commands
-"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "Start executing custom commands"
-# The custom-tjob-teardown file specifies the custom commands-scripting code that need to be executed into the TJob teardown, personalize
-# it in the /.retorch/customsscriptscode/custom-tjob-teardown.
-echo "This TJOB dont have any kind of specific commands"
-"$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-set-up" "End executing custom commands"
-# END Custom Set-up commands
 
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-tear-down" "Tear-down ended"
 # Execute the script to write timestamp again

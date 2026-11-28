@@ -1,0 +1,13 @@
+{
+  "name": "retorch-usageprofile-js-tests",
+  "private": true,
+  "description": "JS tests of the usage profile dashboard (node --test) and the headless browser smoke test",
+  "type": "module",
+  "scripts": {
+    "test": "node --test *.test.mjs",
+    "smoke": "node smoke.mjs ../../../target/usageprofile-smoke/usageprofile.html"
+  },
+  "devDependencies": {
+    "axe-core": "^4.10.0"
+  }
+}

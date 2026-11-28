@@ -1,0 +1,113 @@
+{
+ "deployment_id": "63914630-34db-4ca1-97da-996834114f6d:eu-def41c8af2",
+ "deployment_location": "eu-de",
+ "deployment_region": "eu-de",
+ "origin": "pricing_catalog",
+ "type": "Paid",
+ "url": "https://globalcatalog.cloud.ibm.com/api/v1/63914630-34db-4ca1-97da-996834114f6d:eu-def41c8af2/pricing",
+ "starting_price": {},
+ "effective_from": "2026-11-01T00:00:00Z",
+ "effective_until": "2026-11-30T23:59:59.999Z",
+ "metrics": [
+  {
+   "part_ref": "",
+   "metric_id": "part-is.instance-hours-bxf-4x16",
+   "tier_model": "Linear Tier",
+   "resource_display_name": "InstanceHours",
+   "charge_unit_display_name": "Virtual Server Instance Hours",
+   "charge_unit_name": "INSTANCE_HOURS_MULTI_TENANT",
+   "charge_unit": "Instance-Hour",
+   "charge_unit_quantity": 1,
+   "amounts": [
+    {
+     "country": "USA",
+     "currency": "USD",
+     "prices": [
+      {
+       "quantity_tier": 1,
+       "price": 0.223
+      }
+     ]
+    }
+   ],
+   "usage_cap_qty": 0,
+   "display_cap": 0,
+   "effective_from": "2026-11-01T00:00:00Z",
+   "effective_until": "2026-11-30T23:59:59.999Z",
+   "additional_properties": {
+    "included_quantities": {
+     "account": 0,
+     "instance": 0
+    }
+   },
+   "scope": "DEFAULT"
+  },
+  {
+   "part_ref": "",
+   "metric_id": "part-is.instance-hours-dh-bxf-4x16",
+   "tier_model": "Linear Tier",
+   "resource_display_name": "InstanceHours",
+   "charge_unit_display_name": "Virtual Server on Dedicated Host Instance Hours",
+   "charge_unit_name": "INSTANCE_HOURS_DEDICATED_HOST",
+   "charge_unit": "Instance-Hour",
+   "charge_unit_quantity": 1,
+   "amounts": [
+    {
+     "country": "USA",
+     "currency": "USD",
+     "prices": [
+      {
+       "quantity_tier": 1,
+       "price": 0
+      }
+     ]
+    }
+   ],
+   "usage_cap_qty": 0,
+   "display_cap": 0,
+   "effective_from": "2026-11-01T00:00:00Z",
+   "effective_until": "2026-11-30T23:59:59.999Z",
+   "additional_properties": {
+    "included_quantities": {
+     "account": 0,
+     "instance": 0
+    }
+   },
+   "scope": "DEFAULT"
+  },
+  {
+   "part_ref": "",
+   "metric_id": "part-is.windowsOS",
+   "tier_model": "Linear Tier",
+   "resource_display_name": "WINDOWS_VCPU_HOURS",
+   "charge_unit_display_name": "Windows-vCPU-Hours",
+   "charge_unit_name": "WINDOWS_VCPU_HOURS",
+   "charge_unit": "Virtual Processor Core-Hour",
+   "charge_unit_quantity": 1,
+   "amounts": [
+    {
+     "country": "USA",
+     "currency": "USD",
+     "prices": [
+      {
+       "quantity_tier": 1,
+       "price": 0.05151
+      }
+     ]
+    }
+   ],
+   "usage_cap_qty": 0,
+   "display_cap": 0,
+   "effective_from": "2026-11-01T00:00:00Z",
+   "effective_until": "2026-11-30T23:59:59.999Z",
+   "additional_properties": {
+    "included_quantities": {
+     "account": 0,
+     "instance": 0
+    }
+   },
+   "scope": "DEFAULT"
+  }
+ ],
+ "scope": "DEFAULT"
+}

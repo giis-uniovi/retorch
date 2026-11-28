@@ -1,106 +1,82 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
 package giis.retorch.profiling.main;
 
+import giis.retorch.profiling.usageprofile.dto.cost.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.report.SutInfoDTO;
+import giis.retorch.profiling.usageprofile.cost.CostCalculator;
+import giis.retorch.profiling.usageprofile.plan.ExecutionGraphBuilder;
+import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
+import giis.retorch.profiling.usageprofile.plan.ExecutionPlanReader;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
+import giis.retorch.profiling.usageprofile.pricing.PriceSource;
+import giis.retorch.profiling.usageprofile.measurement.Timeline;
+import giis.retorch.profiling.usageprofile.report.UsageProfileGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import giis.retorch.profiling.datasetgeneration.DataTuple;
-import giis.retorch.profiling.datasetgeneration.DatasetGenerator;
-import giis.retorch.profiling.datasetgeneration.LifecycleTimes;
-import giis.retorch.profiling.datasetgeneration.LifecycleTimesReader;
-import giis.retorch.profiling.model.CloudObjectInstance;
-import giis.retorch.profiling.model.UsageProfile;
-import giis.retorch.profiling.profilegeneration.CoiProfileWriter;
-import giis.retorch.profiling.profilegeneration.ProfileGenerator;
-import giis.retorch.profiling.profilegeneration.ProfilePlotter;
-import giis.retorch.profiling.report.UsageProfileReportGenerator;
-import giis.retorch.profiling.utils.COISerializer;
-import giis.retorch.profiling.utils.FileUtils;
-import giis.retorch.orchestration.model.ExecutionPlan;
-
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
- * {@code UsageProfilerToolBox} provides the main methods to generate the different Usage Profiles.
+ * {@code UsageProfilerToolBox} generates the usage profile of an execution: an interactive HTML usage profile with the
+ * measured resource usage and the cost of every cloud deployment alternative. The entry point is
+ * {@link #generate(UsageProfileRequest)}; the {@code generateUsageProfile} overloads are deprecated and delegate to it.
  */
 public class UsageProfilerToolBox {
 
-    private final DatasetGenerator generator;
     private static final Logger log = LoggerFactory.getLogger(UsageProfilerToolBox.class);
 
-    public UsageProfilerToolBox() {
-        generator = new DatasetGenerator();
+    /**
+     * Generates the usage profile from the usage file exported by the orchestration scripts of one execution
+     * ({@code resourcemonitor.sh export}), with the prices and the optional execution plan of the request.
+     */
+    public void generate(UsageProfileRequest request) throws IOException {
+        Path out = Paths.get(request.outputHtml());
+        PriceCatalog catalog = request.catalog() != null ? request.catalog() : request.priceSource().load();
+        ExecutionMeasurements measurements = ExecutionMeasurements.read(Paths.get(request.usageCsv()));
+        Timeline timeline = measurements.toTimeline();
+        Path planFile = existingPlanFile(request.executionPlanJson());
+        List<ExecutionPlanReader.PlanNode> plan = planFile == null
+                ? Collections.<ExecutionPlanReader.PlanNode>emptyList() : ExecutionPlanReader.read(planFile);
+        CostReportDTO report = new CostCalculator().calculate(timeline, catalog,
+                browserTjobs(plan, request.browserResourcePattern()));
+        ExecutionGraphDTO graph = planFile == null ? null
+                : ExecutionGraphBuilder.build(plan, measurements.tjobMetrics(timeline), measurements.containerUsage());
+        new UsageProfileGenerator().generate(request.planName(), timeline, report, catalog, graph, SutInfoDTO.detect(), out);
+        log.info("Usage profile written to {}", out);
     }
 
-    /**
-     * Reads the execution data CSV files from {@code inputPath}, computes the average lifecycle duration
-     * across all executions, and writes the result to {@code outputPath}.
-     * <p>
-     * Example usage:
-     * <pre>
-     *     UsageProfilerToolBox usageProfiler = new UsageProfilerToolBox();
-     *     usageProfiler.generateAverageDurationCSVFile("/home/datasets", "/averagedurationfile.csv");
-     * </pre>
-     *
-     * @param inputPath  The path where execution data CSV files are located.
-     * @param outputPath The path where the average duration CSV file will be written.
-     */
-    public void generateAverageDurationCSVFile(String inputPath, String outputPath) throws IOException {
-        log.debug("Generating the DataTuples");
-        List<DataTuple> listTuples = generator.generateListTuplesAvgTimes(inputPath);
-        log.debug("Creating the CSV file from the DataTuples");
-        generator.createCSVAvgFromListDataTuplesOrdered(listTuples, outputPath);
-    }
-
-    /**
-     * Generates the raw TJob capacity-usage profile and then overlays contracted capacities
-     * to generate COI usage profiles and charts.
-     *
-     * @param plan           The execution plan.
-     * @param systemName     Name of the system.
-     * @param avgCsvPath     Path to the average duration CSV file.
-     * @param outputPath     Folder where profiles and charts will be written.
-     * @param windowSize     Time window for the profile.
-     * @param executionCount Number of executions to consider.
-     * @throws IOException if an I/O error occurs.
-     */
-    public void generateProfiles(ExecutionPlan plan, String systemName, String avgCsvPath, String outputPath,
-                                 double windowSize, int executionCount) throws IOException {
-        String profileCsvPath = FileUtils.joinPath(outputPath, "profile.csv");
-
-        ProfileGenerator profileGenerator = new ProfileGenerator();
-        profileGenerator.generateExecutionPlanCapacitiesUsage(plan, avgCsvPath, profileCsvPath, windowSize, executionCount);
-
-        generateCOIUsageProfiles(systemName, profileCsvPath, avgCsvPath, outputPath, plan.getName());
-    }
-
-    /**
-     * Loads the {@code CloudObjectInstance}s from {@code .retorch/infra/<systemName>CloudObjectInstances.json}
-     * and, for each instance, overlays the contracted-capacity rows onto the raw TJob usage profile and
-     * generates the corresponding Usage Profile charts in the output folder.
-     */
-    private void generateCOIUsageProfiles(String systemName, String profileCsvPath, String avgCsvPath,
-                                          String outputPath, String planName) throws IOException {
-        log.debug("Loading Cloud Object Instances for system: {}", systemName);
-        List<CloudObjectInstance> cloudObjectInstances =
-                new COISerializer().deserializeCloudObjectInstances(systemName);
-        LifecycleTimes times = LifecycleTimesReader.readFromAverageCsv(avgCsvPath);
-        CoiProfileWriter coiProfileWriter = new CoiProfileWriter();
-        List<UsageProfile> profiles = new ArrayList<>();
-        String imagesPath = FileUtils.joinPath(outputPath, "images/");
-        String profilesPath = FileUtils.joinPath(outputPath, "profiles/");
-        for (CloudObjectInstance coi : cloudObjectInstances) {
-            log.debug("Generating usage profile for COI: {}", coi.getName());
-            coi.setLifecycleTimes(times.getStartSetUp(), times.getEndSetUp(),
-                    times.getStartTJobExec(), times.getEndTJobExec(),
-                    times.getStartTearDown(), times.getEndTearDown());
-            String coiProfilePath = FileUtils.joinPath(outputPath, "profile_" + coi.getName() + ".csv");
-            coiProfileWriter.write(profileCsvPath, coiProfilePath, coi);
-            ProfilePlotter plotter = new ProfilePlotter(coiProfilePath);
-            plotter.generateTotalTJobUsageProfileCharts(imagesPath, profilesPath, planName, coi.getName());
-            profiles.add(plotter.getUsageProfile());
+    /** The execution plan file, or null (no graph) if none was given or it does not exist; an empty plan is not null. */
+    private static Path existingPlanFile(String executionPlanJson) {
+        if (executionPlanJson == null || executionPlanJson.isEmpty() || !Files.exists(Paths.get(executionPlanJson))) {
+            log.info("No execution plan file, the usage profile will not include the execution graph");
+            return null;
         }
-        new UsageProfileReportGenerator().generateReport(profiles, outputPath, planName);
+        return Paths.get(executionPlanJson);
+    }
+
+    /** TJobs that use a browser: those with a resource whose name contains {@code pattern} (case-insensitive). */
+    static Set<String> browserTjobs(List<ExecutionPlanReader.PlanNode> plan, String pattern) {
+        Set<String> ids = new HashSet<>();
+        String wanted = pattern.toLowerCase(Locale.ROOT);
+        for (ExecutionPlanReader.PlanNode node : plan) {
+            for (String resource : node.resources) {
+                if (resource.toLowerCase(Locale.ROOT).contains(wanted)) {
+                    ids.add(node.id);
+                }
+            }
+        }
+        return ids;
     }
 }

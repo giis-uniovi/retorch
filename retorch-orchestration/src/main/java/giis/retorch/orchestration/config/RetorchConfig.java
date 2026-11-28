@@ -1,0 +1,223 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
+package giis.retorch.orchestration.config;
+
+import giis.retorch.orchestration.exception.InvalidConfigurationException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Pattern;
+
+/**
+ * Typed, read-only view of {@code retorchCI.properties}. Required properties fail with a message that names the
+ * property and the file, instead of a {@code NullPointerException} later on.
+ */
+public class RetorchConfig {
+
+    /** Property that enables the resource measurement and the usage profile. */
+    public static final String PROFILING_PROPERTY = "profiling";
+    /**
+     * Deprecated way of overriding {@code profiling} (the CLI now passes it with {@link #withProfiling(Boolean)});
+     * still read for one release so existing launchers keep working.
+     */
+    public static final String PROFILING_SYSTEM_PROPERTY = "retorch.profiling";
+
+    /** Where the profiling jar is downloaded from when the project does not prepare it. */
+    public static final String DEFAULT_PROFILING_JAR_URL =
+            "https://github.com/giis-uniovi/retorch/releases/latest/download/retorch-profiling-cli.jar";
+
+    private static final int DEFAULT_SUT_WAIT_INTERVAL = 5;
+    private static final int DEFAULT_SUT_WAIT_LIMIT = 40;
+
+    private static final String[] REQUIRED_PROPERTIES =
+            {"agentCIName", "sut-location", "app-url", "sut-wait-html", "testsBasePath"};
+
+    /** Optional property with the extra price providers of the usage profile: {@code oracle=global;ibm=us-south,eu-de}. */
+    public static final String PRICE_PROVIDERS_PROPERTY = "price-providers";
+    private static final Pattern PROVIDER_ID = Pattern.compile("[a-z][a-z0-9-]*");
+    private static final Pattern PROVIDER_REGIONS = Pattern.compile("[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*");
+
+    private static final String TJOB_NAME_TOKEN = "$TJOB_NAME";
+
+    private final Properties properties;
+    private final String source;
+
+    public RetorchConfig(Properties properties, String source) {
+        this.properties = properties;
+        this.source = source;
+    }
+
+    /**
+     * Loads {@code retorchCI.properties}; the deprecated system property {@code retorch.profiling} overrides the file.
+     *
+     * @throws InvalidConfigurationException if the file does not exist or a required property is missing (all the
+     *                                       missing ones are listed)
+     * @throws IOException                   if the file cannot be read
+     */
+    public static RetorchConfig load(RetorchPaths paths) throws IOException, InvalidConfigurationException {
+        Path file = paths.ciPropertiesFile();
+        Properties props = new Properties();
+        try (InputStream input = Files.newInputStream(file)) {
+            props.load(input);
+        } catch (NoSuchFileException e) {
+            throw new InvalidConfigurationException("The configuration file " + file + " does not exist");
+        }
+        RetorchConfig config = new RetorchConfig(props, file.toString());
+        config.validate();
+        String legacyOverride = System.getProperty(PROFILING_SYSTEM_PROPERTY);
+        return legacyOverride == null ? config : config.withProfiling(Boolean.valueOf(legacyOverride));
+    }
+
+    /**
+     * Checks that every required property is present.
+     *
+     * @throws InvalidConfigurationException listing all the missing properties
+     */
+    public void validate() throws InvalidConfigurationException {
+        List<String> problems = new ArrayList<>();
+        for (String name : REQUIRED_PROPERTIES) {
+            if (properties.getProperty(name) == null) {
+                problems.add("The required property '" + name + "' is missing");
+            }
+        }
+        for (String name : new String[] {"sut-wait-interval", "sut-wait-limit"}) {
+            try {
+                positiveInt(name, 1);
+            } catch (IllegalStateException e) {
+                problems.add(e.getMessage());
+            }
+        }
+        try {
+            priceProviders();
+        } catch (IllegalStateException e) {
+            problems.add(e.getMessage());
+        }
+        if (!problems.isEmpty()) {
+            throw new InvalidConfigurationException("Invalid configuration file " + source, problems);
+        }
+    }
+
+    /** A copy with the profiling flag forced to {@code profiling}; {@code null} keeps the configured value. */
+    public RetorchConfig withProfiling(Boolean profiling) {
+        if (profiling == null) {
+            return this;
+        }
+        Properties copy = new Properties();
+        copy.putAll(properties);
+        copy.setProperty(PROFILING_PROPERTY, String.valueOf(profiling));
+        return new RetorchConfig(copy, source);
+    }
+
+    public String agentCIName() {
+        return required("agentCIName");
+    }
+
+    public String sutLocation() {
+        return required("sut-location");
+    }
+
+    /** The {@code app-url} property with {@code $TJOB_NAME} replaced by the (lower case) TJob name. */
+    public String appUrl(String tJobName) {
+        return required("app-url").replace(TJOB_NAME_TOKEN, tJobName.toLowerCase(Locale.ROOT));
+    }
+
+    /** Text the SUT home page contains once it is up (used by {@code waitforSUT.sh}). */
+    public String sutWaitHtml() {
+        return required("sut-wait-html");
+    }
+
+    /** Seconds between two checks of the SUT ({@code sut-wait-interval}, default 5). */
+    public int sutWaitInterval() {
+        return positiveInt("sut-wait-interval", DEFAULT_SUT_WAIT_INTERVAL);
+    }
+
+    /** Number of checks of the SUT before giving up ({@code sut-wait-limit}, default 40: about 200 seconds). */
+    public int sutWaitLimit() {
+        return positiveInt("sut-wait-limit", DEFAULT_SUT_WAIT_LIMIT);
+    }
+
+    private int positiveInt(String name, int defaultValue) {
+        String value = properties.getProperty(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            if (parsed > 0) {
+                return parsed;
+            }
+        } catch (NumberFormatException e) {
+            // reported below
+        }
+        throw new IllegalStateException("The property '" + name + "' must be a positive integer but is '" + value
+                + "' in " + source);
+    }
+
+    public String testsBasePath() {
+        return required("testsBasePath");
+    }
+
+    public boolean profiling() {
+        return Boolean.parseBoolean(properties.getProperty(PROFILING_PROPERTY, "false").trim());
+    }
+
+    public String profilingJarUrl() {
+        return properties.getProperty("profiling-jar-url", DEFAULT_PROFILING_JAR_URL);
+    }
+
+    public String azureRegion() {
+        return properties.getProperty("azure-region", "westeurope");
+    }
+
+    public String awsRegion() {
+        return properties.getProperty("aws-region", "eu-west-1");
+    }
+
+    /**
+     * The extra (opt-in) price providers of the usage profile and their regions, from {@code price-providers}: pairs
+     * {@code id=regions} separated by {@code ;}, regions separated by commas, e.g. {@code oracle=global;ibm=us-south,eu-de}.
+     * Empty (the default) when the property is missing or blank. The ids and regions only accept letters, digits and
+     * {@code - _ .} because they end up in the generated shell script.
+     *
+     * @throws IllegalStateException if an entry is not {@code id=regions} or has forbidden characters
+     */
+    public Map<String, String> priceProviders() {
+        String value = properties.getProperty(PRICE_PROVIDERS_PROPERTY, "");
+        Map<String, String> providers = new LinkedHashMap<>();
+        for (String entry : value.split(";")) {
+            if (entry.trim().isEmpty()) {
+                continue;
+            }
+            int eq = entry.indexOf('=');
+            String id = eq < 0 ? "" : entry.substring(0, eq).trim();
+            String regions = eq < 0 ? "" : entry.substring(eq + 1).replace(" ", "");
+            if (!PROVIDER_ID.matcher(id).matches() || !PROVIDER_REGIONS.matcher(regions).matches()) {
+                throw new IllegalStateException("The property '" + PRICE_PROVIDERS_PROPERTY + "' must be a list of "
+                        + "id=region1,region2 separated by ';' (e.g. oracle=global;ibm=us-south) but has '" + entry.trim()
+                        + "' in " + source);
+            }
+            providers.put(id, regions);
+        }
+        return Collections.unmodifiableMap(providers);
+    }
+
+    private String required(String name) {
+        String value = properties.getProperty(name);
+        if (value == null) {
+            throw new IllegalStateException("The required property '" + name + "' is missing in " + source);
+        }
+        return value;
+    }
+}

@@ -1,5 +1,7 @@
 package giis.retorch.orchestration.model;
 
+import java.util.Objects;
+
 /**
  * The {@code AccessMode} class represents the Access Mode performed by a {@code TestCase} on a {@code Resource}.
  * It defines the type of access, the max number of concurrent test cases that can access the {@code Resource},
@@ -37,7 +39,7 @@ public class AccessMode {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(type, sharing, concurrency, resource);
     }
 
     @Override
@@ -46,7 +48,8 @@ public class AccessMode {
         AccessMode objToCompare = ((AccessMode) obj);
 
         return objToCompare.getSharing() == this.sharing && objToCompare.getConcurrency() == this.concurrency
-                && objToCompare.getType().equals(this.type) && objToCompare.getResource().equals(this.resource);
+                && Objects.equals(objToCompare.getType(), this.type)
+                && Objects.equals(objToCompare.getResource(), this.resource);
     }
 
     @Override

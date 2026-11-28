@@ -1,5 +1,7 @@
 package giis.retorch.orchestration.model;
 
+import java.util.Objects;
+
 /**
  * The {@code AccessModeTypes} class is used as AccessMode parser for given a string representation of a RETORCH access mode (i.e:
  * READONLY,READWRITE...) convert it into the proper enumeration.
@@ -36,7 +38,7 @@ public class AccessModeTypes {
     }
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hashCode(accessModeType);
     }
 
     @Override

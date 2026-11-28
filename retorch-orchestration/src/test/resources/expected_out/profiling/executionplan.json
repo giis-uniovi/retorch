@@ -1,0 +1,33 @@
+{
+  "tjobs" : [ {
+    "id" : "tjoba",
+    "stage" : 0,
+    "resources" : [ "MedInElasRest", "mediumElasticResource" ],
+    "tests" : [ "AggregatorClassTests#tActSimpleOneFiveSch", "AggregatorClassTests#tActSimpleOnetFourSch", "AggregatorClassTests#tActSimpleOnetThreeSch" ],
+    "predecessors" : [ ]
+  }, {
+    "id" : "tjobb",
+    "stage" : 0,
+    "resources" : [ "MedInElasRest", "mediumElasticResource" ],
+    "tests" : [ "AggregatorClassTests#tActSimpleTwoFiveSch", "AggregatorClassTests#tActSimpleTwotFourSch", "AggregatorClassTests#tActSimpleTwotThreeSch" ],
+    "predecessors" : [ ]
+  }, {
+    "id" : "tjobc",
+    "stage" : 0,
+    "resources" : [ "MedInElasRest", "mediumElasticResource" ],
+    "tests" : [ "AggregatorClassTests#tActSimpleThreeFiveSch", "AggregatorClassTests#tActSimpleThreetFourSch", "AggregatorClassTests#tActSimpleThreetThreeSch" ],
+    "predecessors" : [ ]
+  }, {
+    "id" : "tjobd",
+    "stage" : 0,
+    "resources" : [ "MedInElasRest", "mediumElasticResource" ],
+    "tests" : [ "AggregatorClassTests#tActSimpleFourFiveSch", "AggregatorClassTests#tActSimpleFourtFourSch", "AggregatorClassTests#tActSimpleFourtThreeSch" ],
+    "predecessors" : [ ]
+  }, {
+    "id" : "tjobe",
+    "stage" : 0,
+    "resources" : [ "MedInElasRest", "mediumElasticResource" ],
+    "tests" : [ "AggregatorClassTests#tActSimpleFiveFiveSch", "AggregatorClassTests#tActSimpleFivetFourSch", "AggregatorClassTests#tActSimpleFivetThreeSch" ],
+    "predecessors" : [ ]
+  } ]
+}

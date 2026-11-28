@@ -2,6 +2,7 @@ package giis.retorch.orchestration.scheduler;
 
 import giis.retorch.orchestration.model.*;
 import org.apache.commons.collections4.CollectionUtils;
+import giis.retorch.orchestration.exception.SchedulingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,19 @@ public class RetorchScheduler {
     private LinkedList<TJob> listTJobs;
     private List<Activity> activityEntities;
 
+    private final boolean lenient;
+
     public RetorchScheduler(List<TGroup> inputTGroups) throws NoTGroupsInTheSchedulerException {
+        this(inputTGroups, false);
+    }
+
+    /**
+     * @param lenient {@code false}: a TJob that cannot be placed makes {@link #generateActivities()} fail;
+     *                {@code true}: it is logged and left out of the plan, together with its test cases (the previous,
+     *                silent behavior)
+     */
+    public RetorchScheduler(List<TGroup> inputTGroups, boolean lenient) throws NoTGroupsInTheSchedulerException {
+        this.lenient = lenient;
         validateTGroups(inputTGroups);
         this.listTGroups = inputTGroups;
         this.listTJobs = new LinkedList<>();
@@ -46,12 +59,25 @@ public class RetorchScheduler {
      * Father method that calls the generation of {@code TJob}s for after that generate a proper scheduling taking into account
      * the restrictions in terms of elasticity and concurrency of the {@code TJob}s
      */
-    public List<Activity> generateActivities() {
+    public List<Activity> generateActivities() throws SchedulingException {
         generateTJobs();
         List<Resource> availableResources = this.getAllResources();
         Scheduling schedule = new Scheduling(availableResources);
+        List<String> unplaced = new LinkedList<>();
         for (TJob currentTJob : this.listTJobs) {
-            schedule.addTJob(currentTJob);
+            if (!schedule.addTJob(currentTJob)) {
+                unplaced.add(String.format("The TJob with the test cases %s cannot be placed: its resources %s are not "
+                                + "all available", currentTJob.getListTestCases().stream().map(TestCase::getName)
+                                .collect(Collectors.toList()),
+                        currentTJob.getListResourceClasses().stream().map(Resource::getResourceID)
+                                .collect(Collectors.toList())));
+            }
+        }
+        if (!unplaced.isEmpty()) {
+            if (!lenient) {
+                throw new SchedulingException("The tests cannot be scheduled", unplaced);
+            }
+            unplaced.forEach(logRetorchScheduler::warn);
         }
         this.activityEntities = this.generateListActivities(schedule);
         return this.activityEntities.stream().sorted(Comparator.comparing(Activity::toString)).collect(Collectors.toList());

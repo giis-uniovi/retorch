@@ -12,8 +12,6 @@ import giis.retorch.orchestration.model.TJob;
 import giis.retorch.orchestration.model.ResourceInstance;
 
 import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -44,47 +42,23 @@ public class TJobsEntityTests {
     }
 
     @Test
-    public void testTJobAvgTime() {
-        assertThrows(IllegalArgumentException.class, () ->
-                tjob.setAvgTime(25, 10, 11, 16, 17, 20));
-        assertThrows(IllegalArgumentException.class, () ->
-                tjob.setAvgTime(20, 30, 10, 16, 5, 7));
-        assertThrows(IllegalArgumentException.class, () ->
-                tjob.setAvgTime(30, 31, 30, 35, 40, 45));
-        tjob.setAvgTime(0, 10, 11, 16, 17, 21);
-
-        assertEquals(0, tjob.getStartSetUp(), 0);
-        assertEquals(10, tjob.getEndSetUp(), 0);
-        assertEquals(11, tjob.getStartExec(), 0);
-        assertEquals(16, tjob.getEndExec(), 0);
-        assertEquals(17, tjob.getStartTearDown(), 0);
-        assertEquals(21, tjob.getEndTearDown(), 0);
+    public void testTJobKeepsItsIdAsStored() {
+        assertEquals("tjoba", tjob.getIdTJob());
+        tjob.setIdTJob("TJobB");
+        assertEquals("TJobB", tjob.getIdTJob());
     }
 
     @Test
-    public void testLifecycleCapacities() {
-        tjob.setAvgTime(2, 10, 11, 16, 17, 21);
-        Capacity capacityOne = new Capacity("memory", 4);
-        Capacity capacityTwo = new Capacity("processor", 3);
+    public void testResourceWithoutMinimalCapacitiesIsValid() throws java.io.IOException {
+        // The capacities are measured when the pipeline runs, so the resources JSON does not have to declare them
+        String json = "{\"resourceID\":\"webserver\",\"hierarchyParent\":[],\"replaceable\":[],"
+                + "\"resourceType\":\"LOGICAL\",\"dockerImage\":\"img\"}";
+        Resource resource = new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Resource.class);
+        assertNotNull(resource.getMinimalCapacities());
+        assertTrue(resource.getMinimalCapacities().isEmpty());
 
-        Map.Entry<String, Set<Capacity>> output;
-        output = tjob.getCapacitiesGivenTime(1, 0);
-        assertEquals("noexec", output.getKey());
-        assertTrue(output.getValue().isEmpty());
-        output = tjob.getCapacitiesGivenTime(2, 0);
-        assertEquals("setup", output.getKey());
-        assertTrue(output.getValue().contains(capacityOne));
-        assertTrue(output.getValue().contains(capacityTwo));
-        output = tjob.getCapacitiesGivenTime(12, 0);
-        assertEquals("testexec", output.getKey());
-        assertTrue(output.getValue().contains(capacityOne));
-        assertTrue(output.getValue().contains(capacityTwo));
-        output = tjob.getCapacitiesGivenTime(19, 0);
-        assertEquals("teardown", output.getKey());
-        assertTrue(output.getValue().contains(capacityOne));
-        assertTrue(output.getValue().contains(capacityTwo));
-        output = tjob.getCapacitiesGivenTime(21, 0);
-        assertEquals("noexec", output.getKey());
-        assertTrue(output.getValue().isEmpty());
+        LinkedList<Resource> resources = new LinkedList<>();
+        resources.add(resource);
+        assertEquals(1, new TJob("tjobx", 0, resources).getListResourceClasses().size());
     }
 }

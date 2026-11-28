@@ -1,0 +1,4 @@
+// Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+// All intellectual property rights on this file belong to GIIS.
+archiveArtifacts artifacts: 'artifacts/usageprofile/*.html', allowEmptyArchive: true
+publishHTML(target: [reportDir: 'artifacts/usageprofile', reportFiles: 'usageprofile.html', reportName: 'RETORCH Usage Profile', keepAll: true, alwaysLinkToLastBuild: true, allowMissing: true])

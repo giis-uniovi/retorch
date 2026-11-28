@@ -30,3 +30,4 @@ for csvfile in $PATH_FILES; do
     exit 1
   fi
 done
+${PROFILING_EXPORT_COMMAND}

@@ -1,0 +1,11 @@
+// Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+// All intellectual property rights on this file belong to GIIS.
+stage('${TJOB} IdResource: ${RESOURCES}') {
+  steps {
+    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+      sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh ${TJOB} ${STAGE} ${APP_URL}'
+      sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh ${TJOB} ${STAGE} ${APP_URL} "${TESTS}"'
+    }// EndExecutionStageError${TJOB}
+    sh '$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh ${TJOB} ${STAGE}'
+  }// EndSteps${TJOB}
+}// EndStage${TJOB}

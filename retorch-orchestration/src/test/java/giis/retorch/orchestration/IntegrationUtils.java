@@ -1,7 +1,7 @@
 package giis.retorch.orchestration;
 
 import giis.retorch.orchestration.classifier.ResourceSerializer;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.*;
 import giis.retorch.orchestration.testdata.integration.IntegrationClassOneTests;
 import giis.retorch.orchestration.testdata.integration.IntegrationClassTwoTests;
@@ -33,8 +33,8 @@ public class IntegrationUtils extends GenericUtils {
      * by three different resources (Heavy-Light inelastic and Mock-Light-Medium elastic) and 16 test cases who
      * perform different resource usage
      */
-    public System getExpectedSystemIntegration() {
-        System outputSystem = new System("SyntheticIntegration");
+    public SystemUnderTest getExpectedSystemIntegration() {
+        SystemUnderTest outputSystem = new SystemUnderTest("SyntheticIntegration");
         outputSystem.addResourceClass(this.getHeavyInelasticResource());
         outputSystem.addResourceClass(this.getMediumElasticResource());
         outputSystem.addResourceClass(this.getLightElasticResource());

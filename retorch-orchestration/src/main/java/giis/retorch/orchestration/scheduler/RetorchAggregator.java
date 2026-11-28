@@ -3,7 +3,7 @@ package giis.retorch.orchestration.scheduler;
 import giis.retorch.orchestration.classifier.ResourceSerializer;
 import giis.retorch.orchestration.model.*;
 
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -18,16 +18,39 @@ public class RetorchAggregator {
     private static final Logger logRetorchAggregator = LoggerFactory.getLogger(RetorchAggregator.class);
     private final Marker errorMarker = MarkerFactory.getMarker("ErrorMarker");
     private final HashMap<String, TGroup> mapTGroups;
-    private final System aggregatorSystem;
+    private final SystemUnderTest aggregatorSystem;
     private Map<String, Resource> mapAvailableResources;
 
-    public RetorchAggregator(System system) throws NotValidSystemException, IOException {
-        boolean isValid = validateSystem(system);
-        this.aggregatorSystem = isValid ? system : new System("EmptySystem ERROR");
+    public RetorchAggregator(SystemUnderTest system) throws NotValidSystemException, IOException {
+        this(system, null, false);
+    }
+
+    /**
+     * @param resources resources of the system by id, already loaded by the caller; {@code null} reads the JSON file
+     */
+    public RetorchAggregator(SystemUnderTest system, Map<String, Resource> resources)
+            throws NotValidSystemException, IOException {
+        this(system, resources, false);
+    }
+
+    /**
+     * @param resources resources of the system by id, already loaded by the caller; {@code null} reads the JSON file
+     * @param lenient   {@code false}: an invalid system throws a {@link NotValidSystemException} listing every
+     *                  problem; {@code true}: the problems are only logged and the system is replaced by an empty one
+     *                  (the previous behavior, which hides the error until a later, unrelated failure)
+     */
+    public RetorchAggregator(SystemUnderTest system, Map<String, Resource> resources, boolean lenient)
+            throws NotValidSystemException, IOException {
+        List<String> problems = findProblems(system);
+        if (!problems.isEmpty() && !lenient) {
+            throw new NotValidSystemException("The system " + system.getName() + " is not valid", problems);
+        }
+        boolean isValid = problems.isEmpty();
+        this.aggregatorSystem = isValid ? system : new SystemUnderTest("EmptySystem ERROR");
         this.mapTGroups = new HashMap<>();
         if (isValid) {
-            ResourceSerializer serializer = new ResourceSerializer();
-            this.mapAvailableResources = serializer.deserializeResources(system.getName());
+            this.mapAvailableResources = resources != null
+                    ? resources : new ResourceSerializer().deserializeResources(system.getName());
         }
     }
 
@@ -42,36 +65,32 @@ public class RetorchAggregator {
      * @param systemToCheck System object to check
      */
 
-    public boolean validateSystem(System systemToCheck) throws NotValidSystemException {
-        boolean hasResources = true;
-        boolean hasTestCases = true;
-        boolean areAllResourcesRequiredByTestCase;
-        boolean areAllResourcesFullFill;
-        boolean thereAreNoDuplicates = true;
-        String message;
+    public boolean validateSystem(SystemUnderTest systemToCheck) throws NotValidSystemException {
+        return findProblems(systemToCheck).isEmpty();
+    }
+
+    /**
+     * Every problem of the system (each one is also logged as an error); empty when the system is valid.
+     */
+    private List<String> findProblems(SystemUnderTest systemToCheck) throws NotValidSystemException {
+        List<String> problems = new ArrayList<>();
         if (systemToCheck.getResources().isEmpty()) {
-            message=String.format("The number of resources in the system %s is zero",
-                    systemToCheck.getName());
-            logRetorchAggregator.error(message);
-            hasResources = false;
+            problems.add(String.format("The number of resources in the system %s is zero",
+                    systemToCheck.getName()));
         }
         if (systemToCheck.getTestCases().isEmpty()) {
-            message=String.format("The number of test cases in the system %s is zero",
-                    systemToCheck.getName());
-            logRetorchAggregator.error(message);
-            hasTestCases = false;
+            problems.add(String.format("The number of test cases in the system %s is zero",
+                    systemToCheck.getName()));
         }
         Set<String> duplicateTestCases = findDuplicates(systemToCheck.getTestCases());
         if (!duplicateTestCases.isEmpty()) {
-            message=String.format("There are several repeated Test Cases in the System %s:%s",
-                    systemToCheck.getName(), duplicateTestCases);
-            logRetorchAggregator.error(message);
-            thereAreNoDuplicates = false;
+            problems.add(String.format("There are several repeated Test Cases in the System %s:%s",
+                    systemToCheck.getName(), duplicateTestCases));
         }
-        areAllResourcesRequiredByTestCase = isRequiredByATestCase(systemToCheck);
-        areAllResourcesFullFill = isAllTestCasesFullFill(systemToCheck);
-
-        return thereAreNoDuplicates && hasResources && areAllResourcesFullFill && hasTestCases && areAllResourcesRequiredByTestCase;
+        problems.addAll(findOrphanResources(systemToCheck));
+        problems.addAll(findUnfulfilledTestCases(systemToCheck));
+        problems.forEach(logRetorchAggregator::error);
+        return problems;
     }
 
     /**
@@ -94,44 +113,37 @@ public class RetorchAggregator {
      * Support method that checks if there are any orphan resources (resources without test cases)
      * @param systemToCheck System on which there are the resources and test cases to validate
      */
-    private boolean isRequiredByATestCase(System systemToCheck) {
+    private List<String> findOrphanResources(SystemUnderTest systemToCheck) {
         Set<String> requiredResourceIds = systemToCheck.getTestCases().stream()
                 .flatMap(tc -> tc.getAccessMode().stream())
                 .map(am -> am.getResource().getResourceID())
                 .collect(Collectors.toSet());
+        List<String> problems = new ArrayList<>();
         for (Resource resource : systemToCheck.getResources()) {
             if (!requiredResourceIds.contains(resource.getResourceID())) {
-                logRetorchAggregator.error("Resource {} not required by any test case",
-                        resource.getResourceID());
-                return false;
+                problems.add(String.format("Resource %s not required by any test case", resource.getResourceID()));
             }
         }
-        return true;
+        return problems;
     }
 
     /**
      * Supporting method that checks if all test cases have the required resources in the system*
      * @param systemToCheck System which remain the test cases to validate
      */
-    private boolean isAllTestCasesFullFill(System systemToCheck) throws NotValidSystemException {
-        // Iterate over all test cases
+    private List<String> findUnfulfilledTestCases(SystemUnderTest systemToCheck) throws NotValidSystemException {
+        List<String> problems = new ArrayList<>();
         for (TestCase tc : systemToCheck.getTestCases()) {
-            // Check if access mode is null
             if (tc.getAccessMode() == null) {
                 throw new NotValidSystemException("The number of test cases or resources of the current system is " + "zero");
             }
-            // Get all resources required by the test case
             List<Resource> resourcesAccessMode =
                     tc.getAccessMode().stream().map(AccessMode::getResource).collect(Collectors.toList());
-            // Check if all required resources exist in the system
             if (!systemToCheck.getResources().containsAll(resourcesAccessMode)) {
-                String message=String.format("The test case  %s requires the resources: %s any of them " + "doesn't exist in the system", tc.getName(), resourcesAccessMode);
-                logRetorchAggregator.error(message);
-                return false;
+                problems.add(String.format("The test case  %s requires the resources: %s any of them " + "doesn't exist in the system", tc.getName(), resourcesAccessMode));
             }
         }
-        // If all test cases are fulfilled, return true
-        return true;
+        return problems;
     }
 
     /**

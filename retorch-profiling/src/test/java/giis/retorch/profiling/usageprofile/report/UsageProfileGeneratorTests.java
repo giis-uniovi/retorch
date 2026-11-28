@@ -1,0 +1,308 @@
+/*
+ * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+ * All intellectual property rights on this file belong to GIIS.
+ */
+package giis.retorch.profiling.usageprofile.report;
+
+import giis.retorch.profiling.usageprofile.dto.cost.CostReportDTO;
+import giis.retorch.profiling.usageprofile.dto.cost.ReservationOptionDTO;
+import giis.retorch.profiling.usageprofile.dto.measurement.TimelineSeriesDTO;
+import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
+import giis.retorch.profiling.usageprofile.dto.report.SutInfoDTO;
+import giis.retorch.profiling.usageprofile.dto.report.UsageProfileDTO;
+import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
+import giis.retorch.profiling.usageprofile.measurement.Timeline;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import giis.retorch.profiling.main.UsageProfileRequest;
+import giis.retorch.profiling.main.UsageProfilerToolBox;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
+import giis.retorch.profiling.usageprofile.cost.CostCalculator;
+import giis.retorch.profiling.usageprofile.plan.ExecutionGraphBuilder;
+import giis.retorch.profiling.usageprofile.plan.ExecutionPlanReader;
+import giis.retorch.profiling.usageprofile.report.UsageProfileGenerator;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+
+import static giis.retorch.profiling.usageprofile.TestFixtures.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+public class UsageProfileGeneratorTests {
+
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
+
+    @Test
+    public void testJsonContractMatchesWhatTheUsageProfilePageReads() throws IOException {
+        Timeline t = timeline();
+        PriceCatalog catalog = smallCatalog();
+        CostReportDTO report = new CostCalculator().calculate(t, catalog);
+        assertFalse(report.alternatives.isEmpty());
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0, 1), Arrays.asList(0.5, 1.5),
+                Arrays.asList(0.1, 0.2), Arrays.asList(0.0, 1.0));
+        JsonNode json = MAPPER.readTree(UsageProfileGenerator.toJson(
+                new UsageProfileDTO("MyPlan", catalog.fetchedAtEpochMs, report, series, null)));
+
+        assertEquals(set("plan", "pricesFetchedAt", "durationSec", "peakCpu", "peakMemGb", "peakDiskGb", "warnings",
+                "alternatives", "timeline", "graph", "sut", "meta"), names(json));
+        assertEquals(set("phases", "kinds", "objects"), names(json.get("meta")));
+        assertEquals(Arrays.asList("COI-setup", "tjob-setup", "tjob-testexec", "tjob-teardown", "coi-teardown",
+                "oversubscription"), texts(json.get("meta").get("phases")));
+        assertEquals(Arrays.asList("VM", "CONTAINER", "BROWSER_SERVICE"), texts(json.get("meta").get("kinds")));
+        assertEquals(Arrays.asList("compute", "storage", "browser"), texts(json.get("meta").get("objects")));
+        assertTrue(json.has("graph") && json.get("graph").isNull());
+        assertEquals("MyPlan", json.get("plan").asText());
+        assertTrue(json.get("warnings").isArray());
+        assertTrue(json.get("alternatives").isArray());
+        assertTrue(json.get("alternatives").size() > 0);
+        for (JsonNode alt : json.get("alternatives")) {
+            assertEquals(set("id", "provider", "kind", "label", "region", "hourlyPrice", "total", "items",
+                    "reservations"), names(alt));
+            assertTrue(alt.get("reservations").isArray());
+            assertTrue(alt.get("items").size() > 0);
+            for (JsonNode item : alt.get("items")) {
+                assertEquals(set("object", "tjob", "phase", "cost"), names(item));
+            }
+        }
+        JsonNode timeline = json.get("timeline");
+        assertEquals(set("t", "cpu", "memGb", "diskGb"), names(timeline));
+        int n = timeline.get("t").size();
+        assertEquals(n, timeline.get("cpu").size());
+        assertEquals(n, timeline.get("memGb").size());
+        assertEquals(n, timeline.get("diskGb").size());
+    }
+
+    @Test
+    public void testLongTimelineIsDownsampledToAtMost600Points() throws IOException {
+        StringBuilder csv = new StringBuilder("kind;tjobname;stage;item;start;end;cpu_percent;mem_bytes;disk_bytes\n");
+        csv.append("phase;COI;;COI-setup;1700000000;1700000010;;;\n");
+        csv.append("phase;tjoba;0;tjob-setup;1700000010;1700000020;;;\n");
+        csv.append("phase;tjoba;0;tjob-testexec;1700000020;1700001500;;;\n");
+        csv.append("phase;tjoba;0;tjob-teardown;1700001500;1700001510;;;\n");
+        csv.append("phase;COI;;coi-teardown;1700001510;1700001520;;;\n");
+        for (int s = 12; s < 1500; s += 10) {
+            csv.append("sample;tjoba;;web-1;").append(1700000000 + s).append(";;100;1073741824;1073741824\n");
+        }
+        Path usage = tmp.newFile("long-usage.csv").toPath();
+        Files.write(usage, csv.toString().getBytes(StandardCharsets.UTF_8));
+        Timeline t = ExecutionMeasurements.read(usage).toTimeline();
+        assertTrue(t.slices.size() > 600);
+
+        PriceCatalog catalog = smallCatalog();
+        CostReportDTO report = new CostCalculator().calculate(t, catalog);
+        Path out = new File(tmp.getRoot(), "long/usageprofile.html").toPath();
+        new UsageProfileGenerator().generate("Long", t, report, catalog, null, out);
+
+        JsonNode timeline = embeddedJson(new String(Files.readAllBytes(out), StandardCharsets.UTF_8)).get("timeline");
+        int n = timeline.get("t").size();
+        assertTrue(n > 1 && n <= 600);
+        assertEquals(n, timeline.get("cpu").size());
+        assertEquals(n, timeline.get("memGb").size());
+        assertEquals(n, timeline.get("diskGb").size());
+    }
+
+    @Test
+    public void testReservationsAreInTheJsonOfAVmAlternativeAndEmptyForContainers() throws IOException {
+        PriceCatalog catalog = smallCatalog();
+        catalog = smallCatalogBuilder().replaceVms(Arrays.asList(catalog.vms.get(0).withReservations(Arrays.asList(
+                new ReservationOptionDTO(1, ReservationOptionDTO.Payment.NO_UPFRONT, 0.5),
+                ReservationOptionDTO.allUpfront(3, 8760 * 3 * 0.25))))).build();
+        CostReportDTO report = new CostCalculator().calculate(timeline(), catalog);
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1),
+                Arrays.asList(0.0));
+        JsonNode json = MAPPER.readTree(UsageProfileGenerator.toJson(
+                new UsageProfileDTO("P", catalog.fetchedAtEpochMs, report, series, null)));
+        int vms = 0;
+        int containers = 0;
+        for (JsonNode alt : json.get("alternatives")) {
+            JsonNode res = alt.get("reservations");
+            if ("VM".equals(alt.get("kind").asText())) {
+                vms++;
+                assertEquals(2, res.size());
+                assertEquals(set("termYears", "payment", "effectiveHourly"), names(res.get(0)));
+                assertEquals(1, res.get(0).get("termYears").asInt());
+                assertEquals("NO_UPFRONT", res.get(0).get("payment").asText());
+                assertEquals(0.5, res.get(0).get("effectiveHourly").asDouble(), 1e-9);
+                assertEquals("ALL_UPFRONT", res.get(1).get("payment").asText());
+                assertEquals(0.25, res.get(1).get("effectiveHourly").asDouble(), 1e-9);
+            } else {
+                containers++;
+                assertTrue(res.isArray());
+                assertEquals(0, res.size());
+            }
+        }
+        assertEquals(1, vms);
+        assertEquals(1, containers);
+    }
+
+    @Test
+    public void testJsonGraphIsPresentAsNullOrAsNodes() throws IOException {
+        ExecutionMeasurements m = ExecutionMeasurements.read(Paths.get(DATA + "usage.csv"));
+        ExecutionGraphDTO graph = ExecutionGraphBuilder.build(
+                ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")), m.tjobMetrics(m.toTimeline()));
+        CostReportDTO report = new CostCalculator().calculate(m.toTimeline(), smallCatalog());
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1), Arrays.asList(0.0));
+        JsonNode withGraph = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileDTO("P", 1L, report, series, graph)));
+        JsonNode node = withGraph.get("graph").get("nodes").get(0);
+        assertEquals(set("id", "stage", "resources", "tests", "predecessors", "startSec", "setupSec", "execSec", "teardownSec",
+                "peakCpu", "peakMemGb", "containers"), names(node));
+        assertTrue(withGraph.get("graph").get("nodes").get(2).get("setupSec").isNull());
+        JsonNode without = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileDTO("P", 1L, report, series, null)));
+        assertTrue(without.has("graph"));
+        assertTrue(without.get("graph").isNull());
+    }
+
+    @Test
+    public void testJsonGraphNodeCarriesTheContainers() throws IOException {
+        ExecutionMeasurements m = containers();
+        ExecutionGraphDTO graph = ExecutionGraphBuilder.build(ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json")),
+                m.tjobMetrics(m.toTimeline()), m.containerUsage());
+        CostReportDTO report = new CostCalculator().calculate(m.toTimeline(), smallCatalog());
+        TimelineSeriesDTO series = new TimelineSeriesDTO(Arrays.asList(0), Arrays.asList(0.5), Arrays.asList(0.1), Arrays.asList(0.0));
+        JsonNode nodes = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileDTO("P", 1L, report, series, graph)))
+                .get("graph").get("nodes");
+        JsonNode list = nodes.get(0).get("containers");
+        assertEquals(2, list.size());
+        assertEquals(set("name", "image", "peakCpu", "avgCpu", "peakMemGb", "avgMemGb", "layerGb", "imageGb", "volumeGb",
+                "storageGb"), names(list.get(0)));
+        assertEquals("db-1", list.get(0).get("name").asText());
+        assertEquals(1.5, list.get(0).get("storageGb").asDouble(), 1e-9);
+        assertTrue(nodes.get(2).get("containers").isArray());
+        assertEquals(0, nodes.get(2).get("containers").size());
+    }
+
+    @Test
+    public void testAssembledPageHasNoPlaceholdersAndInlinesEverything() throws IOException {
+        String out = new File(tmp.getRoot(), "page/usageprofile.html").getPath();
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out)
+                .prices(smallCatalog()).executionPlan(DATA + "executionplan.json").build());
+        String content = html(Paths.get(out));
+        for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "/*I18N*/", "/*ICONS*/", "<!--HEADER_LOGO_SVG-->",
+                "<!--FOOTER_SVG-->"}) {
+            assertFalse(placeholder, content.contains(placeholder));
+        }
+        assertTrue(content.contains("app.title"));
+        assertTrue(content.contains("<svg"));
+        assertTrue(content.contains("https://giis.uniovi.es/"));
+        assertFalse(content.contains("src=\"http"));
+        assertTrue(embeddedJson(content).get("graph").get("nodes").size() == 3);
+        int previous = -1;
+        for (String script : UsageProfileGenerator.appScripts()) {
+            String source = new String(Files.readAllBytes(Paths.get("src/main/resources/" + script)),
+                    StandardCharsets.UTF_8).trim().replace("</script", "<\\/script");
+            int at = content.indexOf(source);
+            assertTrue(script + " is not inlined", at > previous);
+            previous = at;
+        }
+        List<String> scripts = UsageProfileGenerator.appScripts();
+        assertTrue(scripts.get(0).endsWith("js/i18n.js"));
+        assertTrue(scripts.get(scripts.size() - 1).endsWith("js/app.js"));
+        assertTrue(scripts.contains("usageprofile/js/views/simulator.js"));
+    }
+
+    @Test
+    public void testMissingPlanFileMeansNoGraph() throws IOException {
+        String out = new File(tmp.getRoot(), "nograph/usageprofile.html").getPath();
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out)
+                .prices(smallCatalog()).executionPlan("no-such-file.json").build());
+        assertTrue(embeddedJson(html(Paths.get(out))).get("graph").isNull());
+    }
+
+    @Test
+    public void testUsageProfileIsSelfContained() throws IOException {
+        PriceCatalog catalog = PriceCatalog.builder().fetchedAt(1700000000000L).addVm(vm("P", "big", 4, 8, 3.6)).build();
+        String out = new File(tmp.getRoot(), "out/usageprofile.html").getPath();
+
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out).prices(catalog).build());
+
+        Path html = Paths.get(out);
+        assertTrue(Files.exists(html));
+        String content = new String(Files.readAllBytes(html), StandardCharsets.UTF_8);
+        assertNotNull(content);
+        assertFalse(content.contains("/*DATA*/"));
+        assertFalse(content.contains("/*ECHARTS*/"));
+        assertTrue(content.contains("\"plan\":\"MyPlan\""));
+        assertTrue(content.contains("Licensed to the Apache Software Foundation"));
+        assertFalse(content.contains("src=\"http"));
+    }
+
+    /** XML namespace identifiers of the inlined SVG logos: they are names, the browser never fetches them. */
+    private static final String[] ALLOWED_URL_PREFIXES = {"https://giis.uniovi.es", "http://www.w3.org/",
+        "http://purl.org/", "http://creativecommons.org/", "http://www.inkscape.org/", "http://sodipodi.sourceforge.net/"};
+
+    @Test
+    public void testTheProfileIsOneSingleFileWithNoExternalReferences() throws IOException {
+        PriceCatalog catalog = PriceCatalog.builder().fetchedAt(1700000000000L).addVm(vm("P", "big", 4, 8, 3.6)).build();
+        File outDir = new File(tmp.getRoot(), "single");
+        String out = new File(outDir, "usageprofile.html").getPath();
+
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out).prices(catalog)
+                .executionPlan(DATA + "executionplan.json").build());
+
+        assertEquals("only the HTML file is written", 1, outDir.list().length);
+        String page = new String(Files.readAllBytes(Paths.get(out)), StandardCharsets.UTF_8);
+        // ECharts is third-party code with URLs in its comments and messages: check everything else
+        int libStart = page.indexOf("Licensed to the Apache Software Foundation");
+        int libEnd = page.indexOf("</script>", libStart);
+        assertTrue(libStart >= 0 && libEnd > libStart);
+        String own = (page.substring(0, libStart) + page.substring(libEnd)).replace("<img class=\"prov-icon\" src=\"${", "");
+        String[] forbidden = {"<script src", "<img ", "<iframe", "@import", "url(http", "url('http",
+            "url(" + (char) 34 + "http", "fetch(", "XMLHttpRequest", "src=" + (char) 34, "import("};
+        for (String reference : forbidden) {
+            assertFalse("external reference found: " + reference, own.contains(reference));
+        }
+        // the only <link> is the page icon (the GIIS logo) embedded as a data URI: no other file is needed
+        int links = 0;
+        for (int i = own.indexOf("<link "); i >= 0; i = own.indexOf("<link ", i + 5)) {
+            links++;
+        }
+        assertEquals("only the page icon", 1, links);
+        String icon = "<link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml;base64,";
+        int iconAt = own.indexOf(icon);
+        assertTrue("the page has the GIIS logo as icon", iconAt >= 0);
+        String encoded = own.substring(iconAt + icon.length(), own.indexOf('"', iconAt + icon.length()));
+        assertTrue(new String(java.util.Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8).startsWith("<svg"));
+        assertFalse(own.contains("/*FAVICON*/"));
+        for (int i = own.indexOf("http"); i >= 0; i = own.indexOf("http", i + 4)) {
+            String rest = own.substring(i);
+            assertTrue("unexpected URL: " + rest.substring(0, Math.min(70, rest.length())),
+                    !(rest.startsWith("http://") || rest.startsWith("https://")) || isAllowedUrl(rest));
+        }
+    }
+
+    @Test
+    public void testTheHeaderDataTravelsInThePage() throws IOException {
+        Timeline t = timeline();
+        PriceCatalog catalog = smallCatalog();
+        CostReportDTO report = new CostCalculator().calculate(t, catalog);
+        Path out = new File(tmp.getRoot(), "sut/usageprofile.html").toPath();
+        new UsageProfileGenerator().generate("P", t, report, catalog, null,
+                new SutInfoDTO("petclinic", "https://github.com/giis-uniovi/petclinic", "main"), out);
+        JsonNode sut = embeddedJson(new String(Files.readAllBytes(out), StandardCharsets.UTF_8)).get("sut");
+        assertEquals("petclinic", sut.get("name").asText());
+        assertEquals("https://github.com/giis-uniovi/petclinic", sut.get("url").asText());
+        assertEquals("main", sut.get("branch").asText());
+    }
+
+    private static boolean isAllowedUrl(String text) {
+        for (String prefix : ALLOWED_URL_PREFIXES) {
+            if (text.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

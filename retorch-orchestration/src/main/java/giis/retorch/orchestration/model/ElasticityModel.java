@@ -1,5 +1,7 @@
 package giis.retorch.orchestration.model;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -30,7 +32,7 @@ public class ElasticityModel {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(elasticityID, elasticity, elasticityCost);
     }
 
     @Override
@@ -43,7 +45,7 @@ public class ElasticityModel {
         if ((obj == null) ||(!obj.getClass().equals(this.getClass()))) return false;
         ElasticityModel currentType = ((ElasticityModel) obj);
         return currentType.getElasticity() == this.elasticity && currentType.getElasticityCost() == this.elasticityCost &&
-                currentType.getElasticityID().equals(this.getElasticityID());
+                Objects.equals(currentType.getElasticityID(), this.getElasticityID());
     }
 
     public int getElasticity() {

@@ -3,10 +3,12 @@ package giis.retorch.orchestration;
 import giis.retorch.orchestration.classifier.EmptyInputException;
 import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.model.Activity;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
-import giis.retorch.orchestration.orchestrator.JenkinsOrchestrator;
-import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
+import giis.retorch.orchestration.config.RetorchConfig;
+import giis.retorch.orchestration.config.RetorchPaths;
+import giis.retorch.orchestration.model.ExecutionPlan;
+import giis.retorch.orchestration.orchestrator.OrchestrationWriter;
 import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
 import giis.retorch.orchestration.scheduler.NotValidSystemException;
 import giis.retorch.orchestration.scheduler.RetorchAggregator;
@@ -48,12 +50,10 @@ public class OrchestrationIntegrationTests {
     }
 
     @Test
-    public void testIntegrationRetorchArchitecture() throws EmptyInputException, NotValidSystemException,
-            NoTGroupsInTheSchedulerException, NoFinalActivitiesException, IOException, ClassNotFoundException,
-            URISyntaxException {
+    public void testIntegrationRetorchArchitecture() throws Exception {
         String packageName = "giis.retorch.orchestration.testdata.integration";
-        System currentSystem = classifier.getSystemFromPackage("SyntheticIntegration", packageName);
-        System expectedSystem = utils.getExpectedSystemIntegration();
+        SystemUnderTest currentSystem = classifier.getSystemFromPackage("SyntheticIntegration", packageName);
+        SystemUnderTest expectedSystem = utils.getExpectedSystemIntegration();
         assertEquals(expectedSystem.toString(), currentSystem.toString());
         RetorchAggregator aggregator = new RetorchAggregator(currentSystem);
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
@@ -64,10 +64,9 @@ public class OrchestrationIntegrationTests {
         List<Activity> listExpectedActivities =
                 utils.getListExpectedActivities().stream().sorted(Comparator.comparing(Activity::toString)).collect(Collectors.toList());
         assertEquals(listExpectedActivities.toString(), listActivities.toString());
-        JenkinsOrchestrator orchestrator = new JenkinsOrchestrator(listActivities, "SyntheticIntegration");
-        Map<Integer, LinkedList<Activity>> listActivitiesScheduledOrchestrator =
-                orchestrator.getExecutionPlan().getSortedActivities();
-        String executionPipeline = orchestrator.generatePipeline(listActivitiesScheduledOrchestrator);
+        RetorchPaths paths = new RetorchPaths();
+        String executionPipeline = new OrchestrationWriter(paths).generate(
+                ExecutionPlan.fromActivities("defaultName", listActivities), RetorchConfig.load(paths));
         testStringAgainstPath(EXPECTED_OUTPUT_PATH+"outputTestIntegration", executionPipeline);
         checkTJobEnvFiles(7);
     }
