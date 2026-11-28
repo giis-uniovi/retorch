@@ -2,10 +2,10 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile;
+package giis.retorch.profiling.usageprofile.plan;
 
 import giis.retorch.profiling.usageprofile.measurement.TJobMetrics;
-import giis.retorch.profiling.usageprofile.ExecutionPlanReader.PlanNode;
+import giis.retorch.profiling.usageprofile.plan.ExecutionPlanReader.PlanNode;
 import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import giis.retorch.profiling.usageprofile.dto.GraphNode;
