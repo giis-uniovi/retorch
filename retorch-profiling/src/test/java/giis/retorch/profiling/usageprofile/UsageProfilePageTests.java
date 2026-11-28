@@ -4,6 +4,8 @@
  */
 package giis.retorch.profiling.usageprofile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import giis.retorch.profiling.usageprofile.dto.ReservationOption;
@@ -17,7 +19,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -112,5 +119,78 @@ public class UsageProfilePageTests {
         assertTrue(html.contains("\"reservations\":[{"));
         assertFalse(html.contains("\"graph\":null"));
         assertEquals(1, html.split("<\\/script>\\s*</body>", -1).length - 1);
+    }
+
+    // ---- translations: one JSON per language, the same keys as English ----
+
+    private static final String I18N_DIR = "src/main/resources/usageprofile/i18n/";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static JsonNode translations(String language) throws IOException {
+        return MAPPER.readTree(Files.readAllBytes(Paths.get(I18N_DIR + language + ".json")));
+    }
+
+    private static Set<String> keys(JsonNode node) {
+        Set<String> names = new TreeSet<>();
+        Iterator<String> it = node.fieldNames();
+        while (it.hasNext()) {
+            names.add(it.next());
+        }
+        return names;
+    }
+
+    private static Set<String> placeholders(String text) {
+        Set<String> found = new TreeSet<>();
+        Matcher m = Pattern.compile("\\{[A-Za-z]+\\}").matcher(text);
+        while (m.find()) {
+            found.add(m.group());
+        }
+        return found;
+    }
+
+    /** Fails with the keys a language lacks or adds, and the texts that are empty or lose a {placeholder}. */
+    private static void assertSameKeysAsEnglish(String language, JsonNode english, JsonNode other) {
+        Set<String> missing = keys(english);
+        missing.removeAll(keys(other));
+        Set<String> extra = keys(other);
+        extra.removeAll(keys(english));
+        assertTrue(language + " lacks the keys " + missing, missing.isEmpty());
+        assertTrue(language + " has keys that English does not have " + extra, extra.isEmpty());
+        for (String key : keys(english)) {
+            assertFalse(language + " has an empty text for " + key, other.get(key).asText().trim().isEmpty());
+            assertEquals(language + " changes the placeholders of " + key, placeholders(english.get(key).asText()),
+                    placeholders(other.get(key).asText()));
+        }
+    }
+
+    @Test
+    public void testEveryLanguageHasExactlyTheKeysOfEnglish() throws IOException {
+        JsonNode english = translations("en");
+        assertTrue(english.size() > 100);
+        for (String language : UsageProfileGenerator.LANGUAGES) {
+            assertSameKeysAsEnglish(language, english, translations(language));
+        }
+    }
+
+    @Test
+    public void testTheLanguageFilesAreTheListedLanguages() {
+        Set<String> files = new TreeSet<>();
+        for (String name : new java.io.File(I18N_DIR).list()) {
+            files.add(name.replace(".json", ""));
+        }
+        assertEquals(new TreeSet<>(UsageProfileGenerator.LANGUAGES), files);
+    }
+
+    @Test
+    public void testThePageCarriesTheTranslationsOfEveryLanguageUnderOnePlaceholder() throws IOException {
+        String html = new String(Files.readAllBytes(writeFixturePage(Paths.get(SMOKE_PAGE))), StandardCharsets.UTF_8);
+        assertFalse(html.contains("/*I18N*/"));
+        String open = "<script type=\"application/json\" id=\"i18n\">";
+        int start = html.indexOf(open) + open.length();
+        JsonNode inlined = MAPPER.readTree(html.substring(start, html.indexOf("</script>", start)).replace("<\\/", "</"));
+        assertEquals(new TreeSet<>(UsageProfileGenerator.LANGUAGES), keys(inlined));
+        for (String language : UsageProfileGenerator.LANGUAGES) {
+            assertEquals(translations(language), inlined.get(language));
+        }
     }
 }

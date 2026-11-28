@@ -5,8 +5,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {load} from './helpers/load.mjs';
+import {texts} from './helpers/texts.mjs';
 
 const {Fmt, I18n} = load(['i18n.js', 'format.js'], ['Fmt', 'I18n']);
+I18n.load(texts);
 
 test('usd uses more digits for small amounts', () => {
   I18n.set('en', false);

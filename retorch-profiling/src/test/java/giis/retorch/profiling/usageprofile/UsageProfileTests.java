@@ -634,7 +634,7 @@ public class UsageProfileTests {
         new UsageProfilerToolBox().generateUsageProfile("MyPlan", DATA + "usage.csv", out, smallCatalog(),
                 DATA + "executionplan.json");
         String content = html(Paths.get(out));
-        for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "<!--HEADER_LOGO_SVG-->",
+        for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "/*I18N*/", "<!--HEADER_LOGO_SVG-->",
                 "<!--FOOTER_SVG-->"}) {
             assertFalse(placeholder, content.contains(placeholder));
         }

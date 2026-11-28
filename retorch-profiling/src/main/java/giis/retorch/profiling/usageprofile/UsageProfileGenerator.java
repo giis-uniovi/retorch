@@ -45,6 +45,9 @@ public class UsageProfileGenerator {
             DIR + "js/views/panel.js", DIR + "js/views/alternatives.js", DIR + "js/views/table.js", DIR + "js/views/compare.js",
             DIR + "js/views/detail.js", DIR + "js/views/simulator.js", DIR + "js/controller.js", DIR + "js/app.js"));
 
+    /** The languages of the page: one {@code i18n/<language>.json} each, with the same keys as English (a test checks it). */
+    static final List<String> LANGUAGES = Collections.unmodifiableList(Arrays.asList("es", "en", "fr", "de"));
+
     /**
      * @param planName name shown in the usage profile title
      * @param timeline measured usage of the execution
@@ -70,6 +73,7 @@ public class UsageProfileGenerator {
                 .replace("/*FAVICON*/", favicon())
                 .replace("/*ECHARTS*/", inlineScript(resource(DIR + "echarts.min.js")))
                 .replace("/*APP*/", inlineScript(appScripts()))
+                .replace("/*I18N*/", translations().replace("</", "<\\/"))
                 .replace("/*DATA*/", toJson(data).replace("</", "<\\/"));
         if (output.getParent() != null) {
             Files.createDirectories(output.getParent());
@@ -87,6 +91,18 @@ public class UsageProfileGenerator {
             all.append(resource(name)).append('\n');
         }
         return all.toString();
+    }
+
+    /** The translations of every language in one JSON object {@code {"es":{...},"en":{...},...}}, read by the page from #i18n. */
+    static String translations() throws IOException {
+        StringBuilder json = new StringBuilder("{");
+        for (String language : LANGUAGES) {
+            if (json.length() > 1) {
+                json.append(',');
+            }
+            json.append('"').append(language).append("\":").append(resource(DIR + "i18n/" + language + ".json").trim());
+        }
+        return json.append('}').toString();
     }
 
     static String toJson(UsageProfileData data) throws IOException {
