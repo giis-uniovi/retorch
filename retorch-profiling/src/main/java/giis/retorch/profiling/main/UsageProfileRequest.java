@@ -4,8 +4,8 @@
  */
 package giis.retorch.profiling.main;
 
-import giis.retorch.profiling.usageprofile.PriceCatalog;
-import giis.retorch.profiling.usageprofile.PriceSource;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
+import giis.retorch.profiling.usageprofile.pricing.PriceSource;
 
 /**
  * Everything {@link UsageProfilerToolBox#generate(UsageProfileRequest)} needs to build one usage profile. Immutable; use

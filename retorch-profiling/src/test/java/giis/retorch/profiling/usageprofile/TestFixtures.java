@@ -10,6 +10,7 @@ import giis.retorch.profiling.usageprofile.dto.Alternative;
 import giis.retorch.profiling.usageprofile.dto.CostItem;
 import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

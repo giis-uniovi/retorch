@@ -4,7 +4,7 @@
  */
 package giis.retorch.profiling.main;
 
-import giis.retorch.profiling.usageprofile.PriceSource;
+import giis.retorch.profiling.usageprofile.pricing.PriceSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

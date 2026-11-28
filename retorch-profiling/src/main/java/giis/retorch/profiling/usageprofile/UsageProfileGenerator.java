@@ -14,6 +14,7 @@ import giis.retorch.profiling.usageprofile.dto.SutInfo;
 import giis.retorch.profiling.usageprofile.dto.UsageProfileData;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import giis.retorch.profiling.usageprofile.dto.TimelineSeries;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

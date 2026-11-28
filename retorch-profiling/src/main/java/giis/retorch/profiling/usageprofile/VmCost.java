@@ -10,6 +10,7 @@ import giis.retorch.profiling.usageprofile.measurement.Timeline;
 import giis.retorch.profiling.usageprofile.dto.Alternative;
 import giis.retorch.profiling.usageprofile.dto.CostItem;
 import giis.retorch.profiling.usageprofile.dto.Phase;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.util.ArrayList;
 import java.util.Comparator;

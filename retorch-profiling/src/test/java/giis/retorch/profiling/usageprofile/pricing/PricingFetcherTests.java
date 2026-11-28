@@ -2,7 +2,7 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile;
+package giis.retorch.profiling.usageprofile.pricing;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,6 +18,11 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import giis.retorch.profiling.usageprofile.pricing.AzurePrices;
+import giis.retorch.profiling.usageprofile.pricing.HttpGet;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
+import giis.retorch.profiling.usageprofile.pricing.PriceProvider;
+import giis.retorch.profiling.usageprofile.pricing.PricingFetcher;
 
 /** {@code PricingFetcher.fetchOrLoad} with canned HTTP responses and fake providers: no network. */
 public class PricingFetcherTests {

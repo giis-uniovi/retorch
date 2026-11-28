@@ -5,7 +5,7 @@
 package giis.retorch.profiling.main;
 
 import giis.retorch.profiling.usageprofile.ExecutionPlanReader;
-import giis.retorch.profiling.usageprofile.PriceCatalog;
+import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
