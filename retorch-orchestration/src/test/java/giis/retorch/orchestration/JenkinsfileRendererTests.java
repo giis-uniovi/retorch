@@ -44,9 +44,13 @@ public class JenkinsfileRendererTests {
     @Test
     public void testRenderWithProfilingAndCustomPostSteps() throws Exception {
         ExecutionPlan plan = ExecutionPlan.fromActivities("plan", new OrchestratorUtils().getListSimpleActivities());
-        String pipeline = new JenkinsfileRenderer("        junit 'x.xml'\n").render(plan, config(true));
+        String pipeline = new JenkinsfileRenderer("      junit 'x.xml'\n").render(plan, config(true));
         assertTrue(pipeline.contains("stage('Usage-Profile')"));
-        assertTrue(pipeline.contains("        junit 'x.xml'\n        archiveArtifacts artifacts: 'target/testlogs"));
+        assertTrue(pipeline.contains("      publishHTML(target: ["));
+        // the custom steps are inserted verbatim: their indentation is the user's
+        assertTrue(pipeline.contains("\n      junit 'x.xml'\n      archiveArtifacts artifacts: 'target/testlogs"));
+        // and without custom steps no empty line is left behind
+        assertFalse(new JenkinsfileRenderer().render(plan, config(false)).contains("\n\n"));
     }
 
     @Test(expected = IllegalStateException.class)

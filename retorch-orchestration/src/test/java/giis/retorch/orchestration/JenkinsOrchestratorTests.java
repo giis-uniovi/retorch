@@ -164,7 +164,7 @@ public class JenkinsOrchestratorTests {
         java.nio.file.Path coiTearDown = java.nio.file.Paths.get(".retorch/customscriptscode/custom-coi-teardown");
         java.nio.file.Path jenkinsPost = java.nio.file.Paths.get(".retorch/customscriptscode/custom-jenkins-post");
         java.nio.file.Files.write(coiTearDown, "echo coverage-report".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        java.nio.file.Files.write(jenkinsPost, "        archiveArtifacts artifacts: 'coverage/*.xml'"
+        java.nio.file.Files.write(jenkinsPost, "      archiveArtifacts artifacts: 'coverage/*.xml'"
                 .getBytes(java.nio.charset.StandardCharsets.UTF_8));
         try {
             plan = ExecutionPlan.fromActivities("defaultName", utils.getListSimpleActivities());
@@ -173,7 +173,7 @@ public class JenkinsOrchestratorTests {
             String coiScript = new String(java.nio.file.Files.readAllBytes(
                     java.nio.file.Paths.get(".retorch/scripts/coilifecycles/coi-teardown.sh")), java.nio.charset.StandardCharsets.UTF_8);
             org.junit.Assert.assertTrue(coiScript.contains("echo coverage-report"));
-            org.junit.Assert.assertTrue(pipeline.contains("        archiveArtifacts artifacts: 'coverage/*.xml'\n        archiveArtifacts artifacts: 'target/testlogs"));
+            org.junit.Assert.assertTrue(pipeline.contains("      archiveArtifacts artifacts: 'coverage/*.xml'\n      archiveArtifacts artifacts: 'target/testlogs"));
         } finally {
             java.nio.file.Files.deleteIfExists(coiTearDown);
             java.nio.file.Files.deleteIfExists(jenkinsPost);

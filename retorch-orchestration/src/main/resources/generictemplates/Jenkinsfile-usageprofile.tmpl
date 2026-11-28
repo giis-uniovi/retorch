@@ -1,0 +1,9 @@
+// Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+// All intellectual property rights on this file belong to GIIS.
+stage('Usage-Profile') {
+  steps {
+    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+      sh '$SCRIPTS_FOLDER/generateusageprofile.sh'
+    }
+  } // EndStepsUsageProfile
+} // EndStageUsageProfile

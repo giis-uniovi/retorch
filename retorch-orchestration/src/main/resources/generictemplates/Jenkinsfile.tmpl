@@ -1,0 +1,47 @@
+// Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+// All intellectual property rights on this file belong to GIIS.
+pipeline {
+  agent {label '${AGENT_LABEL}'}
+  environment {
+    SELENOID_PRESENT = "TRUE"
+    SUT_LOCATION = "${SUT_LOCATION}"
+    SCRIPTS_FOLDER = "$WORKSPACE/.retorch/scripts"
+  } // EndEnvironment
+  options {
+    disableConcurrentBuilds()
+  } // EndPipOptions
+  stages {
+    stage('Clean Workspace') {
+      steps {
+        cleanWs()
+      } // EndStepsCleanWS
+    } // EndStageCleanWS
+    stage('Clone Project') {
+      steps {
+        checkout scm
+      } // EndStepsCloneProject
+    } // EndStageCloneProject
+    stage('SETUP-Infrastructure') {
+      steps {
+        sh 'chmod +x -R $SCRIPTS_FOLDER'
+        sh '$SCRIPTS_FOLDER/coilifecycles/coi-setup.sh'
+      } // EndStepsSETUPINF
+    } // EndStageSETUPInf
+    ${STAGES}
+    stage('TEARDOWN-Infrastructure') {
+      steps {
+        sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'
+      } // EndStepsTearDownInf
+    } // EndStageTearDown
+    ${PROFILING_USAGE_PROFILE_STAGE}
+  } // EndStagesPipeline
+  post {
+    always {
+      archiveArtifacts artifacts: 'artifacts/*.csv', onlyIfSuccessful: true
+      ${PROFILING_PUBLISH_STEPS}
+${OPTIONAL_CUSTOM_POST_STEPS}
+      archiveArtifacts artifacts: 'target/testlogs/**/*.*', onlyIfSuccessful: false
+      archiveArtifacts artifacts: 'target/containerlogs/**/*.*', onlyIfSuccessful: false
+    }// EndAlways
+  } // EndPostActions
+} // EndPipeline

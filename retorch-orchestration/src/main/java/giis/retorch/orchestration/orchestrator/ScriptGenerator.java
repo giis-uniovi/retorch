@@ -10,12 +10,7 @@ import giis.retorch.orchestration.config.RetorchPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -161,7 +156,8 @@ public class ScriptGenerator {
     }
 
     /**
-     * Replaces placeholders in the template with values from the configurations map and writes the result to an output file.
+     * Replaces placeholders in the template with values from the configurations map and writes the result to an output
+     * file (see {@link TemplateEngine} for the rules).
      *
      * @param inputTemplate String with the path of the input file
      * @param values        the map with the different configuration values
@@ -169,43 +165,8 @@ public class ScriptGenerator {
      */
     public void replacePlaceholderTemplate(Map<String, String> values, String inputTemplate, Path outputFile)
             throws IOException {
-        try (BufferedReader br = getFileFromResource(inputTemplate);
-             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
-                     Files.newOutputStream(outputFile), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                StringBuilder sb = getStringBuilder(values, line);
-                if (line.trim().startsWith("${PROFILING_") && sb.length() == 0) {
-                    continue; // a profiling command that is disabled leaves no trace in the script
-                }
-                bw.write(sb.toString());
-                bw.write("\n");
-            }
-            log.debug("File {} created from {}", outputFile, inputTemplate);
-        }
-    }
-
-    private static StringBuilder getStringBuilder(Map<String, String> values, String line) {
-        StringBuilder sb = new StringBuilder(line);
-        for (Map.Entry<String, String> entry : values.entrySet()) {
-            // Check if the line contains the key before replacing to avoid unnecessary replacements
-            String key = entry.getKey();
-            if (sb.indexOf(key) != -1) {
-                int start;
-                while ((start = sb.indexOf(key)) != -1) {
-                    sb.replace(start, start + key.length(), entry.getValue());
-                }
-            }
-        }
-        return sb;
-    }
-
-    private BufferedReader getFileFromResource(String fileName) {
-        ClassLoader classLoader = getClass().getClassLoader();
-        InputStream in = classLoader.getResourceAsStream(fileName);
-        if (in == null) {
-            throw new IllegalStateException("Template resource not found on classpath: " + fileName);
-        }
-        return new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+        String text = TemplateEngine.render(TemplateEngine.load(inputTemplate, false), values);
+        Files.write(outputFile, (text + '\n').getBytes(StandardCharsets.UTF_8));
+        log.debug("File {} created from {}", outputFile, inputTemplate);
     }
 }

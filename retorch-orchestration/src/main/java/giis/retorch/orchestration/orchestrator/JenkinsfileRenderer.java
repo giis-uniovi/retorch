@@ -12,22 +12,24 @@ import giis.retorch.orchestration.model.Resource;
 import giis.retorch.orchestration.model.TJob;
 import giis.retorch.orchestration.model.TestCase;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * The {@code JenkinsfileRenderer} class derives the Jenkinsfile text from an {@code ExecutionPlan}. It is a pure
- * function of its arguments: it never touches the file system (see {@link OrchestrationWriter} for the side effects).
+ * The {@code JenkinsfileRenderer} class derives the Jenkinsfile text from an {@code ExecutionPlan}. The pipeline is
+ * written once in the {@code generictemplates/Jenkinsfile*.tmpl} templates (skeleton, stage, TJob...) and filled with
+ * the same placeholder engine as the scripts. It is a pure function of its arguments: it only reads the templates from
+ * the classpath and never touches the file system (see {@link OrchestrationWriter} for the side effects).
  */
 public class JenkinsfileRenderer implements IRetorchOrchestrator {
 
     static final String TJOB_BASE_PATH = "testsBasePath";
     static final String APP_URL_PROPERTY = "app-url";
-    private static final String SH_COMMAND = "          sh '";
+    private static final String TEMPLATES = "generictemplates/";
 
     private final String customJenkinsPostSteps;
 
@@ -37,8 +39,8 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
     }
 
     /**
-     * @param customJenkinsPostSteps Jenkins steps inserted verbatim in {@code post { always { } }}, each line ending
-     *                               with a line feed (empty for none)
+     * @param customJenkinsPostSteps Jenkins steps inserted verbatim (not indented) in {@code post { always { } }}
+     *                               (empty for none)
      */
     public JenkinsfileRenderer(String customJenkinsPostSteps) {
         this.customJenkinsPostSteps = customJenkinsPostSteps;
@@ -46,62 +48,35 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
 
     @Override
     public String render(ExecutionPlan plan, RetorchConfig config) {
-        Map<Integer, LinkedList<Activity>> listActivities = plan.getSortedActivities();
-        StringBuilder stringBuilder = new StringBuilder();
-        Integer maxStagesValue = Collections.max(listActivities.keySet());
-        stringBuilder.append("pipeline {\n")
-                .append("  agent {label '").append(config.agentCIName()).append("'}\n")
-                .append("  environment {\n")
-                .append("    SELENOID_PRESENT = \"TRUE\"\n")
-                .append("    SUT_LOCATION = \"").append(config.sutLocation()).append("\"\n")
-                .append("    SCRIPTS_FOLDER = \"$WORKSPACE/.retorch/scripts\"\n")
-                .append("  } // EndEnvironment\n")
-                .append("  options {\n")
-                .append("    disableConcurrentBuilds()\n")
-                .append("  } // EndPipOptions\n")
-                .append("  stages {\n");
+        Map<String, String> values = new HashMap<>();
+        values.put("${AGENT_LABEL}", config.agentCIName());
+        values.put("${SUT_LOCATION}", config.sutLocation());
+        values.put("${STAGES}", renderStages(plan, config));
+        values.put("${PROFILING_USAGE_PROFILE_STAGE}", config.profiling() ? template("Jenkinsfile-usageprofile.tmpl") : "");
+        values.put("${PROFILING_PUBLISH_STEPS}", config.profiling() ? template("Jenkinsfile-publish.tmpl") : "");
+        values.put("${OPTIONAL_CUSTOM_POST_STEPS}", stripLastLineBreak(customJenkinsPostSteps));
+        return TemplateEngine.render(template("Jenkinsfile.tmpl"), values) + "\n";
+    }
 
-        String steps = "        steps {\n";
-
-        stringBuilder.append("    stage('Clean Workspace') {\n")
-                .append(steps)
-                .append("            cleanWs()\n")
-                .append("        } // EndStepsCleanWS\n")
-                .append("    } // EndStageCleanWS\n");
-
-        stringBuilder.append("    stage('Clone Project') {\n")
-                .append(steps)
-                .append("            checkout scm\n")
-                .append("        } // EndStepsCloneProject\n")
-                .append("    } // EndStageCloneProject\n");
-
-        stringBuilder.append("    stage('SETUP-Infrastructure') {\n")
-                .append(steps)
-                .append("            sh 'chmod +x -R $SCRIPTS_FOLDER'\n")
-                .append("            sh '$SCRIPTS_FOLDER/coilifecycles/coi-setup.sh'\n")
-                .append("        } // EndStepsSETUPINF\n")
-                .append("    } // EndStageSETUPInf\n");
-
-        for (int currentStage = 0; currentStage <= maxStagesValue; currentStage++) {
-            LinkedList<Activity> currentActivities = listActivities.get(currentStage);
-            stringBuilder.append("    stage('Stage ").append(currentStage).append("') {\n");
-            stringBuilder.append("      failFast false\n      parallel {\n");
-            for (Activity activity : currentActivities) {
-                stringBuilder.append(this.renderTJob(activity.getTJob(), currentStage, config))
-                        .append("\n");
+    private String renderStages(ExecutionPlan plan, RetorchConfig config) {
+        StringBuilder stages = new StringBuilder();
+        for (Map.Entry<Integer, LinkedList<Activity>> stage : new TreeMap<>(plan.getSortedActivities()).entrySet()) {
+            StringBuilder tJobs = new StringBuilder();
+            for (Activity activity : stage.getValue()) {
+                if (tJobs.length() > 0) {
+                    tJobs.append('\n');
+                }
+                tJobs.append(renderTJob(activity.getTJob(), stage.getKey(), config));
             }
-            stringBuilder.append("} // End Parallel\n");
-            stringBuilder.append("} // End Stage\n");
+            Map<String, String> values = new HashMap<>();
+            values.put("${STAGE}", String.valueOf(stage.getKey()));
+            values.put("${TJOBS}", tJobs.toString());
+            if (stages.length() > 0) {
+                stages.append('\n');
+            }
+            stages.append(TemplateEngine.render(template("Jenkinsfile-stage.tmpl"), values));
         }
-
-        generateInfrastructureTearDown(stringBuilder);
-        if (config.profiling()) {
-            generateUsageProfile(stringBuilder);
-        }
-        stringBuilder.append("} // EndStagesPipeline\n")
-                .append(this.generateDisposingDirective(config.profiling()))
-                .append("} // EndPipeline\n");
-        return stringBuilder.toString();
+        return stages.toString();
     }
 
     /** The identifier of the TJob as it appears in the pipeline, the env files and the usage file: lower case. */
@@ -119,66 +94,28 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
      * dispose the {@code Resource}s when the test execution is finished.
      */
     String renderTJob(TJob tJob, int stage, RetorchConfig config) {
-        StringBuilder stringBuilder = new StringBuilder();
         if (isGateway(tJob)) {
-            stringBuilder.append("        echo 'Gateway Activity'\n");
-        } else {
-            StringBuilder resourceIDBuilder = new StringBuilder();
-            for (Resource res : tJob.getListResourceClasses()) {
-                resourceIDBuilder.append(res.getResourceID()).append(" ");
-            }
-            String id = idOf(tJob);
-            stringBuilder.append("        stage('")
-                    .append(id)
-                    .append(" IdResource: ")
-                    .append(resourceIDBuilder)
-                    .append("') {\n          steps {\n");
-
-            String appUrl = config.appUrl(id);
-            stringBuilder.append("            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {\n    ")
-                    .append(generateResourceDeploymentDirective(tJob, false, appUrl, stage)).append("    ")
-                    .append(generateTestCaseExecutionDirective(tJob, appUrl, stage))
-                    .append("            }// EndExecutionStageError").append(id).append("\n  ")
-                    .append(generateResourceDeploymentDirective(tJob, true, appUrl, stage))
-                    .append("          }// EndSteps").append(id).append("\n")
-                    .append("        }// EndStage").append(id);
+            return template("Jenkinsfile-gateway.tmpl");
         }
-        return stringBuilder.toString();
-    }
-
-    /** The command that executes the test cases of the TJob. */
-    String generateTestCaseExecutionDirective(TJob tJob, String appUrl, int stage) {
-        StringBuilder strBuilder = new StringBuilder();
-        String tJobId = idOf(tJob);
-        strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh");
-        strBuilder.append(" ").append(tJobId).append(" ").append(stage).append(" ")
-                .append(appUrl).append(" \"");
-
-        boolean firstElement = true;
+        String id = idOf(tJob);
+        StringBuilder resourceIds = new StringBuilder();
+        for (Resource res : tJob.getListResourceClasses()) {
+            resourceIds.append(res.getResourceID()).append(" ");
+        }
+        StringBuilder tests = new StringBuilder();
         for (TestCase testcase : tJob.getListTestCases()) {
-            if (firstElement) {
-                firstElement = false;
-            } else {
-                strBuilder.append(",");
+            if (tests.length() > 0) {
+                tests.append(",");
             }
-            strBuilder.append(testcase.getTestClass().getSimpleName()).append("#").append(testcase.getName());
+            tests.append(testcase.getTestClass().getSimpleName()).append("#").append(testcase.getName());
         }
-        strBuilder.append("\"'\n");
-        return strBuilder.toString();
-    }
-
-    /** The command that sets up (or, with {@code disposal}, tears down) the resources of the TJob. */
-    String generateResourceDeploymentDirective(TJob tJob, boolean disposal, String appUrl, int stage) {
-        StringBuilder strBuilder = new StringBuilder();
-        String tJobId = idOf(tJob);
-        if (disposal) {
-            strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-teardown.sh").append(" ")
-                    .append(tJobId).append(" ").append(stage).append("'\n");
-        } else {
-            strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-setup.sh").append(" ")
-                    .append(tJobId).append(" ").append(stage).append(" ").append(appUrl).append("'\n");
-        }
-        return strBuilder.toString();
+        Map<String, String> values = new HashMap<>();
+        values.put("${TJOB}", id);
+        values.put("${STAGE}", String.valueOf(stage));
+        values.put("${RESOURCES}", resourceIds.toString());
+        values.put("${APP_URL}", config.appUrl(id));
+        values.put("${TESTS}", tests.toString());
+        return TemplateEngine.render(template("Jenkinsfile-tjob.tmpl"), values);
     }
 
     /**
@@ -204,46 +141,11 @@ public class JenkinsfileRenderer implements IRetorchOrchestrator {
         return mapData;
     }
 
-    /**
-     * Stage that builds the usage profile (usage and cost) from the measured resources. A failure here marks the stage as
-     * unstable but never fails the build.
-     */
-    private static void generateUsageProfile(StringBuilder stringBuilder) {
-        stringBuilder.append("    stage('Usage-Profile') {\n")
-                .append("      steps {\n")
-                .append("          catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {\n")
-                .append("              sh '$SCRIPTS_FOLDER/generateusageprofile.sh'\n")
-                .append("          }\n")
-                .append("      } // EndStepsUsageProfile\n")
-                .append("    } // EndStageUsageProfile\n");
+    private static String template(String name) {
+        return TemplateEngine.load(TEMPLATES + name, name.startsWith("Jenkinsfile"));
     }
 
-    private static void generateInfrastructureTearDown(StringBuilder stringBuilder) {
-        stringBuilder.append("    stage('TEARDOWN-Infrastructure') {\n")
-                .append("      steps {\n")
-                .append("          sh '$SCRIPTS_FOLDER/coilifecycles/coi-teardown.sh'\n")
-                .append("      } // EndStepsTearDownInf\n")
-                .append("    } // EndStageTearDown\n");
-    }
-
-    /**
-     * The {@code post} block: archives the results and checks that all the {@code Resource}s are released
-     */
-    private String generateDisposingDirective(boolean profiling) {
-        String usageProfilePublication = profiling
-                ? "        archiveArtifacts artifacts: 'artifacts/usageprofile/*.html', allowEmptyArchive: true\n"
-                + "        publishHTML(target: [reportDir: 'artifacts/usageprofile', reportFiles: 'usageprofile.html', "
-                + "reportName: 'RETORCH Usage Profile', keepAll: true, alwaysLinkToLastBuild: true, "
-                + "allowMissing: true])\n"
-                : "";
-        return "post {\n"
-                + "    always {\n"
-                + "        archiveArtifacts artifacts: 'artifacts/*.csv', onlyIfSuccessful: true\n"
-                + usageProfilePublication
-                + customJenkinsPostSteps
-                + "        archiveArtifacts artifacts: 'target/testlogs/**/*.*', onlyIfSuccessful: false\n"
-                + "        archiveArtifacts artifacts: 'target/containerlogs/**/*.*', onlyIfSuccessful: false\n"
-                + "    }// EndAlways\n"
-                + "} // EndPostActions\n";
+    private static String stripLastLineBreak(String text) {
+        return text.endsWith("\n") ? text.substring(0, text.length() - 1) : text;
     }
 }
