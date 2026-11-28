@@ -7,7 +7,8 @@ Facade of the orchestration pipeline: classifier -> aggregator -> scheduler -> `
 - `OrchestrationGenerator()` (working directory) or `OrchestrationGenerator(RetorchPaths)` (any folder);
   `withProfiling(Boolean)` forces profiling on/off (`null` keeps `retorchCI.properties`); `withLenient(boolean)`.
 - `OrchestrationGenerator.generateJenkinsfile(rootPackageNameTests, systemName, jenkinsFilePath)`: runs the whole
-  pipeline, writes `Jenkinsfile` (into `jenkinsFilePath`, or `./Jenkinsfile` if that directory does not exist), the
+  pipeline, writes `Jenkinsfile` (`<jenkinsFilePath>/Jenkinsfile`, with or without a trailing separator; into
+  `./Jenkinsfile` with a warning if that directory does not exist), the
   scripts under `.retorch/scripts` and the TJob env files, and returns the pipeline text.
 - `OrchestrationGenerator.getExecutionPlan(rootPackageNameTests, systemName)`: the `ExecutionPlan` only (used by
   the profiling module).
@@ -23,4 +24,4 @@ Facade of the orchestration pipeline: classifier -> aggregator -> scheduler -> `
   `withLenient(true)` logs and skips invalid tests, systems and TJobs instead (old behavior).
 
 ## Tests
-`OrchestrationIntegrationTests`.
+`OrchestrationIntegrationTests`, `WorkspaceConfigTests`, `RetorchMainTests` (Jenkinsfile location).

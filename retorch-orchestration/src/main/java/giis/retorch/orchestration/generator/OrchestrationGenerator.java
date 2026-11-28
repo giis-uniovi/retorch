@@ -21,10 +21,13 @@ import giis.retorch.orchestration.orchestrator.OrchestrationWriter;
 import giis.retorch.orchestration.scheduler.RetorchAggregator;
 import giis.retorch.orchestration.scheduler.RetorchScheduler;
 
-import java.io.File;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -34,6 +37,8 @@ import java.util.Map;
  * Plan and the Jenkinsfiles and scripting code, orchestrating.
  */
 public class OrchestrationGenerator {
+
+    private static final Logger log = LoggerFactory.getLogger(OrchestrationGenerator.class);
 
     private final RetorchPaths paths;
     private Boolean profilingOverride;
@@ -81,12 +86,13 @@ public class OrchestrationGenerator {
         RetorchConfig config = RetorchConfig.load(paths).withProfiling(profilingOverride);
         ExecutionPlan plan = buildExecutionPlan(rootPackageNameTests, systemName);
         String executionPipeline = new OrchestrationWriter(paths).generate(plan, config);
-        if (!new File(jenkinsFilePath).exists()) {
-            jenkinsFilePath = "./Jenkinsfile";
-        } else {
-            jenkinsFilePath += "Jenkinsfile";
+        Path jenkinsfile = Paths.get(jenkinsFilePath).resolve(RetorchPaths.JENKINSFILE);
+        if (!Files.isDirectory(Paths.get(jenkinsFilePath))) {
+            log.warn("The directory {} does not exist: the Jenkinsfile is written to ./{}", jenkinsFilePath,
+                    RetorchPaths.JENKINSFILE);
+            jenkinsfile = Paths.get(RetorchPaths.JENKINSFILE);
         }
-        Files.write(Paths.get(jenkinsFilePath), executionPipeline.getBytes(StandardCharsets.UTF_8));
+        Files.write(jenkinsfile, executionPipeline.getBytes(StandardCharsets.UTF_8));
         return executionPipeline;
     }
 

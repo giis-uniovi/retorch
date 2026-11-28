@@ -22,62 +22,130 @@ import java.util.List;
 /**
  * CLI entry point for the RETORCH orchestration uber JAR.
  * Usage:
- *   java -jar retorch-orchestration-&lt;version&gt;-standalone.jar &lt;rootPackageNameTests&gt; &lt;systemName&gt; &lt;jenkinsFilePath&gt; [--profiling|--no-profiling] [--lenient]
+ *   java -jar retorch-orchestration-&lt;version&gt;-standalone.jar &lt;rootPackageNameTests&gt; &lt;systemName&gt; &lt;jenkinsFilePath&gt; [--profiling|--no-profiling] [--lenient] [--help]
  * Arguments:
  *   rootPackageNameTests  Root package containing the annotated test classes
  *   systemName            System name matching the &lt;systemName&gt;SystemResources.json file
  *   jenkinsFilePath       Directory path where the Jenkinsfile will be written
  *   --profiling           Optional. Measures the resource usage in the pipeline and publishes the usage profile
- *   --lenient             Optional. Invalid tests, resources and TJobs are logged and left out instead of failing
  *   --no-profiling        Optional. Generates the pipeline without profiling. Without any of the two flags, the
  *                         {@code profiling} property of retorchCI.properties is used (false by default)
+ *   --lenient             Optional. Invalid tests, resources and TJobs are logged and left out instead of failing
+ *   --help                Prints the usage and exits with 0
+ * Exit codes: 0 success, 1 wrong arguments, 2 the generation failed.
  */
 public class RetorchMain {
 
+    public static final int EXIT_OK = 0;
+    public static final int EXIT_USAGE = 1;
+    public static final int EXIT_FAILURE = 2;
+
     private static final Logger log = LoggerFactory.getLogger(RetorchMain.class);
 
-    public static void main(String[] args) {
-        Boolean profiling = null;
-        boolean lenient = false;
-        boolean validArgs = args.length >= 3 && args.length <= 5;
-        for (int i = 3; validArgs && i < args.length; i++) {
-            if ("--profiling".equals(args[i])) {
-                profiling = Boolean.TRUE;
-            } else if ("--no-profiling".equals(args[i])) {
-                profiling = Boolean.FALSE;
-            } else if ("--lenient".equals(args[i])) {
-                lenient = true;
-            } else {
-                validArgs = false;
+    /** The parsed command line. */
+    static final class Arguments {
+        String rootPackageNameTests;
+        String systemName;
+        String jenkinsFilePath;
+        Boolean profiling;
+        boolean lenient;
+        boolean help;
+
+        /**
+         * @throws IllegalArgumentException with the reason if the arguments are not valid
+         */
+        static Arguments parse(String[] args) {
+            Arguments parsed = new Arguments();
+            List<String> positional = new ArrayList<>();
+            for (String arg : args) {
+                switch (arg) {
+                    case "--help":
+                        parsed.help = true;
+                        break;
+                    case "--lenient":
+                        parsed.lenient = true;
+                        break;
+                    case "--profiling":
+                    case "--no-profiling":
+                        Boolean value = Boolean.valueOf("--profiling".equals(arg));
+                        if (parsed.profiling != null && !parsed.profiling.equals(value)) {
+                            throw new IllegalArgumentException("--profiling and --no-profiling cannot be used together");
+                        }
+                        parsed.profiling = value;
+                        break;
+                    default:
+                        if (arg.startsWith("--")) {
+                            throw new IllegalArgumentException("Unknown option " + arg);
+                        }
+                        positional.add(arg);
+                        break;
+                }
             }
+            if (parsed.help) {
+                return parsed;
+            }
+            if (positional.size() != 3) {
+                throw new IllegalArgumentException("Expected 3 arguments (rootPackageNameTests, systemName, "
+                        + "jenkinsFilePath) but got " + positional.size());
+            }
+            parsed.rootPackageNameTests = positional.get(0);
+            parsed.systemName = positional.get(1);
+            parsed.jenkinsFilePath = positional.get(2);
+            return parsed;
         }
-        if (!validArgs) {
-            log.error("Usage: java -jar retorch-orchestration-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath> [--profiling|--no-profiling] [--lenient]");
-            log.error("  rootPackageNameTests : root package containing the annotated test classes");
-            log.error("  systemName           : system name matching the <systemName>SystemResources.json file");
-            log.error("  jenkinsFilePath      : directory path where the Jenkinsfile will be written");
-            log.error("  --profiling          : (optional) add the resource measurement and the usage profile");
-            log.error("  --no-profiling       : (optional) do not add them, overriding retorchCI.properties");
-            log.error("  --lenient            : (optional) log invalid tests, resources and TJobs and leave them out instead of failing");
-            System.exit(1);
+    }
+
+    public static void main(String[] args) {
+        System.exit(run(args));
+    }
+
+    /**
+     * Runs the generator for the given command line arguments.
+     *
+     * @return the exit code: {@link #EXIT_OK}, {@link #EXIT_USAGE} or {@link #EXIT_FAILURE}
+     */
+    public static int run(String[] args) {
+        Arguments arguments;
+        try {
+            arguments = Arguments.parse(args);
+        } catch (IllegalArgumentException e) {
+            log.error("{}", e.getMessage());
+            logUsage();
+            return EXIT_USAGE;
+        }
+        if (arguments.help) {
+            logUsage();
+            return EXIT_OK;
         }
 
-        String rootPackageNameTests = args[0];
-        String systemName = args[1];
-        String jenkinsFilePath = args[2];
-
+        ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
         try {
             extendClasspathFromCwd();
-            OrchestrationGenerator generator = new OrchestrationGenerator().withProfiling(profiling).withLenient(lenient);
-            generator.generateJenkinsfile(rootPackageNameTests, systemName, jenkinsFilePath);
-            log.info("Jenkinsfile and scripts generated successfully in: {}", jenkinsFilePath);
+            new OrchestrationGenerator().withProfiling(arguments.profiling).withLenient(arguments.lenient)
+                    .generateJenkinsfile(arguments.rootPackageNameTests, arguments.systemName,
+                            arguments.jenkinsFilePath);
+            log.info("Jenkinsfile and scripts generated successfully in: {}", arguments.jenkinsFilePath);
+            return EXIT_OK;
         } catch (RetorchException e) {
             log.error("Failed to generate Jenkinsfile: {}", e.getMessage());
-            System.exit(2);
+            return EXIT_FAILURE;
         } catch (Exception e) {
             log.error("Failed to generate Jenkinsfile: {}", e.getMessage(), e);
-            System.exit(2);
+            return EXIT_FAILURE;
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalLoader);
         }
+    }
+
+    private static void logUsage() {
+        log.error("Usage: java -jar retorch-orchestration-standalone.jar <rootPackageNameTests> <systemName> <jenkinsFilePath> [--profiling|--no-profiling] [--lenient] [--help]");
+        log.error("  rootPackageNameTests : root package containing the annotated test classes");
+        log.error("  systemName           : system name matching the <systemName>SystemResources.json file");
+        log.error("  jenkinsFilePath      : directory path where the Jenkinsfile will be written");
+        log.error("  --profiling          : (optional) add the resource measurement and the usage profile");
+        log.error("  --no-profiling       : (optional) do not add them, overriding retorchCI.properties");
+        log.error("  --lenient            : (optional) log invalid tests, resources and TJobs and leave them out instead of failing");
+        log.error("  --help               : print this usage");
     }
 
     /**
