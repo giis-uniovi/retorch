@@ -32,11 +32,34 @@ public class PricingFetcherTests {
 
     /** A provider that returns one VM named after the region, or fails. */
     private static final class FakeProvider implements PriceProvider {
+        final String id;
+        final String configId;
         final boolean fails;
         final List<String> calls = new ArrayList<>();
 
-        FakeProvider(boolean fails) {
+        FakeProvider(String id, String configId, boolean fails) {
+            this.id = id;
+            this.configId = configId;
             this.fails = fails;
+        }
+
+        @Override
+        public String id() {
+            return id;
+        }
+
+        @Override
+        public String configId() {
+            return configId;
+        }
+
+        /** Like the real Device Farm: global, only when AWS has regions. */
+        @Override
+        public List<String> regionsFor(ProviderRegions config) {
+            if ("aws-devicefarm".equals(id)) {
+                return config.regions("aws").isEmpty() ? new ArrayList<String>() : java.util.Collections.singletonList("global");
+            }
+            return config.regions(configId);
         }
 
         @Override
@@ -54,6 +77,22 @@ public class PricingFetcherTests {
         }
     }
 
+    private static FakeProvider azure(boolean fails) {
+        return new FakeProvider("azure", "azure", fails);
+    }
+
+    private static FakeProvider aws(boolean fails) {
+        return new FakeProvider("aws", "aws", fails);
+    }
+
+    private static FakeProvider deviceFarm(boolean fails) {
+        return new FakeProvider("aws-devicefarm", "aws", fails);
+    }
+
+    private static PricingFetcher fetcher(PriceProvider azure, PriceProvider aws, PriceProvider deviceFarm) {
+        return new PricingFetcher(new PriceProviderRegistry().register(azure).register(aws).register(deviceFarm));
+    }
+
     private static PriceCatalog cached(long fetchedAt, String regionsKey) {
         return PriceCatalog.builder().fetchedAt(fetchedAt).regionsKey(regionsKey)
                 .addVm(new PriceCatalog.VmOffer("Fake", "r", "cached", 1, 1, 1)).build();
@@ -63,8 +102,8 @@ public class PricingFetcherTests {
     public void testFreshCacheIsUsedWithoutCallingTheProviders() throws IOException {
         File file = new File(tmp.getRoot(), "prices.json");
         cached(System.currentTimeMillis(), "azure=a;aws=").save(file);
-        FakeProvider azure = new FakeProvider(false);
-        PriceCatalog loaded = new PricingFetcher(azure, new FakeProvider(false), new FakeProvider(false))
+        FakeProvider azure = azure(false);
+        PriceCatalog loaded = fetcher(azure, aws(false), deviceFarm(false))
                 .fetchOrLoad("a", "", file, 3600_000L);
         assertEquals("cached", loaded.vms.get(0).name);
         assertTrue(azure.calls.isEmpty());
@@ -74,8 +113,8 @@ public class PricingFetcherTests {
     public void testExpiredCacheIsRefetchedAndSaved() throws IOException {
         File file = new File(tmp.getRoot(), "prices.json");
         cached(System.currentTimeMillis() - 10_000L, "azure=a,b;aws=").save(file);
-        FakeProvider azure = new FakeProvider(false);
-        PriceCatalog fresh = new PricingFetcher(azure, new FakeProvider(false), new FakeProvider(false))
+        FakeProvider azure = azure(false);
+        PriceCatalog fresh = fetcher(azure, aws(false), deviceFarm(false))
                 .fetchOrLoad("a,b", "", file, 1_000L);
         assertEquals(2, fresh.vms.size());
         assertEquals("vm-a", fresh.vms.get(0).name);
@@ -88,7 +127,7 @@ public class PricingFetcherTests {
     public void testCacheFromOtherRegionsIsIgnored() throws IOException {
         File file = new File(tmp.getRoot(), "prices.json");
         cached(System.currentTimeMillis(), "azure=other;aws=").save(file);
-        PriceCatalog fresh = new PricingFetcher(new FakeProvider(false), new FakeProvider(false), new FakeProvider(false))
+        PriceCatalog fresh = fetcher(azure(false), aws(false), deviceFarm(false))
                 .fetchOrLoad("a", "", file, 3600_000L);
         assertEquals("vm-a", fresh.vms.get(0).name);
     }
@@ -97,7 +136,7 @@ public class PricingFetcherTests {
     public void testAllProvidersFailingFallsBackToTheExpiredCacheWithWarnings() throws IOException {
         File file = new File(tmp.getRoot(), "prices.json");
         cached(System.currentTimeMillis() - 10_000L, "azure=a;aws=").save(file);
-        PriceCatalog loaded = new PricingFetcher(new FakeProvider(true), new FakeProvider(true), new FakeProvider(true))
+        PriceCatalog loaded = fetcher(azure(true), aws(true), deviceFarm(true))
                 .fetchOrLoad("a", "", file, 1_000L);
         assertEquals("cached", loaded.vms.get(0).name);
         assertEquals(2, loaded.warnings.size());
@@ -109,7 +148,7 @@ public class PricingFetcherTests {
     public void testNothingAvailableThrows() throws IOException {
         File file = new File(tmp.getRoot(), "none.json");
         try {
-            new PricingFetcher(new FakeProvider(true), new FakeProvider(true), new FakeProvider(true))
+            fetcher(azure(true), aws(true), deviceFarm(true))
                     .fetchOrLoad("a", "", file, 1_000L);
             fail("no prices and no cache must fail");
         } catch (IOException expected) {
@@ -121,6 +160,11 @@ public class PricingFetcherTests {
     public void testOneFailingRegionOnlyAddsAWarning() throws IOException {
         File file = new File(tmp.getRoot(), "prices.json");
         PriceProvider flaky = new PriceProvider() {
+            @Override
+            public String id() {
+                return "azure";
+            }
+
             @Override
             public String name() {
                 return "Flaky";
@@ -134,7 +178,7 @@ public class PricingFetcherTests {
                 return PriceCatalog.builder().addVm(new PriceCatalog.VmOffer("Flaky", region, "ok", 1, 1, 1)).build();
             }
         };
-        PriceCatalog fresh = new PricingFetcher(flaky, new FakeProvider(false), new FakeProvider(false))
+        PriceCatalog fresh = fetcher(flaky, aws(false), deviceFarm(false))
                 .fetchOrLoad("good,bad", "", file, 1_000L);
         assertEquals(1, fresh.vms.size());
         assertEquals(1, fresh.warnings.size());
@@ -143,11 +187,11 @@ public class PricingFetcherTests {
 
     @Test
     public void testDeviceFarmIsFetchedOnceAndOnlyWhenAwsIsEnabled() throws IOException {
-        FakeProvider deviceFarm = new FakeProvider(false);
-        new PricingFetcher(new FakeProvider(false), new FakeProvider(false), deviceFarm)
+        FakeProvider deviceFarm = deviceFarm(false);
+        fetcher(azure(false), aws(false), deviceFarm)
                 .fetchOrLoad("a", "", new File(tmp.getRoot(), "a.json"), 1_000L);
         assertTrue(deviceFarm.calls.isEmpty());
-        new PricingFetcher(new FakeProvider(false), new FakeProvider(false), deviceFarm)
+        fetcher(azure(false), aws(false), deviceFarm)
                 .fetchOrLoad("", "r1,r2", new File(tmp.getRoot(), "b.json"), 1_000L);
         assertEquals(1, deviceFarm.calls.size());
     }

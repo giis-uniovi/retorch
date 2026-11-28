@@ -29,6 +29,10 @@ public class PricingTests {
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
 
+    private static final HttpGet NO_HTTP = url -> {
+        throw new IOException("no network in tests");
+    };
+
     @Test
     public void testAzureParsersIgnoreSpotAndWindows() throws IOException {
         JsonNode items = MAPPER.readTree("[" +
@@ -36,19 +40,19 @@ public class PricingTests {
                 "{\"skuName\":\"Standard_D2s_v5 Spot\",\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"Virtual Machines Dsv5 Series\",\"unitOfMeasure\":\"1 Hour\",\"retailPrice\":0.02}," +
                 "{\"skuName\":\"Standard_D2s_v5\",\"armSkuName\":\"Standard_D2s_v5\",\"productName\":\"Virtual Machines Dsv5 Series Windows\",\"unitOfMeasure\":\"1 Hour\",\"retailPrice\":0.2}]");
         PriceCatalog.Builder out = PriceCatalog.builder();
-        AzurePrices.parseVms(toArray(items), "westeurope", out);
+        new AzurePrices(NO_HTTP).parseVms(toArray(items), "westeurope", out);
         assertEquals(1, out.build().vms.size());
         assertEquals(0.115, out.build().vms.get(0).hourly, 1e-9);
         assertEquals(8, out.build().vms.get(0).memGb, 1e-9);
 
         JsonNode aci = MAPPER.readTree("[{\"meterName\":\"Standard vCPU Duration\",\"retailPrice\":0.0466}," +
                 "{\"meterName\":\"Standard Memory Duration\",\"retailPrice\":0.00511},{\"meterName\":\"Standard Windows Software Duration\",\"retailPrice\":1}]");
-        AzurePrices.parseContainers(toArray(aci), "westeurope", out);
+        new AzurePrices(NO_HTTP).parseContainers(toArray(aci), "westeurope", out);
         assertEquals(0.0466, out.build().containers.get(0).vcpuHour, 1e-9);
 
         JsonNode disks = MAPPER.readTree("[{\"meterName\":\"E10 LRS Disk Mount\",\"unitOfMeasure\":\"1/Month\",\"retailPrice\":1.183}," +
                 "{\"meterName\":\"E10 LRS Disk\",\"unitOfMeasure\":\"1/Month\",\"retailPrice\":9.6}]");
-        AzurePrices.parseDisks(toArray(disks), "westeurope", out);
+        new AzurePrices(NO_HTTP).parseDisks(toArray(disks), "westeurope", out);
         assertEquals(0.075, out.build().storage.get(0).gbMonth, 1e-9);
     }
 
@@ -72,7 +76,7 @@ public class PricingTests {
         Map<JsonNode, Double> offer = AwsPrices.readOffer(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), p -> p.path("attributes").path("operatingSystem").asText("Linux").equals("Linux"));
         PriceCatalog.Builder builder = PriceCatalog.builder();
-        AwsPrices.parseEc2(offer, "eu-west-1", builder);
+        new AwsPrices(NO_HTTP).parseEc2(offer, "eu-west-1", builder);
         PriceCatalog out = builder.build();
         assertEquals(1, out.vms.size());
         assertEquals(0.096, out.vms.get(0).hourly, 1e-9);
@@ -119,7 +123,7 @@ public class PricingTests {
                 p -> "Linux".equals(p.path("attributes").path("operatingSystem").asText("Linux"))
                         && p.path("attributes").has("instanceType"), reserved);
         PriceCatalog.Builder builder = PriceCatalog.builder();
-        AwsPrices.parseEc2(offer, reserved, "eu-west-1", builder);
+        new AwsPrices(NO_HTTP).parseEc2(offer, reserved, "eu-west-1", builder);
         PriceCatalog out = builder.build();
         assertEquals(1, out.vms.size());
         List<ReservationOptionDTO> r = out.vms.get(0).reservations;
@@ -215,7 +219,7 @@ public class PricingTests {
         }
         JsonNode offer = MAPPER.readTree("{\"products\":{" + products + "},\"terms\":{\"OnDemand\":{" + terms + "}}}");
         PriceCatalog.Builder builder = PriceCatalog.builder();
-        DeviceFarmPrices.parse(offer, builder);
+        new DeviceFarmPrices(NO_HTTP).parse(offer, builder);
         PriceCatalog catalog = builder.build();
 
         assertEquals(2, catalog.browsers.size());

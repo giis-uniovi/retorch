@@ -58,29 +58,17 @@ final class AwsReservations {
         for (JsonNode term : skuTerms) {
             ReservationOptionDTO option = option(term);
             if (option != null) {
-                addCheapest(result, option);
+                AbstractPriceProvider.addCheapest(result, option);
             }
         }
         return result;
     }
 
-    private static void addCheapest(List<ReservationOptionDTO> options, ReservationOptionDTO candidate) {
-        for (int i = 0; i < options.size(); i++) {
-            ReservationOptionDTO o = options.get(i);
-            if (o.termYears == candidate.termYears && o.payment == candidate.payment) {
-                if (candidate.effectiveHourly < o.effectiveHourly) {
-                    options.set(i, candidate);
-                }
-                return;
-            }
-        }
-        options.add(candidate);
-    }
 
     /** The option of one term, or null if it is not a standard 1/3 year No Upfront or All Upfront term. */
     private static ReservationOptionDTO option(JsonNode term) {
         JsonNode attrs = term.path("termAttributes");
-        int years = years(attrs.path("LeaseContractLength").asText());
+        int years = AbstractPriceProvider.termYears(attrs.path("LeaseContractLength").asText());
         if (years == 0 || !STANDARD.equals(attrs.path("OfferingClass").asText())) {
             return null;
         }
@@ -94,13 +82,6 @@ final class AwsReservations {
             return fee < 0 ? null : ReservationOptionDTO.allUpfront(years, fee);
         }
         return null;
-    }
-
-    private static int years(String leaseContractLength) {
-        if ("1yr".equals(leaseContractLength)) {
-            return 1;
-        }
-        return "3yr".equals(leaseContractLength) ? 3 : 0;
     }
 
     /** USD of the first price dimension with the given unit, or -1 if the term has none. */

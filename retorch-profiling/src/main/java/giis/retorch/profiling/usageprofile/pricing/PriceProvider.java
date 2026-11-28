@@ -5,12 +5,29 @@
 package giis.retorch.profiling.usageprofile.pricing;
 
 import java.io.IOException;
+import java.util.List;
 
-/** A source of prices (a cloud provider or one of its services) that can be asked for one region. */
+/**
+ * Strategy: a source of prices (a cloud provider or one of its services) that can be asked for one region. Providers
+ * are registered in a {@link PriceProviderRegistry}; see {@link AbstractPriceProvider} for the shared plumbing.
+ */
 public interface PriceProvider {
+
+    /** Short unique id ({@code azure}, {@code aws-devicefarm}): the key of its regions in {@link ProviderRegions}. */
+    String id();
 
     /** Provider name used in the warnings. */
     String name();
+
+    /** The id of the region setting this provider reads; a provider that follows another one's regions returns that id. */
+    default String configId() {
+        return id();
+    }
+
+    /** The regions to fetch for this configuration; empty = the provider is disabled. */
+    default List<String> regionsFor(ProviderRegions config) {
+        return config.regions(configId());
+    }
 
     /** The prices of one region; a failure is reported by the caller as a warning. */
     PriceCatalog fetch(String region) throws IOException;
