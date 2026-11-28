@@ -5,14 +5,20 @@ Turns the ordered `Activity`s into a Jenkins declarative pipeline, the per-TJob 
 pipeline runs.
 
 ## Public API
-- `IRetorchOrchestrator`, `JenkinsOrchestrator(activities, systemName[, paths])` or
-  `JenkinsOrchestrator(activities, resources, config, paths)` (resources and configuration loaded once by the caller):
-  `generatePipeline(sortedActivities)`, `getExecutionPlan`, `setExecutionPlan`, `generateDockerComposeEnvironmentFiles`.
-  Exceptions: `NoFinalActivitiesException`.
+- `IRetorchOrchestrator.render(ExecutionPlan, RetorchConfig)` -> pipeline text. `JenkinsfileRenderer(customPostSteps)` is the
+  Jenkins implementation: a **pure function**, no file access, constructors only store their arguments. It also
+  offers `environmentOf(TJob, RetorchConfig)` (placeholders and values of the TJob `.env`) and `isGateway(TJob)`.
+- `OrchestrationWriter(RetorchPaths).generate(plan, config)`: the edge with the side effects, in this order: render,
+  delete `.retorch/scripts` and any previous `executionplan.json`, write the `.env` file of every non-gateway TJob
+  (`EnvFileWriter`), generate the scripts (`ScriptGenerator`) and, with profiling, the execution plan
+  (`ExecutionPlanWriter`). Returns the Jenkinsfile text; where to write it is up to the caller
+  (`OrchestrationGenerator`). It reads the optional `custom-jenkins-post` hook and gives it to the renderer.
 - `ScriptGenerator(RetorchConfig, RetorchPaths)`: `generateScriptsTJob()`, `generateScriptsCOI()`,
   `replacePlaceholderTemplate`.
-- `ExecutionPlanWriter(RetorchPaths)`.
+- `ExecutionPlanWriter(RetorchPaths)`, `EnvFileWriter(RetorchPaths)`.
 - Every path comes from `RetorchPaths` and every property from `RetorchConfig` (see `orchestration/config.md`).
+- The renderer throws `IllegalStateException` for a missing required property; a resource without a
+  `PLACEHOLDER;image` docker image fails when the `.env` file is built (known issue).
 
 ## Configuration (`.retorch/configurations/retorchCI.properties`)
 | Property | Meaning | Default |
@@ -58,7 +64,7 @@ Profiling placeholders: `PROFILING_START_COMMAND` (tjob-setup), `PROFILING_STOP_
 `AWS_REGION_PLACEHOLDER` (generateusageprofile).
 
 ### Execution graph file (profiling on)
-`generatePipeline` also writes `.retorch/executionplan.json` (`ExecutionPlanWriter`), the graph of the execution that the
+`OrchestrationWriter` also writes `.retorch/executionplan.json` (`ExecutionPlanWriter`), the graph of the execution that the
 usage profile draws: `{"tjobs":[{"id","stage","resources":[],"tests":[],"predecessors":[]}]}`, one node per TJob in stage
 order. `id` is the lower case TJob name used by the pipeline and the usage file; `tests` are `Class#method` as passed to
 Maven; `predecessors` are the ids of the TJobs that must finish first (always in an earlier stage). Gateway activities
@@ -83,5 +89,5 @@ project has it (`$WORKSPACE/.retorch/executionplan.json`, versioned with the pro
   `savetjoblifecycledata.sh`.
 
 ## Tests
-`WorkspaceConfigTests` (generation in a temporary workspace). `JenkinsOrchestratorTests`: default mode against `expected_out/` (`scriptler/`, `outputTest*`); profiling mode against
+`JenkinsfileRendererTests` (pure rendering, no file system), `WorkspaceConfigTests` (generation in a temporary workspace). `JenkinsOrchestratorTests` (runs `OrchestrationWriter`): default mode against `expected_out/` (`scriptler/`, `outputTest*`); profiling mode against
 `expected_out/profiling/`; profiling off generates no profiling script and no usage profile stage.

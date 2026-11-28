@@ -1,7 +1,7 @@
 # Spec: `giis.retorch.orchestration.generator`
 
 ## Purpose
-Facade of the orchestration pipeline: classifier -> aggregator -> scheduler -> orchestrator.
+Facade of the orchestration pipeline: classifier -> aggregator -> scheduler -> `OrchestrationWriter`.
 
 ## Public API
 - `OrchestrationGenerator()` (working directory) or `OrchestrationGenerator(RetorchPaths)` (any folder);
@@ -15,8 +15,8 @@ Facade of the orchestration pipeline: classifier -> aggregator -> scheduler -> o
 ## Behavior
 - Profiling is decided by `RetorchConfig` (property `profiling` in `retorchCI.properties`, overridden by
   `withProfiling`, which `RetorchMain` calls for `--profiling/--no-profiling`). See `orchestration/orchestrator.md`.
-- The configuration is loaded once and the resources JSON is deserialized once; the same map is given to the classifier,
-  the aggregator and the orchestrator. A missing `retorchCI.properties` fails with an `IOException` naming the file.
+- The configuration is loaded once and the resources JSON is deserialized once; the same map is given to the classifier
+  and the aggregator. `getExecutionPlan` loads no configuration and writes nothing. A missing `retorchCI.properties` fails with an `IOException` naming the file.
 - Errors of the intermediate steps propagate as the checked exceptions of the signature.
 
 ## Tests

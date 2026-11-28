@@ -9,7 +9,10 @@ import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.model.Activity;
 import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
-import giis.retorch.orchestration.orchestrator.JenkinsOrchestrator;
+import giis.retorch.orchestration.config.RetorchConfig;
+import giis.retorch.orchestration.config.RetorchPaths;
+import giis.retorch.orchestration.model.ExecutionPlan;
+import giis.retorch.orchestration.orchestrator.OrchestrationWriter;
 import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
 import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
 import giis.retorch.orchestration.scheduler.NotValidSystemException;
@@ -68,10 +71,9 @@ public class OrchestrationIntegrationTests {
         List<Activity> listExpectedActivities =
                 utils.getListExpectedActivities().stream().sorted(Comparator.comparing(Activity::toString)).collect(Collectors.toList());
         assertEquals(listExpectedActivities.toString(), listActivities.toString());
-        JenkinsOrchestrator orchestrator = new JenkinsOrchestrator(listActivities, "SyntheticIntegration");
-        Map<Integer, LinkedList<Activity>> listActivitiesScheduledOrchestrator =
-                orchestrator.getExecutionPlan().getSortedActivities();
-        String executionPipeline = orchestrator.generatePipeline(listActivitiesScheduledOrchestrator);
+        RetorchPaths paths = new RetorchPaths();
+        String executionPipeline = new OrchestrationWriter(paths).generate(
+                new ExecutionPlan("defaultName", listActivities), RetorchConfig.load(paths));
         testStringAgainstPath(EXPECTED_OUTPUT_PATH+"outputTestIntegration", executionPipeline);
         checkTJobEnvFiles(7);
     }

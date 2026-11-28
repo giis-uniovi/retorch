@@ -15,7 +15,7 @@ import giis.retorch.orchestration.model.ExecutionPlan;
 import giis.retorch.orchestration.model.Resource;
 import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
-import giis.retorch.orchestration.orchestrator.JenkinsOrchestrator;
+import giis.retorch.orchestration.orchestrator.OrchestrationWriter;
 import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
 import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
 import giis.retorch.orchestration.scheduler.NotValidSystemException;
@@ -58,9 +58,9 @@ public class OrchestrationGenerator {
     }
 
     /**
-     * Main method of RETORCH  prototype. This method given root package name where tests are located and the system name,
-     * Creates a {@code JenkinsOrchestrator}. The {@code JenkinsOrchestrator}. The {@code JenkinsOrchestrator}
-     * generates the JenkinsFile and Scripting code in the  directory of the project specified
+     * Main method of RETORCH prototype. Given the root package name where tests are located and the system name,
+     * classifies, aggregates and schedules the tests, and writes the Jenkinsfile and the scripting code in the
+     * directory of the project specified
      *
      * @param systemName      String with the system name (must coincide with the SystemResources.json file)
      * @param rootPackageNameTests    String with root package name where tests are located
@@ -69,8 +69,9 @@ public class OrchestrationGenerator {
     public String generateJenkinsfile(String rootPackageNameTests, String systemName, String jenkinsFilePath) throws NotValidSystemException,
             IOException, NoTGroupsInTheSchedulerException, EmptyInputException, NoFinalActivitiesException,
             ClassNotFoundException, URISyntaxException {
-        JenkinsOrchestrator orchestrator = getJenkinsOrchestrator(rootPackageNameTests, systemName);
-        String executionPipeline = orchestrator.generatePipeline(orchestrator.getExecutionPlan().getSortedActivities());
+        RetorchConfig config = RetorchConfig.load(paths).withProfiling(profilingOverride);
+        ExecutionPlan plan = buildExecutionPlan(rootPackageNameTests, systemName);
+        String executionPipeline = new OrchestrationWriter(paths).generate(plan, config);
         if (!new File(jenkinsFilePath).exists()) {
             jenkinsFilePath = "./Jenkinsfile";
         } else {
@@ -81,8 +82,8 @@ public class OrchestrationGenerator {
     }
 
     /**
-     * This method creates a {@code JenkinsOrchestrator} that returns the {@code ExecutionPlan}. The {@code ExecutionPlan}
-     * can be used for debugging purposes or generate the usage profiles/estimate the different costs.
+     * Returns the {@code ExecutionPlan} without writing anything. It can be used for debugging purposes or generate the
+     * usage profiles/estimate the different costs.
      *
      * @param systemName   String with the system name (must coincide with the SystemResources.json file )
      * @param rootPackageNameTests String with root package name where tests are located
@@ -91,24 +92,21 @@ public class OrchestrationGenerator {
     public ExecutionPlan getExecutionPlan(String rootPackageNameTests, String systemName) throws NotValidSystemException,
             IOException, NoTGroupsInTheSchedulerException, EmptyInputException, NoFinalActivitiesException,
             ClassNotFoundException, URISyntaxException {
-        JenkinsOrchestrator orchestrator = getJenkinsOrchestrator(rootPackageNameTests, systemName);
-        return orchestrator.getExecutionPlan();
+        return buildExecutionPlan(rootPackageNameTests, systemName);
     }
 
     /**
-     * This  method  with the  system name and root package name where tests are located provided as input, creates a {@code Classifier} and gets the {@code SystemUnderTest}
-     * from its package. With the {@code SystemUnderTest} creates an {@code Aggregator}  who generate the {@code tGroup}s.
-     * This {@code tGroup}s are given as input to the {@code Scheduler} who generates the {@code Activity} Graph.
-     * Finally, creates a {@code JenkinsOrchestrator} with the {@code Activity} Graph and the system name
+     * With the system name and root package name where tests are located, creates a {@code Classifier} and gets the
+     * {@code SystemUnderTest} from its package. With it creates an {@code Aggregator} who generates the {@code tGroup}s,
+     * that the {@code Scheduler} turns into the {@code Activity} graph of the {@code ExecutionPlan}.
      *
      * @param systemName   String with the system name (must coincide with the SystemResources.json file).
      * @param rootPackageNameTests String with root package name where tests are located.
      */
-    private JenkinsOrchestrator getJenkinsOrchestrator(String rootPackageNameTests, String systemName) throws
+    private ExecutionPlan buildExecutionPlan(String rootPackageNameTests, String systemName) throws
             EmptyInputException, IOException, ClassNotFoundException, URISyntaxException, NotValidSystemException,
             NoTGroupsInTheSchedulerException, NoFinalActivitiesException {
-        RetorchConfig config = RetorchConfig.load(paths).withProfiling(profilingOverride);
-        // the resources JSON is read once and shared by the three phases
+        // the resources JSON is read once and shared by the classifier and the aggregator
         Map<String, Resource> resources = new ResourceSerializer(paths).deserializeResources(systemName);
         RetorchClassifier classifier = new RetorchClassifier(resources);
         SystemUnderTest currentSystem = classifier.getSystemFromPackage(systemName, rootPackageNameTests);
@@ -116,6 +114,6 @@ public class OrchestrationGenerator {
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
         RetorchScheduler scheduler = new RetorchScheduler(tGroupsOutputAggregator);
         List<Activity> listActivities = scheduler.generateActivities();
-        return new JenkinsOrchestrator(listActivities, resources, config, paths);
+        return new ExecutionPlan("defaultName", listActivities);
     }
 }
