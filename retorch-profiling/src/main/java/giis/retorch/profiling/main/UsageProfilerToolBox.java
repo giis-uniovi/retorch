@@ -21,6 +21,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * {@code UsageProfilerToolBox} generates the usage profile of an execution: an interactive HTML usage profile with the
@@ -65,19 +69,32 @@ public class UsageProfilerToolBox {
         Path out = Paths.get(outputHtml);
         ExecutionMeasurements measurements = ExecutionMeasurements.read(Paths.get(usageCsv));
         ExecutionMeasurements.Timeline timeline = measurements.toTimeline();
-        CostReport report = new CostCalculator().calculate(timeline, catalog);
-        ExecutionGraph graph = readGraph(executionPlanJson, measurements, timeline);
+        List<ExecutionPlanReader.PlanNode> plan = readPlan(executionPlanJson);
+        CostReport report = new CostCalculator().calculate(timeline, catalog, browserTjobs(plan));
+        ExecutionGraph graph = plan == null ? null
+                : ExecutionGraphBuilder.build(plan, measurements.tjobMetrics(timeline), measurements.containerUsage());
         new UsageProfileGenerator().generate(planName, timeline, report, catalog, graph, SutInfo.detect(), out);
         log.info("Usage profile written to {}", out);
     }
 
-    private static ExecutionGraph readGraph(String executionPlanJson, ExecutionMeasurements measurements,
-                                            ExecutionMeasurements.Timeline timeline) throws IOException {
+    private static List<ExecutionPlanReader.PlanNode> readPlan(String executionPlanJson) throws IOException {
         if (executionPlanJson == null || executionPlanJson.isEmpty() || !Files.exists(Paths.get(executionPlanJson))) {
             log.info("No execution plan file, the usage profile will not include the execution graph");
             return null;
         }
-        return ExecutionGraphBuilder.build(ExecutionPlanReader.read(Paths.get(executionPlanJson)),
-                measurements.tjobMetrics(timeline), measurements.containerUsage());
+        return ExecutionPlanReader.read(Paths.get(executionPlanJson));
+    }
+
+    /** TJobs that use a browser: those whose resources include one whose name contains "browser". */
+    static Set<String> browserTjobs(List<ExecutionPlanReader.PlanNode> plan) {
+        Set<String> ids = new HashSet<>();
+        for (ExecutionPlanReader.PlanNode node : plan == null ? Collections.<ExecutionPlanReader.PlanNode>emptyList() : plan) {
+            for (String resource : node.resources) {
+                if (resource.toLowerCase().contains("browser")) {
+                    ids.add(node.id);
+                }
+            }
+        }
+        return ids;
     }
 }

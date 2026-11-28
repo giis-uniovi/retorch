@@ -40,6 +40,16 @@ public class PriceCatalog {
         public double gbHour;
     }
 
+    /** A browser (or device) as a service, billed per minute of use, e.g. AWS Device Farm. */
+    public static class BrowserRate {
+        public String provider;
+        public String region;
+        public String service;
+        /** What is rented: "Chrome", "Firefox", "Edge", "Android devices", "iOS devices". */
+        public String name;
+        public double minuteUsd;
+    }
+
     /** A block storage volume, billed per provisioned GB-month. */
     public static class StorageRate {
         public String provider;
@@ -49,7 +59,7 @@ public class PriceCatalog {
     }
 
     /** Version of the layout of the catalog (and of what it contains); a cache with another version is refetched. */
-    public static final int SCHEMA_VERSION = 2;
+    public static final int SCHEMA_VERSION = 3;
 
     /** A catalog read from a file that has no version (written before versions existed) gets 0. */
     public int schemaVersion = SCHEMA_VERSION;
@@ -59,6 +69,7 @@ public class PriceCatalog {
     public List<VmOffer> vms = new ArrayList<>();
     public List<ContainerRate> containers = new ArrayList<>();
     public List<StorageRate> storage = new ArrayList<>();
+    public List<BrowserRate> browsers = new ArrayList<>();
     /** Non-fatal problems found while building the catalog (e.g. a provider that could not be reached). */
     public List<String> warnings = new ArrayList<>();
 
@@ -66,6 +77,7 @@ public class PriceCatalog {
         vms.addAll(other.vms);
         containers.addAll(other.containers);
         storage.addAll(other.storage);
+        browsers.addAll(other.browsers);
         warnings.addAll(other.warnings);
     }
 

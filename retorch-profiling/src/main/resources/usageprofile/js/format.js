@@ -15,7 +15,7 @@ const Fmt = (function () {
     'coi-setup': 'dots', 'tjob-setup': 'stripes', 'tjob-testexec': 'solid',
     'tjob-teardown': 'backStripes', 'coi-teardown': 'horizontal', 'oversubscription': 'vertical'
   };
-  const OBJECT_COLORS = {compute: '#2563eb', storage: '#0f9488'};
+  const OBJECT_COLORS = {compute: '#2563eb', storage: '#0f9488', browser: '#b45309'};
   const SERIES_COLORS = {used: '#2563eb', over: '#dc2626', cpu: '#2563eb', mem: '#16a34a', disk: '#d97706'};
   /* Dark enough for white labels; also used for the TJob stacks and the graph stages. */
   const CYCLE_COLORS = ['#2563eb', '#0f766e', '#b45309', '#7c3aed', '#be185d', '#4d7c0f', '#0369a1', '#b91c1c', '#475569', '#a16207'];

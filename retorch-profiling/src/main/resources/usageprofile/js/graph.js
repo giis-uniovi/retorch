@@ -288,20 +288,25 @@ const Graph = (function () {
     const list = n.containers || [];
     const title = '<h4 id="graphContTitle">' + I18n.t('graph.containers') + '</h4>';
     if (!list.length) { return title + '<p class="muted">' + I18n.t('graph.noContainers') + '</p>'; }
+    return title + containerNotes(n) + containerList(n);
+  }
+
+  /* Always visible, right after the tests executed and before the measurements. */
+  function containerChartSection(n) {
+    if (!(n.containers || []).length) { return ''; }
     const picks = METRICS.map(function (m) {
       return '<label><input type="radio" name="contMetric" value="' + m.id + '"' + (m.id === metricId ? ' checked' : '') + '><span>' + I18n.t(m.label) + '</span></label>';
     }).join('');
-    const chart = '<details class="cont-item" id="graphContChartBox"><summary><span class="name">' + I18n.t('graph.cChart') + '</span></summary>' +
+    return '<div id="graphContChartBox"><h4>' + I18n.t('graph.cChart') + '</h4>' +
       '<div class="metric-pick" role="radiogroup" aria-label="' + Fmt.esc(I18n.t('graph.mLabel')) + '">' + picks + '</div>' +
-      '<div class="chart cont-chart" id="graphContChart" role="img"></div></details>';
-    return title + containerNotes(n) + containerList(n) + chart;
+      '<div class="chart cont-chart" id="graphContChart" role="img"></div></div>';
   }
 
   /* One bar group per container for the chosen resource: storage stacked (layer + image + volumes), memory and CPU as peak / average.
      The list above holds the same figures. */
   function renderContainersChart(node) {
     const box = document.getElementById('graphContChartBox');
-    if (!node || !box || !box.open) { return; } // a chart in a closed <details> has no size: it is drawn when opened
+    if (!node || !box) { return; } // nodes without containers have no chart
     const list = node.containers;
     const f = Charts.fonts('graphContChart');
     const m = METRICS.filter(function (x) { return x.id === metricId; })[0];
@@ -338,13 +343,14 @@ const Graph = (function () {
       (node.predecessors.length ? '<h4>' + I18n.t('graph.predecessors') + '</h4><div>' + chips(node.predecessors) + '</div>' : '') +
       '<h4>' + I18n.t('graph.resources') + '</h4><div>' + chips(node.resources) + '</div>' +
       '<h4 id="graphTestsTitle">' + I18n.t('graph.tests') + ' (' + node.tests.length + ')</h4>' + testList(node) +
+      containerChartSection(node) +
       '<h4>' + I18n.t('graph.measures') + '</h4>' + measures(node) +
       containerSection(node) +
       '<h4>' + I18n.t('graph.cost', {alt: Fmt.esc(label || '')}) + '</h4>' + costRows(items, I18n.t('graph.cost', {alt: label || ''}));
     I18n.apply();
     const box = document.getElementById('graphContChartBox');
     if (box) {
-      box.addEventListener('toggle', function () { renderContainersChart(node); });
+      renderContainersChart(node);
       box.addEventListener('change', function (e) {
         if (e.target.name === 'contMetric') { metricId = e.target.value; renderContainersChart(node); }
       });

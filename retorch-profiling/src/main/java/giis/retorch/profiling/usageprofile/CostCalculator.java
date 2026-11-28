@@ -12,6 +12,7 @@ import giis.retorch.profiling.usageprofile.dto.CostItem;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -33,12 +34,16 @@ import java.util.function.ToDoubleFunction;
  *   <li>Volume: same rule, over the provisioned GB (the disk peak) and the prorated GB-month price.</li>
  *   <li>Container service: pay-per-use, each TJob phase is charged the vCPU and GB it actually used, so there is no
  *   oversubscription (the COI phases run outside the service and are not charged).</li>
+ *   <li>Browser service (e.g. AWS Device Farm): the SUT keeps running on the cheapest of the alternatives above and
+ *   every TJob that uses a browser rents one browser session during its test execution phase, billed per minute.</li>
  * </ul>
  */
 public class CostCalculator {
 
     public static final String COMPUTE = "compute";
     public static final String STORAGE = "storage";
+    public static final String BROWSER = "browser";
+    private static final String TEST_EXECUTION = "tjob-testexec";
     public static final String COI = "COI";
     public static final String IDLE = "(idle)";
     public static final String OVERSUBSCRIPTION = "oversubscription";
@@ -61,6 +66,14 @@ public class CostCalculator {
     }
 
     public CostReport calculate(Timeline timeline, PriceCatalog catalog) {
+        return calculate(timeline, catalog, Collections.<String>emptySet());
+    }
+
+    /**
+     * Same as above; {@code browserTjobs} are the (case-insensitive) ids of the TJobs that use a browser, which
+     * the browser services of the catalog are charged for.
+     */
+    public CostReport calculate(Timeline timeline, PriceCatalog catalog, Set<String> browserTjobs) {
         double peakCpu = timeline.peak("cpu");
         double peakMemGb = timeline.peak("mem");
         double peakDiskGb = timeline.peak("disk");
@@ -90,7 +103,43 @@ public class CostCalculator {
             alternatives.add(containerAlternative(timeline, rate));
         }
         alternatives.sort(Comparator.comparingDouble((Alternative a) -> a.total));
+        addBrowserServices(timeline, catalog, browserTjobs, alternatives, warnings);
         return new CostReport(peakCpu, peakMemGb, peakDiskGb, timeline.slices.size(), alternatives, warnings);
+    }
+
+    /** Adds, for every browser service, the cheapest alternative above plus the browser minutes of the TJobs. */
+    private static void addBrowserServices(Timeline timeline, PriceCatalog catalog, Set<String> browserTjobs,
+                                           List<Alternative> alternatives, List<String> warnings) {
+        if (catalog.browsers.isEmpty()) {
+            return;
+        }
+        if (browserTjobs.isEmpty() || alternatives.isEmpty()) {
+            warnings.add("Browser services not calculated: no TJob of the execution plan uses a browser"
+                    + " (or there is no execution plan)");
+            return;
+        }
+        Set<String> browsers = new HashSet<>();
+        for (String id : browserTjobs) {
+            browsers.add(id.toLowerCase());
+        }
+        Alternative base = alternatives.get(0);
+        for (PriceCatalog.BrowserRate rate : catalog.browsers) {
+            Accumulator acc = new Accumulator();
+            for (CostItem item : base.items) {
+                acc.add(item.object, item.tjob, item.phase, item.cost);
+            }
+            for (Slice s : timeline.slices) {
+                for (Load l : s.loads) {
+                    if (TEST_EXECUTION.equals(l.phase) && browsers.contains(l.tjob.toLowerCase())) {
+                        acc.add(BROWSER, l.tjob, l.phase, rate.minuteUsd / 60.0);
+                    }
+                }
+            }
+            alternatives.add(new Alternative(rate.provider + "/" + rate.region + "/" + rate.service + "/" + rate.name
+                    + "+" + base.id, rate.service, Alternative.KIND_BROWSER_SERVICE,
+                    rate.name + " + " + base.provider + " " + base.label, base.region, 0, acc.items()));
+        }
+        alternatives.sort(Comparator.comparingDouble((Alternative a) -> a.total));
     }
 
     /** The cheapest VMs of distinct shape of one provider and region that fit the peak (possibly none). */

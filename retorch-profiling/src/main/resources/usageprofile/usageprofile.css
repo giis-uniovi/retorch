@@ -42,11 +42,11 @@ main:focus-visible{outline:none}
 .brand-text{min-inline-size:0}
 .logo-badge{display:inline-flex;flex:none}
 .logo-badge svg{block-size:clamp(3.25rem,2.25rem + 4dvw,5rem);inline-size:auto;display:block}
-/* The logos are inline SVG with fixed colours. They are recoloured per theme, so no box is needed behind them:
-   white (the holes of the letters) = page background, dark blue = --logo-blue, dark grey text = text colour. */
-:is(.logo-badge,.footer-logo) svg :is([fill="#ffffff"],[fill="rgb(100%, 100%, 100%)"]){fill:var(--bg)}
-:is(.logo-badge,.footer-logo) svg :is([fill="#004c99"],[fill="rgb(0%, 29.798889%, 59.999084%)"]){fill:var(--logo-blue)}
-:is(.logo-badge,.footer-logo) svg [fill="rgb(18.429565%, 19.60907%, 21.179199%)"]{fill:var(--fg)}
+/* The header logo keeps its original colours in both themes. The footer logo (inline SVG with fixed colours) is recoloured per
+   theme so no box is needed behind it: white = page background, dark blue = --logo-blue, dark grey text = text colour. */
+.footer-logo svg :is([fill="#ffffff"],[fill="rgb(100%, 100%, 100%)"]){fill:var(--bg)}
+.footer-logo svg :is([fill="#004c99"],[fill="rgb(0%, 29.798889%, 59.999084%)"]){fill:var(--logo-blue)}
+.footer-logo svg [fill="rgb(18.429565%, 19.60907%, 21.179199%)"]{fill:var(--fg)}
 .prefs{display:flex;gap:.625rem 1rem;flex-wrap:wrap;align-items:center}
 .pref{display:flex;gap:.5rem;align-items:center}
 

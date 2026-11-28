@@ -783,4 +783,74 @@ public class UsageProfileTests {
         }
         return false;
     }
+    private static String deviceFarmProduct(String sku, String usage, String price) {
+        return "\"" + sku + "\":{\"sku\":\"" + sku + "\",\"attributes\":{\"usagetype\":\"" + usage
+                + "\",\"regionCode\":\"us-west-2\"}}|\"" + sku + "\":{\"T\":{\"priceDimensions\":{\"D\":{\"pricePerUnit\":{\"USD\":\""
+                + price + "\"}}}}}";
+    }
+
+    @Test
+    public void testDeviceFarmPricesOnlyMeteredBrowsersAndDevices() throws IOException {
+        String[][] rows = {{"A", "USW2-Windows-Chrome-automated-minute", "0.005"}, {"B", "USW2-Windows-IE-automated-minute", "0.005"},
+            {"C", "USW2-Android-Device-Minute", "0.17"}, {"D", "USW2-Android-Device-Minute-Trial", "0.0"},
+            {"E", "USW2-Android-Unmetered", "0.0"}, {"F", "USW2-iOS-Device-Slot-Month", "250.0"}};
+        StringBuilder products = new StringBuilder();
+        StringBuilder terms = new StringBuilder();
+        for (String[] r : rows) {
+            String[] parts = deviceFarmProduct(r[0], r[1], r[2]).split("[|]");
+            products.append(products.length() == 0 ? "" : ",").append(parts[0]);
+            terms.append(terms.length() == 0 ? "" : ",").append(parts[1]);
+        }
+        JsonNode offer = MAPPER.readTree("{\"products\":{" + products + "},\"terms\":{\"OnDemand\":{" + terms + "}}}");
+        PriceCatalog catalog = new PriceCatalog();
+        PricingFetcher.parseDeviceFarm(offer, catalog);
+
+        assertEquals(2, catalog.browsers.size());
+        assertEquals("Chrome", catalog.browsers.get(0).name);
+        assertEquals(0.005, catalog.browsers.get(0).minuteUsd, 1e-9);
+        assertEquals("Android devices", catalog.browsers.get(1).name);
+        assertEquals("AWS Device Farm", catalog.browsers.get(1).service);
+        assertEquals("us-west-2", catalog.browsers.get(1).region);
+    }
+
+    @Test
+    public void testBrowserServiceAddsBrowserMinutesToTheCheapestAlternative() throws IOException {
+        PriceCatalog catalog = smallCatalog();
+        PriceCatalog.BrowserRate rate = new PriceCatalog.BrowserRate();
+        rate.provider = "AWS";
+        rate.region = "us-west-2";
+        rate.service = "AWS Device Farm";
+        rate.name = "Chrome";
+        rate.minuteUsd = 0.6;
+        catalog.browsers.add(rate);
+        CostReport plain = new CostCalculator().calculate(timeline(), catalog);
+        Alternative cheapest = plain.alternatives.get(0);
+
+        CostReport report = new CostCalculator().calculate(timeline(), catalog, set("TJOBA"));
+        Alternative service = null;
+        for (Alternative a : report.alternatives) {
+            if (Alternative.KIND_BROWSER_SERVICE.equals(a.kind)) {
+                service = a;
+            }
+        }
+        assertNotNull(service);
+        assertEquals("AWS Device Farm", service.provider);
+        assertTrue(service.label.startsWith("Chrome + "));
+        double browser = 0;
+        for (CostItem item : service.items) {
+            if ("browser".equals(item.object)) {
+                assertEquals("tjoba", item.tjob);
+                assertEquals("tjob-testexec", item.phase);
+                browser += item.cost;
+            }
+        }
+        // tjoba runs its tests during 40 s, at 0.6 USD per minute
+        assertEquals(0.4, browser, 0.03);
+        assertEquals(cheapest.total + browser, service.total, 1e-9);
+        assertEquals(plain.alternatives.size() + 1, report.alternatives.size());
+
+        CostReport noBrowsers = new CostCalculator().calculate(timeline(), catalog, new HashSet<String>());
+        assertEquals(plain.alternatives.size(), noBrowsers.alternatives.size());
+        assertTrue(noBrowsers.warnings.toString().contains("Browser services not calculated"));
+    }
 }

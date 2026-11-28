@@ -16,6 +16,7 @@ const App = (function () {
 
   /* ---- data helpers ---- */
   const providers = Array.from(new Set(D.alternatives.map(function (a) { return a.provider; })));
+  const kinds = ['VM', 'CONTAINER', 'BROWSER_SERVICE'].filter(function (k) { return D.alternatives.some(function (a) { return a.kind === k; }); });
   const regions = Array.from(new Set(D.alternatives.map(function (a) { return a.region; }))).sort();
   const multiRegion = new Set(D.alternatives.filter(function (a) { return a.kind === 'VM'; })
     .map(function (a) { return a.provider + a.region; })).size > providers.length;
@@ -32,11 +33,10 @@ const App = (function () {
     });
   }
 
-  function cheapestPerProvider() {
-    return providers.map(function (p) {
-      return D.alternatives.filter(function (a) { return a.provider === p; })
-        .reduce(function (best, a) { return !best || a.total < best.total ? a : best; }, null);
-    }).filter(Boolean);
+  /* The alternatives preloaded in the comparison (and chosen by its "cheapest" helper): the cheapest overall, whatever the provider. */
+  const CHEAPEST_COUNT = 5;
+  function cheapest() {
+    return D.alternatives.slice().sort(function (a, b) { return a.total - b.total; }).slice(0, CHEAPEST_COUNT);
   }
 
   function sorted(alts) {
@@ -100,7 +100,7 @@ const App = (function () {
       return '<label class="chk"><input type="checkbox" value="' + Fmt.esc(p) + '"' + (S.offProviders.has(p) ? '' : ' checked') + '> ' + Fmt.esc(p) + '</label>';
     }).join(' ');
     el('kind').innerHTML = option('', I18n.t('filter.all'), S.kind) +
-      ['VM', 'CONTAINER'].map(function (k) { return option(k, I18n.t('kind.' + k), S.kind); }).join('');
+      kinds.map(function (k) { return option(k, I18n.t('kind.' + k), S.kind); }).join('');
     el('region').innerHTML = option('', I18n.t('filter.all'), S.region) +
       regions.map(function (r) { return option(r, r, S.region); }).join('');
     el('showOver').checked = S.showOver;
@@ -336,7 +336,7 @@ const App = (function () {
     const ids = {
       all: D.alternatives.map(function (a) { return a.id; }),
       none: [],
-      cheapest: cheapestPerProvider().map(function (a) { return a.id; })
+      cheapest: cheapest().map(function (a) { return a.id; })
     }[helper] || [];
     S.compared = new Set(ids);
     keepFocus(function () {
@@ -435,7 +435,7 @@ const App = (function () {
   function init() {
     I18n.init();
     Theme.init(function () { renderAll(); });
-    S.compared = new Set(cheapestPerProvider().map(function (a) { return a.id; }));
+    S.compared = new Set(cheapest().map(function (a) { return a.id; }));
     Simulator.init(D, {label: label, announce: announce});
     applyHash();
     bindControls();

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -39,6 +40,9 @@ public class PricingFetcher {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String AZURE_URL = "https://prices.azure.com/api/retail/prices?$filter=";
     private static final String AWS_URL = "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/";
+    private static final String DEVICE_FARM = "AWS Device Farm";
+    private static final Pattern DEVICE_FARM_BROWSER = Pattern.compile("^[A-Z0-9]+-Windows-(Chrome|Firefox|Edge)-automated-minute$");
+    private static final Pattern DEVICE_FARM_DEVICE = Pattern.compile("^[A-Z0-9]+-(Android|iOS)-Device-Minute$");
     private static final Pattern FARGATE_USAGE = Pattern.compile("^[A-Z0-9]+-Fargate-(vCPU-Hours:perCPU|GB-Hours)$");
     private static final double AZURE_E10_DISK_GB = 128;
     private static final String PROVIDER_AZURE = "Azure";
@@ -106,6 +110,9 @@ public class PricingFetcher {
         fresh.regionsKey = regionsKey;
         fetchRegions(fresh, PROVIDER_AZURE, split(azureRegions), this::fetchAzure);
         fetchRegions(fresh, PROVIDER_AWS, split(awsRegions), this::fetchAws);
+        if (!split(awsRegions).isEmpty()) {
+            fetchDeviceFarm(fresh);
+        }
         return fresh;
     }
 
@@ -273,6 +280,39 @@ public class PricingFetcher {
     }
 
     // -------------------------------------------------------------------- AWS
+
+    /** AWS Device Farm is a single global offer (its prices do not depend on the EC2 regions being compared). */
+    private void fetchDeviceFarm(PriceCatalog target) {
+        try (InputStream in = open(AWS_URL + "AWSDeviceFarm/current/index.json")) {
+            parseDeviceFarm(MAPPER.readTree(in), target);
+        } catch (IOException | RuntimeException e) {
+            target.warnings.add("AWS Device Farm prices not available: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Adds the metered per-minute prices of the Device Farm offer: Windows desktop browsers (Chrome, Firefox, Edge)
+     * and Android / iOS devices. Free, trial, unmetered and remote-access products and the monthly slots are ignored.
+     */
+    static void parseDeviceFarm(JsonNode offer, PriceCatalog out) {
+        JsonNode onDemand = offer.path("terms").path("OnDemand");
+        for (JsonNode product : offer.path("products")) {
+            String usage = attr(product, "usagetype");
+            Matcher browser = DEVICE_FARM_BROWSER.matcher(usage);
+            Matcher device = DEVICE_FARM_DEVICE.matcher(usage);
+            String name = browser.matches() ? browser.group(1) : device.matches() ? device.group(1) + " devices" : null;
+            Double price = name == null ? null : firstUsdPrice(onDemand.path(product.path("sku").asText()));
+            if (price != null && price > 0) {
+                PriceCatalog.BrowserRate rate = new PriceCatalog.BrowserRate();
+                rate.provider = PROVIDER_AWS;
+                rate.region = attr(product, "regionCode");
+                rate.service = DEVICE_FARM;
+                rate.name = name;
+                rate.minuteUsd = price;
+                out.browsers.add(rate);
+            }
+        }
+    }
 
     public PriceCatalog fetchAws(String region) throws IOException {
         PriceCatalog catalog = new PriceCatalog();

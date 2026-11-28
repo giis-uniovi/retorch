@@ -12,10 +12,12 @@ import java.util.List;
 public final class Alternative {
     public static final String KIND_VM = "VM";
     public static final String KIND_CONTAINER = "CONTAINER";
+    /** The SUT runs on the cheapest compute alternative and the browsers are rented by the minute. */
+    public static final String KIND_BROWSER_SERVICE = "BROWSER_SERVICE";
 
     public final String id;
     public final String provider;
-    /** {@link #KIND_VM} or {@link #KIND_CONTAINER}. */
+    /** {@link #KIND_VM}, {@link #KIND_CONTAINER} or {@link #KIND_BROWSER_SERVICE}. */
     public final String kind;
     public final String label;
     public final String region;
