@@ -8,6 +8,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Resource Usage Profile</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,/*FAVICON*/">
 <style>/*CSS*/</style>
 </head>
 <body>
@@ -17,6 +18,7 @@
     <span class="logo-badge" role="img" aria-label="GIIS"><!--HEADER_LOGO_SVG--></span>
     <div class="brand-text">
       <h1 data-i18n="app.title">Resource Usage Profile</h1>
+      <p class="facts" id="facts"></p>
       <p class="sub" id="sub"></p>
     </div>
   </div>
@@ -63,11 +65,12 @@
     <div class="graph-box">
       <div class="graph-wrap">
         <div class="graph-chart">
+          <p class="muted graph-hint" id="graphHint" data-i18n="graph.hint"></p>
           <div id="graphChart" role="img"></div>
           <h3 class="list-title" id="tjobListTitle" data-i18n="graph.list">TJobs</h3>
           <ul class="tjob-list" id="tjobList" aria-labelledby="tjobListTitle"></ul>
         </div>
-        <div class="panel" id="graphPanel" role="region" data-i18n-label="graph.panel" aria-label="TJob details"></div>
+        <div class="panel" id="graphPanel" role="region" data-i18n-label="graph.panel" aria-label="TJob details" hidden></div>
       </div>
     </div>
   </section>

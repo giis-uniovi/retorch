@@ -15,6 +15,7 @@ import giis.retorch.profiling.usageprofile.dto.UsageProfileData;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import giis.retorch.profiling.usageprofile.dto.GraphNode;
 import giis.retorch.profiling.usageprofile.dto.ReservationOption;
+import giis.retorch.profiling.usageprofile.dto.SutInfo;
 import giis.retorch.profiling.usageprofile.dto.TimelineSeries;
 import giis.retorch.profiling.main.UsageProfilerToolBox;
 import org.junit.Rule;
@@ -120,7 +121,7 @@ public class UsageProfileTests {
                 new UsageProfileData("MyPlan", catalog.fetchedAtEpochMs, report, series, null)));
 
         assertEquals(set("plan", "pricesFetchedAt", "durationSec", "peakCpu", "peakMemGb", "peakDiskGb", "warnings",
-                "alternatives", "timeline", "graph"), names(json));
+                "alternatives", "timeline", "graph", "sut"), names(json));
         assertTrue(json.has("graph") && json.get("graph").isNull());
         assertEquals("MyPlan", json.get("plan").asText());
         assertTrue(json.get("warnings").isArray());
@@ -702,16 +703,76 @@ public class UsageProfileTests {
         int libEnd = page.indexOf("</script>", libStart);
         assertTrue(libStart >= 0 && libEnd > libStart);
         String own = page.substring(0, libStart) + page.substring(libEnd);
-        String[] forbidden = {"<script src", "<link ", "<img ", "<iframe", "@import", "url(http", "url('http",
+        String[] forbidden = {"<script src", "<img ", "<iframe", "@import", "url(http", "url('http",
             "url(" + (char) 34 + "http", "fetch(", "XMLHttpRequest", "src=" + (char) 34, "import("};
         for (String reference : forbidden) {
             assertFalse("external reference found: " + reference, own.contains(reference));
         }
+        // the only <link> is the page icon (the GIIS logo) embedded as a data URI: no other file is needed
+        int links = 0;
+        for (int i = own.indexOf("<link "); i >= 0; i = own.indexOf("<link ", i + 5)) {
+            links++;
+        }
+        assertEquals("only the page icon", 1, links);
+        String icon = "<link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml;base64,";
+        int iconAt = own.indexOf(icon);
+        assertTrue("the page has the GIIS logo as icon", iconAt >= 0);
+        String encoded = own.substring(iconAt + icon.length(), own.indexOf('"', iconAt + icon.length()));
+        assertTrue(new String(java.util.Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8).startsWith("<svg"));
+        assertFalse(own.contains("/*FAVICON*/"));
         for (int i = own.indexOf("http"); i >= 0; i = own.indexOf("http", i + 4)) {
             String rest = own.substring(i);
             assertTrue("unexpected URL: " + rest.substring(0, Math.min(70, rest.length())),
                     !(rest.startsWith("http://") || rest.startsWith("https://")) || isAllowedUrl(rest));
         }
+    }
+
+    @Test
+    public void testSutAndBranchComeFromTheJenkinsEnvironmentWithoutCredentials() {
+        Map<String, String> env = new HashMap<>();
+        env.put("GIT_URL", "https://user:secret-token@github.com/giis-uniovi/retorch-st-petclinic.git");
+        env.put("BRANCH_NAME", "feature-x");
+        SutInfo sut = SutInfo.detect(env, tmp.getRoot().toPath());
+        assertEquals("retorch-st-petclinic", sut.name);
+        assertEquals("https://github.com/giis-uniovi/retorch-st-petclinic", sut.url);
+        assertEquals("feature-x", sut.branch);
+
+        env.clear();
+        env.put("GIT_URL", "git@github.com:giis-uniovi/retorch-st-fullteaching.git");
+        env.put("GIT_BRANCH", "origin/main");
+        sut = SutInfo.detect(env, tmp.getRoot().toPath());
+        assertEquals("https://github.com/giis-uniovi/retorch-st-fullteaching", sut.url);
+        assertEquals("main", sut.branch);
+    }
+
+    @Test
+    public void testSutAndBranchComeFromTheWorkspaceGitFilesWhenThereIsNoEnvironment() throws IOException {
+        File git = tmp.newFolder("ws", ".git");
+        Files.write(new File(git, "config").toPath(), ("[core]\n\tbare = false\n[remote \"origin\"]\n\turl = ssh://git@github.com:22/giis-uniovi/shop.git\n"
+                + "\tfetch = +refs/heads/*:refs/remotes/origin/*\n").getBytes(StandardCharsets.UTF_8));
+        Files.write(new File(git, "HEAD").toPath(), "ref: refs/heads/dev\n".getBytes(StandardCharsets.UTF_8));
+        SutInfo sut = SutInfo.detect(new HashMap<String, String>(), git.getParentFile().toPath());
+        assertEquals("shop", sut.name);
+        assertEquals("https://github.com/giis-uniovi/shop", sut.url);
+        assertEquals("dev", sut.branch);
+        // unknown values are empty, never null, and a local path is not turned into a link
+        SutInfo none = SutInfo.detect(new HashMap<String, String>(), tmp.newFolder("empty").toPath());
+        assertEquals("", none.name + none.url + none.branch);
+        assertEquals("", new SutInfo("x", "/local/path", null).branch);
+    }
+
+    @Test
+    public void testTheHeaderDataTravelsInThePage() throws IOException {
+        Timeline t = timeline();
+        PriceCatalog catalog = smallCatalog();
+        CostReport report = new CostCalculator().calculate(t, catalog);
+        Path out = new File(tmp.getRoot(), "sut/usageprofile.html").toPath();
+        new UsageProfileGenerator().generate("P", t, report, catalog, null,
+                new SutInfo("petclinic", "https://github.com/giis-uniovi/petclinic", "main"), out);
+        JsonNode sut = embeddedJson(new String(Files.readAllBytes(out), StandardCharsets.UTF_8)).get("sut");
+        assertEquals("petclinic", sut.get("name").asText());
+        assertEquals("https://github.com/giis-uniovi/petclinic", sut.get("url").asText());
+        assertEquals("main", sut.get("branch").asText());
     }
 
     private static boolean isAllowedUrl(String text) {

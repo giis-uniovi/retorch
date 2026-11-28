@@ -432,7 +432,7 @@ Without it the pipeline does not measure anything and has no `Usage-Profile` sta
 - **Scenario explorer.** Filter by provider, type and region; select several alternatives and compare them side by side
   by phase or by TJob; show or hide the oversubscription, switch between USD and percentage of the cheapest, and sort.
 - **Execution graph.** Every TJob is a bar whose length is proportional to its duration, painted in three parts
-  proportional to its set-up, test execution and tear-down time, with arrows for the dependencies. Clicking a bar shows
+  proportional to its set-up, test execution and tear-down time, without drawing the dependencies (the panel lists them) and sharing its time axis with the usage chart. Clicking a bar shows
   the tests executed by that TJob, its resources, durations, peak CPU and memory, and its cost in the selected
   alternative.
 - Spanish, English, French and German; light, dark or automatic theme; links such as

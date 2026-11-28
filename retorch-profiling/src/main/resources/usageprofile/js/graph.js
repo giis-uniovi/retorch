@@ -3,7 +3,8 @@
  * All intellectual property rights on this file belong to GIIS.
  */
 /* Execution graph drawn as a Gantt chart (bar length = TJob duration, three segments = setup / tests / teardown),
-   dependency arrows between bars, the keyboard-accessible list of TJobs and the side panel with the details of the selected TJob. */
+   the keyboard-accessible list of TJobs and the side panel with the details of the selected TJob. The dependencies are
+   not drawn (the arrows cluttered the chart); the panel lists the predecessors of the selected TJob. */
 const Graph = (function () {
   const MIN_NO_DATA = 0.03; // placeholder width as a fraction of the longest end time
   const SEGMENTS = [['graph.setup', 'tjob-setup'], ['graph.exec', 'tjob-testexec'], ['graph.teardown', 'tjob-teardown']];
@@ -90,17 +91,6 @@ const Graph = (function () {
     });
   }
 
-  function edges(lay) {
-    const data = [];
-    lay.rows.forEach(function (r) {
-      r.node.predecessors.forEach(function (p) {
-        if (lay.byId[p]) { data.push({coords: [[lay.byId[p].end, lay.byId[p].row], [r.start, r.row]]}); }
-      });
-    });
-    return {type: 'lines', coordinateSystem: 'cartesian2d', silent: true, z: 5, data: data, symbol: ['none', 'arrow'], symbolSize: 7,
-      lineStyle: {color: Theme.colors().muted, width: 1.2, curveness: 0.2, opacity: 0.85}};
-  }
-
   function tooltip(lay) {
     return function (p) {
       if (p.seriesType !== 'custom') { return ''; }
@@ -121,27 +111,36 @@ const Graph = (function () {
 
   let selectCallback = null;
 
+  /* The side panel only takes room when a TJob is selected: without selection the chart uses the whole width and a hint
+     tells how to select one. Done before the chart is created so that it measures its final width. */
+  function showPanelArea(selected) {
+    document.getElementById('graphPanel').hidden = !selected;
+    document.getElementById('graphHint').hidden = selected;
+  }
+
   /* graph: {nodes}; selectedId: id or null; onSelect(id|null) is called when the user clicks a bar / the background. */
   function render(graph, selectedId, onSelect) {
+    showPanelArea(!!selectedId);
     const lay = layout(graph.nodes);
     const f = Charts.fonts('graphChart');
-    Charts.setHeight('graphChart', lay.rows.length * Math.round(f.root * 1.9) + f.root * 7);
+    Charts.setHeight('graphChart', lay.rows.length * Math.round(f.root * 2.7) + f.root * 7);
     const c = Theme.colors();
+    const frame = Charts.timeFrame(f);
     const chart = Charts.mk('graphChart', {
       aria: Charts.ARIA_DECAL,
       tooltip: {trigger: 'item', formatter: tooltip(lay)},
       legend: Charts.legend(f, {top: 0, selectedMode: false, data: SEGMENTS.map(function (s) { return I18n.t(s[0]); })}),
-      grid: {left: 10, right: f.root * 1.25, top: f.root * 2.4, bottom: f.root * 4, containLabel: true},
-      xAxis: Charts.axis(f, {type: 'value', min: 0, name: I18n.t('graph.time'), nameLocation: 'middle', nameGap: f.root * 1.8,
-        axisLabel: {color: c.muted, fontSize: f.text, hideOverlap: true, formatter: function (v) { return Fmt.dur(v); }}}),
-      yAxis: Charts.axis(f, {type: 'category', inverse: true, data: lay.rows.map(function (r) { return r.node.id; }), splitLine: {show: false}}),
-      dataZoom: [{type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: 'ctrl', moveOnMouseWheel: false, preventDefaultMouseMove: false},
-        {type: 'slider', xAxisIndex: 0, height: f.root * 0.9, bottom: f.root * 0.25, filterMode: 'none', borderColor: c.line, textStyle: {color: c.muted, fontSize: f.text}}],
+      // same plot margins, time range and zoom as the usage chart: the two charts line up (see Charts.timeFrame)
+      grid: {left: frame.left, right: frame.right, top: f.root * 2.4, bottom: f.root * 4},
+      xAxis: Charts.timeAxis(f, {name: I18n.t('graph.time'), nameLocation: 'middle', nameGap: f.root * 1.8}),
+      yAxis: Charts.axis(f, {type: 'category', inverse: true, data: lay.rows.map(function (r) { return r.node.id; }), splitLine: {show: false},
+        axisLabel: {color: c.muted, fontSize: f.text, width: frame.left - 12, overflow: 'truncate'}}),
+      dataZoom: Charts.timeZoom(f),
       series: legendSeries(lay.rows, f).concat([
         {type: 'custom', name: 'tjobs', renderItem: bar(selectedId), encode: {x: [1, 4], y: 0}, z: 4,
-          data: lay.rows.map(value)},
-        edges(lay)])
+          data: lay.rows.map(value)}])
     });
+    Charts.linkZoom('graphChart');
     describeChart(lay);
     // chart.off('click') only removes the chart level handlers. Never call getZr().off('click') without the handler:
     // it also removes the internal handler ECharts uses to dispatch the series events, and clicks on a bar stop working.
@@ -234,7 +233,13 @@ const Graph = (function () {
   const CONTAINER_COLS = [['graph.cCpuPeak', 'peakCpu', 'vCPU'], ['graph.cCpuAvg', 'avgCpu', 'vCPU'], ['graph.cMemPeak', 'peakMemGb', 'GB'],
     ['graph.cMemAvg', 'avgMemGb', 'GB'], ['graph.layer', 'layerGb', 'GB'], ['graph.imageSize', 'imageGb', 'GB'], ['graph.volumes', 'volumeGb', 'GB'],
     ['graph.cStorage', 'storageGb', 'GB']];
-  const STORAGE_STACKS = [['graph.layer', 'layerGb', 0], ['graph.imageSize', 'imageGb', 3], ['graph.volumes', 'volumeGb', 2]];
+  /* What the chart below the containers can show, chosen by the user: [id, label key, series [label key, field, colour, unit], stacked?]. */
+  const METRICS = [
+    {id: 'storage', label: 'graph.sDisk', stacked: true, unit: 'GB',
+      series: [['graph.layer', 'layerGb', 0], ['graph.imageSize', 'imageGb', 3], ['graph.volumes', 'volumeGb', 2]]},
+    {id: 'mem', label: 'graph.sMem', stacked: false, unit: 'GB', series: [['graph.cMemPeak', 'peakMemGb', 1], ['graph.cMemAvg', 'avgMemGb', 4]]},
+    {id: 'cpu', label: 'graph.sCpu', stacked: false, unit: 'vCPU', series: [['graph.cCpuPeak', 'peakCpu', 0], ['graph.cCpuAvg', 'avgCpu', 5]]}];
+  let metricId = 'storage'; // kept while the user moves between TJobs
 
   const gb = function (v) { return Fmt.num(v, v > 0 && v < 0.1 ? 3 : 2); };
   const total = function (list, key) { return list.reduce(function (s, c) { return s + c[key]; }, 0); };
@@ -246,22 +251,29 @@ const Graph = (function () {
     return total(list, 'layerGb') + total(list, 'volumeGb') + Object.keys(images).reduce(function (s, k) { return s + images[k]; }, 0);
   }
 
-  function containerCell(col, c) {
-    const text = col[2] === 'vCPU' ? Fmt.num(c[col[1]], 2) : gb(c[col[1]]);
-    return '<td class="num" data-label="' + Fmt.esc(I18n.t(col[0]) + ' (' + col[2] + ')') + '">' + text + '</td>';
+  function containerValue(col, c) {
+    return col[2] === 'vCPU' ? Fmt.num(c[col[1]], 2) : gb(c[col[1]]);
   }
 
-  function containerTable(n) {
-    const head = '<thead><tr><th scope="col">' + I18n.t('graph.cName') + '</th>' + CONTAINER_COLS.map(function (c) {
-      return '<th scope="col" class="num">' + Fmt.esc(I18n.t(c[0]) + ' (' + c[2] + ')') + '</th>';
-    }).join('') + '</tr></thead>';
-    const rows = n.containers.map(function (c) {
-      return '<tr><th scope="row"><span class="name">' + Fmt.esc(c.name) + '</span>' +
-        (c.image ? '<span class="sub-name"><span class="vh">' + I18n.t('graph.cImage') + ': </span>' + Fmt.esc(c.image) + '</span>' : '') + '</th>' +
-        CONTAINER_COLS.map(function (col) { return containerCell(col, c); }).join('') + '</tr>';
+  /* One line with the key figures, always visible; the full figures are in the body of the <details>. */
+  function containerSummary(c) {
+    const figures = [I18n.t('graph.sCpu') + ' ' + containerValue(CONTAINER_COLS[0], c) + ' vCPU',
+      I18n.t('graph.sMem') + ' ' + containerValue(CONTAINER_COLS[2], c) + ' GB',
+      I18n.t('graph.sDisk') + ' ' + containerValue(CONTAINER_COLS[7], c) + ' GB'];
+    return '<span class="name">' + Fmt.esc(c.name) + '</span><span class="cont-sum">' + Fmt.esc(figures.join(' · ')) + '</span>';
+  }
+
+  /* A container is collapsed until the user opens it (native disclosure: keyboard and screen reader support for free). */
+  function containerItem(c) {
+    const rows = CONTAINER_COLS.map(function (col) {
+      return '<dt>' + Fmt.esc(I18n.t(col[0])) + '</dt><dd>' + containerValue(col, c) + ' ' + col[2] + '</dd>';
     }).join('');
-    return '<div class="rt-wrap" role="region" tabindex="0" aria-labelledby="graphContTitle"><table class="rt cont"><caption class="vh">' +
-      Fmt.esc(I18n.t('graph.cCaption', {id: n.id})) + '</caption>' + head + '<tbody>' + rows + '</tbody></table></div>';
+    const image = c.image ? '<p class="sub-name"><span class="muted">' + I18n.t('graph.cImage') + ':</span> ' + Fmt.esc(c.image) + '</p>' : '';
+    return '<details class="cont-item"><summary>' + containerSummary(c) + '</summary>' + image + '<dl class="measures">' + rows + '</dl></details>';
+  }
+
+  function containerList(n) {
+    return '<div class="cont-list" role="group" aria-labelledby="graphContTitle">' + n.containers.map(containerItem).join('') + '</div>';
   }
 
   function containerNotes(n) {
@@ -276,24 +288,37 @@ const Graph = (function () {
     const list = n.containers || [];
     const title = '<h4 id="graphContTitle">' + I18n.t('graph.containers') + '</h4>';
     if (!list.length) { return title + '<p class="muted">' + I18n.t('graph.noContainers') + '</p>'; }
-    const chart = total(list, 'storageGb') > 0
-      ? '<p class="cont-title" id="graphContChartTitle">' + I18n.t('graph.cChart') + '</p><div class="chart cont-chart" id="graphContChart" role="img"></div>' : '';
-    return title + containerNotes(n) + containerTable(n) + chart;
+    const picks = METRICS.map(function (m) {
+      return '<label><input type="radio" name="contMetric" value="' + m.id + '"' + (m.id === metricId ? ' checked' : '') + '><span>' + I18n.t(m.label) + '</span></label>';
+    }).join('');
+    const chart = '<details class="cont-item" id="graphContChartBox"><summary><span class="name">' + I18n.t('graph.cChart') + '</span></summary>' +
+      '<div class="metric-pick" role="radiogroup" aria-label="' + Fmt.esc(I18n.t('graph.mLabel')) + '">' + picks + '</div>' +
+      '<div class="chart cont-chart" id="graphContChart" role="img"></div></details>';
+    return title + containerNotes(n) + containerList(n) + chart;
   }
 
-  /* Stacked horizontal bars: writable layer + image + volumes per container. The table above holds the same figures. */
+  /* One bar group per container for the chosen resource: storage stacked (layer + image + volumes), memory and CPU as peak / average.
+     The list above holds the same figures. */
   function renderContainersChart(node) {
-    if (!node || !document.getElementById('graphContChart')) { return; }
+    const box = document.getElementById('graphContChartBox');
+    if (!node || !box || !box.open) { return; } // a chart in a closed <details> has no size: it is drawn when opened
     const list = node.containers;
     const f = Charts.fonts('graphContChart');
-    const largest = list.reduce(function (best, c) { return c.storageGb > best.storageGb ? c : best; }, list[0]);
-    Charts.setHeight('graphContChart', Math.max(f.root * 11, list.length * f.root * 2.4 + f.root * 7));
+    const m = METRICS.filter(function (x) { return x.id === metricId; })[0];
+    const key = m.series[0][1];
+    const largest = list.reduce(function (best, c) { return c[key] > best[key] ? c : best; }, list[0]);
+    const at = function (c) { return m.stacked ? c.storageGb : c[key]; };
+    const top = m.stacked ? gb(at(largest)) + ' GB' : Fmt.num(largest[key], 3) + ' ' + m.unit;
+    Charts.setHeight('graphContChart', Math.max(f.root * 11, list.length * f.root * (m.stacked ? 2.4 : 3.2) + f.root * 7));
     Charts.stacked('graphContChart', {
-      categories: list.map(function (c) { return c.name; }), horizontal: true, axisName: 'GB', format: function (v) { return Fmt.num(v, 3) + ' GB'; },
-      stacks: STORAGE_STACKS.map(function (s, n) {
+      categories: list.map(function (c) { return c.name; }), horizontal: true, axisName: m.unit, grouped: !m.stacked,
+      format: function (v) { return Fmt.num(v, 3) + ' ' + m.unit; },
+      stacks: m.series.map(function (s, n) {
         return {name: I18n.t(s[0]), color: Fmt.cycleColor(s[2]), pattern: Charts.cyclePattern(n), values: list.map(function (c) { return c[s[1]]; })};
       }),
-      description: I18n.t('graph.cChart') + '. ' + I18n.t('desc.containers', {n: list.length, name: largest.name, gb: gb(largest.storageGb) + ' GB'})
+      description: I18n.t('graph.cChart') + '. ' + (m.stacked
+        ? I18n.t('desc.containers', {n: list.length, name: largest.name, gb: top})
+        : I18n.t('desc.containersPeak', {metric: I18n.t(m.label), n: list.length, name: largest.name, v: top}))
     });
   }
 
@@ -301,7 +326,7 @@ const Graph = (function () {
   function renderPanel(node, alt, label) {
     const panel = document.getElementById('graphPanel');
     if (!node) {
-      panel.innerHTML = '<p class="muted">' + I18n.t('graph.hint') + '</p>';
+      panel.innerHTML = '';
       return;
     }
     const items = alt ? alt.items.filter(function (i) { return i.tjob === node.id; }) : [];
@@ -317,8 +342,17 @@ const Graph = (function () {
       containerSection(node) +
       '<h4>' + I18n.t('graph.cost', {alt: Fmt.esc(label || '')}) + '</h4>' + costRows(items, I18n.t('graph.cost', {alt: label || ''}));
     I18n.apply();
-    renderContainersChart(node);
+    const box = document.getElementById('graphContChartBox');
+    if (box) {
+      box.addEventListener('toggle', function () { renderContainersChart(node); });
+      box.addEventListener('change', function (e) {
+        if (e.target.name === 'contMetric') { metricId = e.target.value; renderContainersChart(node); }
+      });
+    }
   }
 
-  return {render: render, renderPanel: renderPanel, renderContainersChart: renderContainersChart, renderList: renderList, focusItem: focusItem, focusPanel: focusPanel};
+  /* Seconds the execution graph spans (used to give the usage chart the same time axis). */
+  function span(graph) { return layout(graph.nodes).longest; }
+
+  return {span: span, render: render, renderPanel: renderPanel, renderContainersChart: renderContainersChart, renderList: renderList, focusItem: focusItem, focusPanel: focusPanel};
 })();

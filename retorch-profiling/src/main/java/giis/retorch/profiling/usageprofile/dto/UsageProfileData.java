@@ -23,9 +23,17 @@ public final class UsageProfileData {
     public final TimelineSeries timeline;
     /** The execution graph, or null when no execution plan is available. */
     public final ExecutionGraph graph;
+    /** SUT and branch shown in the header (empty strings when unknown). */
+    public final SutInfo sut;
 
+    /** Without SUT information. */
     public UsageProfileData(String plan, long pricesFetchedAt, CostReport report, TimelineSeries timeline,
                          ExecutionGraph graph) {
+        this(plan, pricesFetchedAt, report, timeline, graph, SutInfo.none());
+    }
+
+    public UsageProfileData(String plan, long pricesFetchedAt, CostReport report, TimelineSeries timeline,
+                         ExecutionGraph graph, SutInfo sut) {
         this.plan = plan;
         this.pricesFetchedAt = pricesFetchedAt;
         this.durationSec = report.durationSec;
@@ -36,5 +44,6 @@ public final class UsageProfileData {
         this.alternatives = report.alternatives;
         this.timeline = timeline;
         this.graph = graph;
+        this.sut = sut;
     }
 }

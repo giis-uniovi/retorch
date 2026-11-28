@@ -114,9 +114,25 @@ const App = (function () {
     }).join(' ');
   };
 
+  /* SUT name linked to its repository (only an https address is ever linked) and branch, when the execution knows them. */
+  function renderFacts() {
+    const sut = D.sut || {};
+    const facts = [];
+    if (sut.name) {
+      const link = /^https:\/\//.test(sut.url)
+        ? '<a href="' + Fmt.esc(sut.url) + '" target="_blank" rel="noopener noreferrer">' + Fmt.esc(sut.name) + '<span class="vh"> ' + I18n.t('head.newTab') + '</span></a>'
+        : Fmt.esc(sut.name);
+      facts.push('<span class="fact"><span class="fact-k">' + I18n.t('head.sut') + '</span> ' + link + '</span>');
+    }
+    if (sut.branch) { facts.push('<span class="fact"><span class="fact-k">' + I18n.t('head.branch') + '</span> <code>' + Fmt.esc(sut.branch) + '</code></span>'); }
+    el('facts').innerHTML = facts.join('');
+    el('facts').hidden = !facts.length;
+  }
+
   function renderHead() {
+    renderFacts();
     el('sub').textContent = I18n.t('app.subtitle', {plan: D.plan, date: Fmt.date(D.pricesFetchedAt)});
-    document.title = I18n.t('app.title') + (D.plan ? ' · ' + D.plan : '');
+    document.title = I18n.t('app.title') + (D.sut && D.sut.name ? ' · ' + D.sut.name : '') + (D.plan ? ' · ' + D.plan : '');
     el('warnings').innerHTML = D.warnings.map(function (w) { return '<div class="warn">' + Fmt.esc(w) + '</div>'; }).join('');
     const kpis = [['kpi.duration', Fmt.dur(D.durationSec)], ['kpi.peakCpu', Fmt.num(D.peakCpu, 2) + ' vCPU'],
       ['kpi.peakMem', Fmt.num(D.peakMemGb, 2) + ' GB'], ['kpi.peakDisk', Fmt.num(D.peakDiskGb, 2) + ' GB', I18n.t('kpi.peakDiskHint')],
@@ -259,11 +275,18 @@ const App = (function () {
     Graph.renderPanel(nodeById(S.node), alt, alt ? label(alt) : '');
   }
 
+  /* The usage chart and the execution graph share the time axis: the span is the longest of the two. */
+  function renderTimeCharts() {
+    const t = D.timeline.t;
+    Charts.setTimeSpan(Math.max(t.length ? t[t.length - 1] : 0, D.graph ? Graph.span(D.graph) : 0));
+    Charts.usage(D.timeline);
+  }
+
   function renderAll() {
     I18n.apply();
     renderControls();
     renderHead();
-    Charts.usage(D.timeline);
+    renderTimeCharts();
     renderGraph();
     renderAlternatives();
     renderCompared();
@@ -274,7 +297,7 @@ const App = (function () {
   /* Only what depends on the container width / root font size: every chart (the controls and the panel stay as they are). */
   function renderCharts() {
     keepFocus(function () {
-      Charts.usage(D.timeline);
+      renderTimeCharts();
       if (D.graph) { Graph.render(D.graph, S.node, selectNode); }
       renderAlternatives();
       renderCompared();

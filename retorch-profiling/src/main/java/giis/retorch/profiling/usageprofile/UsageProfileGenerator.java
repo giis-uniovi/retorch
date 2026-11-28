@@ -9,6 +9,7 @@ import giis.retorch.profiling.usageprofile.ExecutionMeasurements.Load;
 import giis.retorch.profiling.usageprofile.ExecutionMeasurements.Slice;
 import giis.retorch.profiling.usageprofile.ExecutionMeasurements.Timeline;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
+import giis.retorch.profiling.usageprofile.dto.SutInfo;
 import giis.retorch.profiling.usageprofile.dto.UsageProfileData;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import giis.retorch.profiling.usageprofile.dto.TimelineSeries;
@@ -21,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,12 +52,19 @@ public class UsageProfileGenerator {
      */
     public void generate(String planName, Timeline timeline, CostReport report, PriceCatalog catalog,
                          ExecutionGraph graph, Path output) throws IOException {
-        UsageProfileData data = new UsageProfileData(planName, catalog.fetchedAtEpochMs, report, sample(timeline), graph);
+        generate(planName, timeline, report, catalog, graph, SutInfo.none(), output);
+    }
+
+    /** Same as above, adding the SUT and branch shown in the header ({@link SutInfo#none()} when unknown). */
+    public void generate(String planName, Timeline timeline, CostReport report, PriceCatalog catalog,
+                         ExecutionGraph graph, SutInfo sut, Path output) throws IOException {
+        UsageProfileData data = new UsageProfileData(planName, catalog.fetchedAtEpochMs, report, sample(timeline), graph, sut);
         // the JSON goes last: it is user data and must never be scanned for placeholders
         String html = resource(DIR + "usageprofile.html")
                 .replace("/*CSS*/", resource(DIR + "usageprofile.css"))
                 .replace("<!--HEADER_LOGO_SVG-->", resource(DIR + "giis-logo.svg"))
                 .replace("<!--FOOTER_SVG-->", resource(DIR + "giis-footer.svg"))
+                .replace("/*FAVICON*/", favicon())
                 .replace("/*ECHARTS*/", inlineScript(resource(DIR + "echarts.min.js")))
                 .replace("/*APP*/", inlineScript(appScripts()))
                 .replace("/*DATA*/", toJson(data).replace("</", "<\\/"));
@@ -112,6 +121,11 @@ public class UsageProfileGenerator {
 
     private static double round(double v) {
         return Math.round(v * 1000.0) / 1000.0;
+    }
+
+    /** The GIIS logo as the page icon: Base64 of the SVG, embedded in a data URI so the page needs no other file. */
+    private static String favicon() throws IOException {
+        return Base64.getEncoder().encodeToString(resource(DIR + "giis-logo.svg").getBytes(StandardCharsets.UTF_8));
     }
 
     private static String resource(String name) throws IOException {

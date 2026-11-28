@@ -116,6 +116,45 @@ const Charts = (function () {
     return chart;
   }
 
+  /* ---- shared time axis: the usage chart and the execution graph always show the same time span in the same pixels, so
+     what a TJob does (graph) can be read against the resources used at that moment (usage). Same range, same left / right
+     margins and the same zoom window (zooming one chart zooms the other). ---- */
+  const TIME_CHARTS = ['usage', 'graphChart'];
+  const timeAxisState = {span: 0, start: 0, end: 100, busy: false};
+
+  function setTimeSpan(seconds) { timeAxisState.span = Math.max(1, seconds); }
+
+  /* Pixel margins of the plot area, identical for every chart on the time axis. */
+  function timeFrame(f) {
+    return {left: Math.min(f.w * 0.3, f.root * (f.narrow ? 8 : 13)), right: f.root * (f.narrow ? 2.6 : 3.6)};
+  }
+
+  function timeAxis(f, extra) {
+    const c = Theme.colors();
+    return axis(f, Object.assign({type: 'value', min: 0, max: timeAxisState.span, axisLabel: {color: c.muted, fontSize: f.text, hideOverlap: true, formatter: Fmt.dur}}, extra));
+  }
+
+  function timeZoom(f) {
+    const c = Theme.colors();
+    return [{type: 'inside', xAxisIndex: 0, start: timeAxisState.start, end: timeAxisState.end, filterMode: 'none', zoomOnMouseWheel: 'ctrl', moveOnMouseWheel: false, preventDefaultMouseMove: false},
+      {type: 'slider', xAxisIndex: 0, start: timeAxisState.start, end: timeAxisState.end, height: f.root, bottom: f.root * 0.25, filterMode: 'none', borderColor: c.line, textStyle: {color: c.muted, fontSize: f.text}}];
+  }
+
+  /* Call after mk(): copies the zoom window of this chart to the other chart(s) on the time axis. */
+  function linkZoom(id) {
+    instances[id].on('datazoom', function (e) {
+      const z = e.batch ? e.batch[0] : e;
+      if (timeAxisState.busy || z.start === undefined) { return; }
+      timeAxisState.start = z.start;
+      timeAxisState.end = z.end;
+      timeAxisState.busy = true;
+      TIME_CHARTS.forEach(function (other) {
+        if (other !== id && instances[other]) { instances[other].dispatchAction({type: 'dataZoom', start: z.start, end: z.end}); }
+      });
+      timeAxisState.busy = false;
+    });
+  }
+
   function resizeAll() {
     Object.keys(instances).forEach(function (id) { instances[id].resize(); });
   }
@@ -173,23 +212,24 @@ const Charts = (function () {
     const colors = Fmt.SERIES_COLORS;
     const f = fonts('usage');
     const c = Theme.colors();
-    const side = f.root * (f.narrow ? 2.6 : 3.6);
+    const frame = timeFrame(f);
+    const xy = function (values) { return values.map(function (v, i) { return [timeline.t[i], v]; }); };
     const line = function (key, nameKey, data, extra) {
       return Object.assign({name: I18n.t(nameKey), type: 'line', showSymbol: false, data: data, color: colors[key], lineStyle: {width: 2}}, extra);
     };
     const chart = mk('usage', {
       tooltip: {trigger: 'axis', valueFormatter: function (v) { return Fmt.num(v, 2); }}, legend: legend(f, {top: 0}),
-      grid: {left: side, right: side, top: f.root * 3, bottom: f.root * 3.4},
-      xAxis: axis(f, {type: 'category', boundaryGap: false, data: timeline.t.map(Fmt.dur), axisLabel: {color: c.muted, fontSize: f.text, hideOverlap: true}, splitLine: {show: false}}),
+      grid: {left: frame.left, right: frame.right, top: f.root * 3, bottom: f.root * 3.4},
+      xAxis: timeAxis(f, {splitLine: {show: false}}),
       yAxis: [axis(f, {type: 'value', name: I18n.t('usage.axisLeft'), nameGap: f.root * 0.6, nameTextStyle: {color: c.muted, fontSize: f.text, align: 'left'}}),
         axis(f, {type: 'value', name: I18n.t('usage.axisRight'), splitLine: {show: false}, nameGap: f.root * 0.6, nameTextStyle: {color: c.muted, fontSize: f.text, align: 'right'}})],
       // The wheel zooms only with Ctrl and touch drags are not captured, so the chart never traps page scrolling.
-      dataZoom: [{type: 'inside', zoomOnMouseWheel: 'ctrl', moveOnMouseWheel: false, preventDefaultMouseMove: false},
-        {type: 'slider', height: f.root, bottom: f.root * 0.25, borderColor: c.line, textStyle: {color: c.muted, fontSize: f.text}}],
+      dataZoom: timeZoom(f),
       series: [
-        line('cpu', 'usage.cpu', timeline.cpu), line('mem', 'usage.mem', timeline.memGb, {lineStyle: {width: 2, type: 'dashed'}}),
-        line('disk', 'usage.disk', timeline.diskGb, {yAxisIndex: 1, lineStyle: {width: 2, type: 'dotted'}})]
+        line('cpu', 'usage.cpu', xy(timeline.cpu)), line('mem', 'usage.mem', xy(timeline.memGb), {lineStyle: {width: 2, type: 'dashed'}}),
+        line('disk', 'usage.disk', xy(timeline.diskGb), {yAxisIndex: 1, lineStyle: {width: 2, type: 'dotted'}})]
     });
+    linkZoom('usage');
     usageSummary(timeline);
     return chart;
   }
@@ -249,12 +289,12 @@ const Charts = (function () {
       xAxis: spec.horizontal ? valueAxis : categoryAxis,
       yAxis: spec.horizontal ? categoryAxis : valueAxis,
       series: spec.stacks.map(function (s) {
-        return {name: s.name, type: 'bar', stack: 'cost', color: s.color, itemStyle: {decal: decal(s.pattern)}, data: s.values};
+        return {name: s.name, type: 'bar', stack: spec.grouped ? undefined : 'cost', color: s.color, itemStyle: {decal: decal(s.pattern)}, data: s.values};
       })
     }, spec.description);
   }
 
-  return {mk: mk, resizeAll: resizeAll, setHeight: setHeight, axis: axis, legend: legend, fonts: fonts, describe: describe,
+  return {setTimeSpan: setTimeSpan, timeFrame: timeFrame, timeAxis: timeAxis, timeZoom: timeZoom, linkZoom: linkZoom, mk: mk, resizeAll: resizeAll, setHeight: setHeight, axis: axis, legend: legend, fonts: fonts, describe: describe,
     dataTable: dataTable, ARIA_DECAL: ARIA_DECAL, decal: decal, pattern: pattern, cyclePattern: cyclePattern,
     usage: usage, alternatives: alternatives, pie: pie, stacked: stacked};
 })();

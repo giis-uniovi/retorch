@@ -71,7 +71,12 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
     six measured fields (incl. `startSec`) are nullable `Double`; `containers` is a never-null list of `ContainerUsage` (`[]` by default).
   - `ContainerUsage(name, image, peakCpu, avgCpu, peakMemGb, avgMemGb, layerGb, imageGb, volumeGb, storageGb)`: usage of one container of a TJob (cores / GB 1024^3), `storageGb = layerGb + imageGb + volumeGb`.
   - `ExecutionGraph(nodes)`.
-  - `UsageProfileData(plan, pricesFetchedAt, report, timeline, graph)`: exactly what the page receives; `graph` is nullable.
+  - `SutInfo(name, url, branch)`: SUT and branch shown in the header; empty strings when unknown, never null. `SutInfo.detect()` /
+    `detect(env, workspace)` read `GIT_URL` (else `remote "origin"` of `<workspace>/.git/config`) and `BRANCH_NAME` (else `GIT_BRANCH` without
+    `origin/`, else `<workspace>/.git/HEAD`); the workspace is `WORKSPACE` or the current directory. The URL is normalised to a plain
+    `https://host/org/repo` (no credentials, no `.git`, `git@host:` and `ssh://` converted; anything else, e.g. a local path, gives an empty URL);
+    the name is its last segment.
+  - `UsageProfileData(plan, pricesFetchedAt, report, timeline, graph[, sut])`: exactly what the page receives; `graph` is nullable, `sut` defaults to `SutInfo.none()`.
 - `CostCalculator.calculate(timeline, catalog)` -> `CostReport` (peaks, duration, alternatives sorted by total, warnings):
   - VM alternatives carry the reservations of the chosen VM (`Alternative.reservations`); container alternatives have none.
   - VM alternatives: per provider+region, the cheapest 3 VMs of distinct shape that fit the peak CPU and memory;
@@ -82,11 +87,12 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
   - Container alternatives (one per catalog entry): pay-per-use `cpu*vcpuHour + memGb*gbHour` per second for each TJob
     phase; no oversubscription, COI phases and disk are not charged.
   - Cost items are unique per (cloud object, tjob, phase). The sum of items equals the total.
-- `UsageProfileGenerator.generate(plan, timeline, report, catalog, graph, output)` (`graph` nullable): one self-contained HTML
+- `UsageProfileGenerator.generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfo.detect()`): one self-contained HTML
   (no external requests). It fills `resources/usageprofile/usageprofile.html` by replacing `/*CSS*/` with `usageprofile.css`, `/*ECHARTS*/`
   with Apache ECharts 5.6.0 (`echarts.min.js`, Apache License 2.0, its licence header is kept), `/*APP*/` with the six
   `js/*.js` files joined with a newline in the order `i18n, format, theme, charts, graph, simulator, app` (constant `APP_SCRIPTS`; one
-  script, one global scope), `<!--HEADER_LOGO_SVG-->` with `giis-logo.svg`, `<!--FOOTER_SVG-->` with `giis-footer.svg` and
+  script, one global scope), `<!--HEADER_LOGO_SVG-->` with `giis-logo.svg`, `<!--FOOTER_SVG-->` with `giis-footer.svg`, `/*FAVICON*/` with the
+  Base64 of `giis-logo.svg` (page icon as a data URI) and
   `/*DATA*/` with the JSON (replaced last so user data is never scanned for placeholders). `</script` is escaped as
   `<\/script` in the inlined scripts and `</` as `<\/` in the JSON. The timeline is averaged into at most 600 points (values
   rounded to 3 decimals). The page itself (front-end: i18n es/en/fr/de, light/dark theme, scenario explorer, execution graph with
@@ -94,7 +100,8 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
   alternatives, breakdowns, table, price date and warnings.
 - JSON contract with the scripts in `resources/usageprofile/js` (`UsageProfileData` serialized by Jackson; the page is not
   generated from it, it reads these names, so renaming a field breaks the page):
-  - top level: `plan, pricesFetchedAt, durationSec, peakCpu, peakMemGb, peakDiskGb, warnings, alternatives, timeline, graph`;
+  - top level: `plan, pricesFetchedAt, durationSec, peakCpu, peakMemGb, peakDiskGb, warnings, alternatives, timeline, graph, sut`;
+  - `sut`: `{name, url, branch}` (strings, possibly empty);
   - each alternative: `id, provider, kind, label, region, hourlyPrice, total, items, reservations`;
   - each item: `object, tjob, phase, cost`;
   - each reservation: `termYears` (1|3), `payment` (`NO_UPFRONT`|`ALL_UPFRONT`), `effectiveHourly` (USD/hour); the list is empty
@@ -105,7 +112,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
 
 ## Front-end (`resources/usageprofile/`)
 Output rule: the profile is **one self-contained HTML file** (CSS, JS, ECharts, data and both logos inlined; no external
-request; the only URL is the footer link to the group site). A test enforces it.
+request; the only URL is the footer link to the group site; the only `<link>` is the page icon, the GIIS logo as a data URI). A test enforces it.
 
 Source layout: `usageprofile.html` (structure and placeholders), `usageprofile.css` (themes through CSS variables) and one
 namespace per concern in `js/`: `i18n.js` (`I18n`), `format.js` (`Fmt`: formats, colours, phase order), `theme.js`
@@ -113,9 +120,12 @@ namespace per concern in `js/`: `i18n.js` (`I18n`), `format.js` (`Fmt`: formats,
 step. The files carry the GIIS notice; ECharts and the SVG logos are third party / assets.
 
 The page must provide:
-- **Header** with the inline GIIS logo and the title "Perfil de Uso de Recursos" (key `app.title`, translated), plus the
-  language and theme selectors. **Footer**: horizontal rule and the centered group footer logo linking to
-  https://giis.uniovi.es/ (same as `README.md`). Both logos sit on a light badge so they are readable in the dark theme.
+- **Header** with a large inline GIIS logo, the title "RETORCH Resource Usage Profile" (key `app.title`, the same in every language),
+  the **SUT** (name linking to its repository in a new tab, only when the URL is `https://`; `rel="noopener noreferrer"`) and the **branch**
+  as pills under the title (hidden when unknown), and the language and theme selectors. **Footer**: horizontal rule and the centered group
+  footer logo linking to https://giis.uniovi.es/ (same as `README.md`). The logos have no box behind them: their fixed colours are
+  recoloured per theme in CSS (white parts = page background, blue = `--logo-blue`, grey text = text colour). The page icon is the
+  GIIS logo.
 - **Languages** es, en, fr, de: default from `navigator.language`, remembered (`localStorage`, guarded); everything the user
   sees is translated and changing language re-renders without reloading. Backend warnings stay in English.
 - **Theme** Auto / Light / Dark (default Auto = `prefers-color-scheme`), remembered; every chart re-renders on change.
@@ -125,15 +135,20 @@ The page must provide:
   alternative and see its breakdown (TJob x phase, phase x cloud object, by phase, by object).
 - **Execution graph** (hidden when `graph` is null): a Gantt-style DAG, x = time in seconds, one row per TJob ordered by
   stage; each TJob is a bar whose **length is proportional to its duration** and is painted in three segments proportional
-  to its setup, test execution and teardown times (the phase colours used elsewhere); arrows go from the end of each
-  predecessor to the start of the TJob; TJobs without measurements are a dashed placeholder marked "no data". Clicking a bar
-  opens a side panel with the TJob's stage, predecessors, resources, **the list of tests executed (`Class#method`)**,
-  measured durations, peak CPU and memory, and its cost in the selected alternative by phase; it refreshes when the
-  alternative or the language changes.
+  to its setup, test execution and teardown times (the phase colours used elsewhere); dependencies are not drawn (the panel lists
+  the predecessors); TJobs without measurements are a dashed placeholder marked "no data". Rows are tall and the chart always uses
+  the full width. Clicking a bar opens a panel **below the chart** (hidden until a TJob is selected, with a hint) with the TJob's
+  stage, predecessors, resources, **the list of tests executed (`Class#method`)**, measured durations, peak CPU and memory, and its
+  cost in the selected alternative by phase; it refreshes when the alternative or the language changes.
+- **Shared time axis**: the usage chart and the execution graph always show the same time range (the longest of the two, from 0),
+  have identical left and right plot margins (`Charts.timeFrame`), so the same x pixel is the same instant in both, and share the
+  zoom window (zooming or moving one slider moves the other). Both x axes are value axes in seconds (`Charts.timeAxis`).
 - **Per-container analysis** in the side panel of the selected TJob ("Resources of this TJob", from
-  `graph.nodes[].containers`): one row per container with its image, CPU and memory (peak and average), and its storage split
-  into writable layer, image and volumes, plus the storage of the whole TJob (layers + volumes + images, a shared image counted
-  once) and a stacked storage chart with a table as text alternative. Peaks of different containers are not additive, so the
+  `graph.nodes[].containers`): one collapsed native `<details>` per container (summary: name and CPU / memory / disk peaks; body: image and
+  CPU, memory (peak and average), writable layer, image, volumes and total storage), plus the storage of the whole TJob (layers +
+  volumes + images, a shared image counted once) and a collapsed "chart per container" with a radio group to choose the resource:
+  **storage** (stacked: layer, image, volumes), **memory** or **CPU** (grouped bars: peak and average). The chosen resource is kept
+  while moving between TJobs; the chart is drawn when its `<details>` is opened. Peaks of different containers are not additive, so the
   panel labels the sum of the peaks apart from the measured peak of the TJob. Empty state when `containers` is empty or absent.
   The disk figures of the page include images and volumes when the file records them.
 - **Projection simulator** (section "Projection", driven by the data already in the page): inputs runs per day, days per month,
@@ -153,4 +168,4 @@ The page must provide:
 
 ## Tests
 `UsageProfileTests` (timeline from synthetic and real Jenkins data, incomplete phases, VM and container cost conservation and oversubscription, no-fit warning, Azure/AWS parsers
-and streaming reader, cache and regions parsing, cache with another or no `schemaVersion` ignored, Azure reservations (all upfront per term), AWS `terms.Reserved` streaming (standard only, No/All Upfront, 1/3 years), `reservations` property in the JSON of VM and container alternatives, self-contained HTML, JSON contract property names incl. `graph` null / non-null, timeline downsampled to at most 600 points, plan reader, TJob metrics, graph merge with nulls, assembled page without leftover placeholders and with both logos, the six scripts in order and the `app.title` key, missing plan file means no graph, 12-column file with `container` rows: peak disk includes images and volumes, shared image counted once per TJob, per-container peaks/averages/storage, `containers` JSON property and field names, 9-column file yields `containers: []`). Fixtures `testdata/usageprofile/usage-containers.csv` (12 columns, container rows), `usage.csv` and `real-run.csv` (9 columns) and `executionplan.json` (TJobs of `usage.csv` plus a gateway node). Network is never used in tests.
+and streaming reader, cache and regions parsing, cache with another or no `schemaVersion` ignored, Azure reservations (all upfront per term), AWS `terms.Reserved` streaming (standard only, No/All Upfront, 1/3 years), `reservations` property in the JSON of VM and container alternatives, self-contained HTML, JSON contract property names incl. `graph` null / non-null, timeline downsampled to at most 600 points, plan reader, TJob metrics, graph merge with nulls, assembled page without leftover placeholders and with both logos and the data-URI icon (the only `<link>`), `SutInfo` from the Jenkins environment (credentials removed, ssh converted) and from `.git` files, `sut` in the JSON, the six scripts in order and the `app.title` key, missing plan file means no graph, 12-column file with `container` rows: peak disk includes images and volumes, shared image counted once per TJob, per-container peaks/averages/storage, `containers` JSON property and field names, 9-column file yields `containers: []`). Fixtures `testdata/usageprofile/usage-containers.csv` (12 columns, container rows), `usage.csv` and `real-run.csv` (9 columns) and `executionplan.json` (TJobs of `usage.csv` plus a gateway node). Network is never used in tests.

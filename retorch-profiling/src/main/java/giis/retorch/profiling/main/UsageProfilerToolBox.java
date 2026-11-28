@@ -12,6 +12,7 @@ import giis.retorch.profiling.usageprofile.ExecutionPlanReader;
 import giis.retorch.profiling.usageprofile.PriceCatalog;
 import giis.retorch.profiling.usageprofile.PriceSource;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
+import giis.retorch.profiling.usageprofile.dto.SutInfo;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,7 @@ public class UsageProfilerToolBox {
         ExecutionMeasurements.Timeline timeline = measurements.toTimeline();
         CostReport report = new CostCalculator().calculate(timeline, catalog);
         ExecutionGraph graph = readGraph(executionPlanJson, measurements, timeline);
-        new UsageProfileGenerator().generate(planName, timeline, report, catalog, graph, out);
+        new UsageProfileGenerator().generate(planName, timeline, report, catalog, graph, SutInfo.detect(), out);
         log.info("Usage profile written to {}", out);
     }
 
