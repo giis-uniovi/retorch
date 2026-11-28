@@ -48,8 +48,9 @@ public class UsageProfileGenerator {
     /** The list of the page scripts, one file of {@code js/} per line, in the order they are concatenated (blank lines and # comments ignored). */
     static final String SCRIPT_LIST = DIR + "js/scripts.txt";
 
-    /** Provider label to icon file mapping (see {@link #icons}). */
-    static final String ICON_LIST = DIR + "providers/icons.txt";
+    /** Provider label to icon file mapping and kind to icon file mapping, relative to the page resources (see {@link #icons}). */
+    static final String PROVIDER_ICONS = "providers/icons.txt";
+    static final String KIND_ICONS = "kinds/icons.txt";
 
     /** The languages of the page: one {@code i18n/<language>.json} each, with the same keys as English (a test checks it). */
     static final List<String> LANGUAGES = Collections.unmodifiableList(Arrays.asList("es", "en", "fr", "de"));
@@ -80,7 +81,7 @@ public class UsageProfileGenerator {
                 .replace("/*ECHARTS*/", inlineScript(resource(DIR + "echarts.min.js")))
                 .replace("/*APP*/", inlineScript(appScript()))
                 .replace("/*I18N*/", translations().replace("</", "<\\/"))
-                .replace("/*ICONS*/", icons(providersOf(report)).replace("</", "<\\/"))
+                .replace("/*ICONS*/", icons(valuesOf(report, false), valuesOf(report, true)).replace("</", "<\\/"))
                 .replace("/*DATA*/", toJson(data).replace("</", "<\\/"));
         if (output.getParent() != null) {
             Files.createDirectories(output.getParent());
@@ -124,35 +125,43 @@ public class UsageProfileGenerator {
         return json.append('}').toString();
     }
 
-    /** The providers of the alternatives, sorted. */
-    private static Set<String> providersOf(CostReportDTO report) {
-        Set<String> providers = new TreeSet<>();
+    /** The values of the alternatives (their providers or their kinds), sorted. */
+    private static Set<String> valuesOf(CostReportDTO report, boolean kinds) {
+        Set<String> values = new TreeSet<>();
         for (AlternativeDTO alternative : report.alternatives) {
-            providers.add(alternative.provider);
+            values.add(kinds ? alternative.kind : alternative.provider);
         }
-        return providers;
+        return values;
     }
 
     /**
-     * The icons of the given providers in one JSON object {@code {"<provider>":"<svg>"}}, read by the page from #icons. The
-     * mapping is {@code providers/icons.txt}; a provider without a line has no icon; the XML prolog and the DOCTYPE are
-     * removed from the SVG and its line breaks collapsed. Only the given providers are included, so unused icons cost nothing.
+     * The icons of the page in one JSON object {@code {"providers":{"<provider>":"<svg>"},"kinds":{"<kind>":"<svg>"}}}, read by
+     * the page from #icons. The mappings are {@code providers/icons.txt} and {@code kinds/icons.txt}; a provider or kind without
+     * a line has no icon; the XML prolog and the DOCTYPE are removed from the SVG and its line breaks collapsed. Only the given
+     * providers and kinds are included, so unused icons cost nothing.
      */
-    static String icons(Set<String> providers) throws IOException {
+    static String icons(Set<String> providers, Set<String> kinds) throws IOException {
         ObjectNode json = MAPPER.createObjectNode();
-        Map<String, String> files = iconFiles();
-        for (String provider : providers) {
-            if (files.containsKey(provider)) {
-                json.put(provider, inlineSvg(resource(DIR + "providers/" + files.get(provider))));
-            }
-        }
+        json.set("providers", iconSet(providers, PROVIDER_ICONS));
+        json.set("kinds", iconSet(kinds, KIND_ICONS));
         return json.toString();
     }
 
-    /** The provider label -> icon file mapping of {@code providers/icons.txt} (blank lines and # comments ignored). */
-    static Map<String, String> iconFiles() throws IOException {
+    private static ObjectNode iconSet(Set<String> names, String list) throws IOException {
+        ObjectNode set = MAPPER.createObjectNode();
+        Map<String, String> files = iconFiles(list);
+        for (String name : names) {
+            if (files.containsKey(name)) {
+                set.put(name, inlineSvg(resource(DIR + list.substring(0, list.lastIndexOf('/') + 1) + files.get(name))));
+            }
+        }
+        return set;
+    }
+
+    /** The name -> icon file mapping of an icon list such as {@link #PROVIDER_ICONS} (blank lines and # comments ignored). */
+    static Map<String, String> iconFiles(String list) throws IOException {
         Map<String, String> files = new LinkedHashMap<>();
-        for (String line : resource(ICON_LIST).split("\\R")) {
+        for (String line : resource(DIR + list).split("\\R")) {
             String entry = line.trim();
             int eq = entry.lastIndexOf('=');
             if (!entry.isEmpty() && !entry.startsWith("#") && eq > 0) {
