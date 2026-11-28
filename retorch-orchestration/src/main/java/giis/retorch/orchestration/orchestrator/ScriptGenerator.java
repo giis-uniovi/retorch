@@ -87,12 +87,30 @@ public class ScriptGenerator {
         mapValues.put("${CUSTOM_USAGEPROFILE_COMMANDS}", getCustomContent(CustomHook.USAGE_PROFILE));
         mapValues.put("${AZURE_REGION_PLACEHOLDER}", config.azureRegion());
         mapValues.put("${AWS_REGION_PLACEHOLDER}", config.awsRegion());
+        mapValues.put("${OPTIONAL_PRICE_PROVIDERS_COMMANDS}", priceProvidersCommands());
         mapValues.put("${CUSTOM_SETUP_TJOB_COMMANDS}", getCustomContent(CustomHook.TJOB_SETUP));
         mapValues.put("${CUSTOM_TEARDOWN_TJOB_COMMANDS}", getCustomContent(CustomHook.TJOB_TEARDOWN));
         boolean profiling = config.profiling();
         mapValues.put("${PROFILING_START_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" start \"$1\"" : "");
         mapValues.put("${PROFILING_STOP_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" stop \"$1\"" : "");
         generate(Phase.TJOB, mapValues);
+    }
+
+    /**
+     * Shell lines that pass the regions of the extra price providers ({@code price-providers}) to the java call of
+     * {@code generateusageprofile.sh} as {@code -Dusageprofile-regions-<id>=<regions>}, by wrapping {@code java} in a
+     * function; empty (so the line disappears and the script is unchanged) when there are none.
+     */
+    private String priceProvidersCommands() {
+        StringBuilder options = new StringBuilder();
+        for (Map.Entry<String, String> provider : config.priceProviders().entrySet()) {
+            options.append(" -Dusageprofile-regions-").append(provider.getKey()).append('=').append(provider.getValue());
+        }
+        if (options.length() == 0) {
+            return "";
+        }
+        return "# Extra price providers (price-providers in retorchCI.properties): their regions go to the profiling tool\n"
+                + "java() { command java" + options + " \"$@\"; }";
     }
 
     /**

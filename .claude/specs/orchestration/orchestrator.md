@@ -31,6 +31,7 @@ pipeline runs.
 | `profiling` | `true` adds resource measurement + usage profile to the pipeline | `false` |
 | `profiling-jar-url` | where `generateusageprofile.sh` downloads `retorch-profiling-cli.jar` from when `$HOME/.retorch/retorch-profiling-cli.jar` does not exist | GitHub `releases/latest/download/retorch-profiling-cli.jar` |
 | `azure-region`, `aws-region` | comma separated cloud regions whose prices are compared; empty disables the provider | `westeurope`, `eu-west-1` |
+| `price-providers` | optional extra (opt-in) price providers of the usage profile: `id=regions` pairs separated by `;`, e.g. `oracle=global;ibm=us-south,eu-de` (ids and regions: see `profiling/pricing.md`) | none |
 
 The `--profiling/--no-profiling` flag of `RetorchMain` overrides `profiling` (passed as a `RetorchConfig` override; the JVM
 system property `retorch.profiling` is still read for one release, deprecated). A required property that is missing
@@ -97,7 +98,10 @@ Placeholders: `${KEY}` tokens are replaced line by line. A line that contains on
 whose value is empty is **removed**, so the profiling-off scripts are byte-identical to the pre-profiling ones.
 Profiling placeholders: `PROFILING_START_COMMAND` (tjob-setup), `PROFILING_STOP_COMMAND` (tjob-teardown),
 `PROFILING_EXPORT_COMMAND` (savetjoblifecycledata), `PROFILING_JAR_URL_PLACEHOLDER`, `AZURE_REGION_PLACEHOLDER`,
-`AWS_REGION_PLACEHOLDER` (generateusageprofile).
+`AWS_REGION_PLACEHOLDER` (generateusageprofile). The optional `OPTIONAL_PRICE_PROVIDERS_COMMANDS` token of
+`generateusageprofile.sh` (on its own line just before the `java -jar` call) is empty unless `price-providers` is set, so without it the
+script is byte-identical to before; with it the line becomes a comment plus `java() { command java -Dusageprofile-regions-<id>=<regions> ... "$@"; }`,
+so the java call receives the regions of each provider as system properties read by `UsageProfileMain` (`profiling/main.md`).
 
 ### Execution graph file (profiling on)
 `OrchestrationWriter` also writes `.retorch/executionplan.json` (`ExecutionPlanWriter`), the graph of the execution that the
@@ -125,5 +129,5 @@ project has it (`$WORKSPACE/.retorch/executionplan.json`, versioned with the pro
   `savetjoblifecycledata.sh`.
 
 ## Tests
-`TemplateEngineTests`, `JenkinsfileRendererTests` (pure rendering, no file system), `WorkspaceConfigTests` (generation in a temporary workspace). `JenkinsOrchestratorTests` (runs `OrchestrationWriter`): default mode against `expected_out/` (`scriptler/`, `outputTest*`); profiling mode against
+`TemplateEngineTests`, `JenkinsfileRendererTests` (pure rendering, no file system), `WorkspaceConfigTests` (generation in a temporary workspace, including `price-providers` forwarded to `generateusageprofile.sh` only when configured). `JenkinsOrchestratorTests` (runs `OrchestrationWriter`): default mode against `expected_out/` (`scriptler/`, `outputTest*`); profiling mode against
 `expected_out/profiling/`; profiling off generates no profiling script and no usage profile stage.

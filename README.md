@@ -247,6 +247,8 @@ The following parameters are optional and only matter for the [usage profile](#r
 - `azure-region`, `aws-region`: cloud regions whose prices are compared, as comma separated lists (e.g.
   `westeurope,northeurope`); defaults `westeurope` and `eu-west-1`; an empty value disables that provider. The
   pipeline can override them with the `AZURE_REGIONS` / `AWS_REGIONS` environment variables.
+- `price-providers` (optional): extra price providers of the usage profile, as `id=regions` pairs separated by `;`, e.g.
+  `oracle=global;ibm=us-south,eu-de` (Oracle Cloud and IBM Cloud, no credentials needed). Without it they are not used.
 - `profiling-jar-url`: where the pipeline downloads the profiling tool (`retorch-profiling-cli.jar`) from the first time
   (default: the latest GitHub release).  A project can prepare the jar itself in the optional
   `custom-usageprofile` snippet (see below).
