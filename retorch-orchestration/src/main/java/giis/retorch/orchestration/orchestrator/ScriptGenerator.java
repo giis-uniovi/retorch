@@ -4,6 +4,7 @@
  */
 package giis.retorch.orchestration.orchestrator;
 
+import giis.retorch.orchestration.config.CustomHook;
 import giis.retorch.orchestration.config.RetorchConfig;
 import giis.retorch.orchestration.config.RetorchPaths;
 import org.slf4j.Logger;
@@ -18,7 +19,6 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,19 +30,44 @@ public class ScriptGenerator {
 
     private static final String DIRECTORY_TEMPLATES = "generictemplates/";
 
-    private static final String INPUT_FILE_TJOB_SETUP_TEMPLATE = DIRECTORY_TEMPLATES + "basetjob-setup.sh";
-    private static final String INPUT_FILE_TJOB_TESTEXECUTION_TEMPLATE = DIRECTORY_TEMPLATES + "basetjob" + "-testexecution.sh";
-    private static final String INPUT_FILE_TJOB_TEARDOWN_TEMPLATE = DIRECTORY_TEMPLATES + "basetjob-teardown.sh";
-    private static final String INPUT_FILE_WAITER_TEMPLATE = DIRECTORY_TEMPLATES + "base-waitforSUT.sh";
-    private static final String INPUT_FILE_WRITE_TIME_TEMPLATE = DIRECTORY_TEMPLATES + "base-writetime.sh";
-    private static final String INPUT_FILE_RESOURCE_MONITOR = DIRECTORY_TEMPLATES + "base-resourcemonitor.sh";
-    private static final String INPUT_FILE_USAGE_PROFILE = DIRECTORY_TEMPLATES + "base-generateusageprofile.sh";
-    private static final String INPUT_FILE_SAVE_CONTAINER_LOGS = DIRECTORY_TEMPLATES + "base-storeContainerLogs.sh";
-    private static final String INPUT_FILE_LOGGING = DIRECTORY_TEMPLATES + "base-printLog.sh";
-    private static final String INPUT_FILE_COI_SETUP_TEMPLATE = DIRECTORY_TEMPLATES + "basecoi-setup.sh";
-    private static final String INPUT_FILE_COI_TEARDOWN_TEMPLATE = DIRECTORY_TEMPLATES + "basecoi-teardown.sh";
-    private static final String INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE = DIRECTORY_TEMPLATES + "base" + "-savetjoblifecycledata.sh";
+    /** Folder (under {@code .retorch/scripts}) a script is written to. */
+    private enum Location { SCRIPTS, TJOB_LIFECYCLES, COI_LIFECYCLES }
 
+    /** Which of the two generation steps writes a script. */
+    private enum Phase { TJOB, COI }
+
+    /**
+     * Every template with the script it produces: the single table of the generator. {@code profilingOnly} scripts are
+     * only generated when profiling is enabled.
+     */
+    private enum Template {
+        TJOB_SETUP("basetjob-setup.sh", Location.TJOB_LIFECYCLES, "tjob-setup.sh", Phase.TJOB, false),
+        TJOB_TEST_EXECUTION("basetjob-testexecution.sh", Location.TJOB_LIFECYCLES, "tjob-testexecution.sh", Phase.TJOB, false),
+        TJOB_TEARDOWN("basetjob-teardown.sh", Location.TJOB_LIFECYCLES, "tjob-teardown.sh", Phase.TJOB, false),
+        WAIT_FOR_SUT("base-waitforSUT.sh", Location.SCRIPTS, "waitforSUT.sh", Phase.TJOB, false),
+        WRITE_TIME("base-writetime.sh", Location.SCRIPTS, "writetime.sh", Phase.TJOB, false),
+        RESOURCE_MONITOR("base-resourcemonitor.sh", Location.SCRIPTS, "resourcemonitor.sh", Phase.TJOB, true),
+        USAGE_PROFILE("base-generateusageprofile.sh", Location.SCRIPTS, "generateusageprofile.sh", Phase.TJOB, true),
+        STORE_CONTAINER_LOGS("base-storeContainerLogs.sh", Location.SCRIPTS, "storeContainerLogs.sh", Phase.TJOB, false),
+        PRINT_LOG("base-printLog.sh", Location.SCRIPTS, "printLog.sh", Phase.TJOB, false),
+        COI_SETUP("basecoi-setup.sh", Location.COI_LIFECYCLES, "coi-setup.sh", Phase.COI, false),
+        COI_TEARDOWN("basecoi-teardown.sh", Location.COI_LIFECYCLES, "coi-teardown.sh", Phase.COI, false),
+        SAVE_TJOB_LIFECYCLE_DATA("base-savetjoblifecycledata.sh", Location.SCRIPTS, "savetjoblifecycledata.sh", Phase.COI, false);
+
+        private final String templateFile;
+        private final Location location;
+        private final String outputFile;
+        private final Phase phase;
+        private final boolean profilingOnly;
+
+        Template(String templateFile, Location location, String outputFile, Phase phase, boolean profilingOnly) {
+            this.templateFile = DIRECTORY_TEMPLATES + templateFile;
+            this.location = location;
+            this.outputFile = outputFile;
+            this.phase = phase;
+            this.profilingOnly = profilingOnly;
+        }
+    }
 
     private static final Logger log = LoggerFactory.getLogger(ScriptGenerator.class);
     private final RetorchConfig config;
@@ -58,76 +83,68 @@ public class ScriptGenerator {
      * in the continuous integration system.
      */
     public void generateScriptsTJob() throws IOException {
-        Path tjobDir = paths.tjobScriptsDir();
-        Path scriptsDir = paths.scriptsDir();
-        checkFolderExists(tjobDir);
+        checkFolderExists(paths.tjobScriptsDir());
         Map<String, String> mapValues = new HashMap<>();
         mapValues.put("${SUT-WAIT-HTML}", config.sutWaitHtml());
-        mapValues.put("${PROFILING_JAR_URL_PLACEHOLDER}",
-                config.profilingJarUrl());
-        mapValues.put("${CUSTOM_USAGEPROFILE_COMMANDS}", getCustomContent("usageprofile"));
+        mapValues.put("${PROFILING_JAR_URL_PLACEHOLDER}", config.profilingJarUrl());
+        mapValues.put("${CUSTOM_USAGEPROFILE_COMMANDS}", getCustomContent(CustomHook.USAGE_PROFILE));
         mapValues.put("${AZURE_REGION_PLACEHOLDER}", config.azureRegion());
         mapValues.put("${AWS_REGION_PLACEHOLDER}", config.awsRegion());
-        mapValues.put("${CUSTOM_SETUP_TJOB_COMMANDS}", getCustomContent("tjob-setup"));
-        mapValues.put("${CUSTOM_TEARDOWN_TJOB_COMMANDS}", getCustomContent("tjob-teardown"));
+        mapValues.put("${CUSTOM_SETUP_TJOB_COMMANDS}", getCustomContent(CustomHook.TJOB_SETUP));
+        mapValues.put("${CUSTOM_TEARDOWN_TJOB_COMMANDS}", getCustomContent(CustomHook.TJOB_TEARDOWN));
         boolean profiling = config.profiling();
         mapValues.put("${PROFILING_START_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" start \"$1\"" : "");
         mapValues.put("${PROFILING_STOP_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" stop \"$1\"" : "");
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_SETUP_TEMPLATE, tjobDir.resolve("tjob-setup.sh"));
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TESTEXECUTION_TEMPLATE, tjobDir.resolve("tjob-testexecution.sh"));
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TEARDOWN_TEMPLATE, tjobDir.resolve("tjob-teardown.sh"));
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_WAITER_TEMPLATE, scriptsDir.resolve("waitforSUT.sh"));
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_WRITE_TIME_TEMPLATE, scriptsDir.resolve("writetime.sh"));
-        if (profiling) {
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_RESOURCE_MONITOR, scriptsDir.resolve("resourcemonitor.sh"));
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_USAGE_PROFILE, scriptsDir.resolve("generateusageprofile.sh"));
+        generate(Phase.TJOB, mapValues);
+    }
+
+    public void generateScriptsCOI() throws IOException {
+        checkFolderExists(paths.coiScriptsDir());
+        Map<String, String> mapValues = new HashMap<>();
+        mapValues.put("${CUSTOM_SETUP_COI_COMMANDS}", getCustomContent(CustomHook.COI_SETUP));
+        mapValues.put("${CUSTOM_TEARDOWN_COI_COMMANDS}", getCustomContent(CustomHook.COI_TEARDOWN));
+        mapValues.put("${PROFILING_EXPORT_COMMAND}", config.profiling()
+                ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" export" : "");
+        generate(Phase.COI, mapValues);
+    }
+
+    private void generate(Phase phase, Map<String, String> mapValues) throws IOException {
+        for (Template template : Template.values()) {
+            if (template.phase == phase && (!template.profilingOnly || config.profiling())) {
+                replacePlaceholderTemplate(mapValues, template.templateFile, outputOf(template));
+            }
         }
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_CONTAINER_LOGS, scriptsDir.resolve("storeContainerLogs.sh"));
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_LOGGING, scriptsDir.resolve("printLog.sh"));
+    }
+
+    private Path outputOf(Template template) {
+        switch (template.location) {
+            case TJOB_LIFECYCLES:
+                return paths.tjobScriptsDir().resolve(template.outputFile);
+            case COI_LIFECYCLES:
+                return paths.coiScriptsDir().resolve(template.outputFile);
+            default:
+                return paths.scriptsDir().resolve(template.outputFile);
+        }
     }
 
     public static void checkFolderExists(Path directoryPath) throws IOException {
-        String path = directoryPath.toString();
-
         if (!Files.exists(directoryPath)) {
             Files.createDirectories(directoryPath);
             log.debug("Directory created successfully.");
         } else {
-            log.debug("The directory {} already exists.", path);
+            log.debug("The directory {} already exists.", directoryPath);
         }
     }
 
     /**
-     * Returns the custom content from a file  located in .retorch/customscriptscode/ based on the given phase.
+     * Returns the content of a user hook ({@code .retorch/customscriptscode/}).
      *
-     * @param phase contains the phase to provide the custom file
+     * @param hook the hook to read
      * @return the custom content, or an empty string if the file does not exist
      * @throws IOException if an I/O error occurs
      */
-    private String getCustomContent(String phase) throws IOException {
-        // Map the phase to the corresponding file
-        String urlFile;
-        switch (phase) {
-            case "tjob-setup":
-                urlFile = "custom-tjob-setup";
-                break;
-            case "tjob-teardown":
-                urlFile = "custom-tjob-teardown";
-                break;
-            case "coi-setup":
-                urlFile = "custom-coi-setup";
-                break;
-            case "coi-teardown":
-                urlFile = "custom-coi-teardown";
-                break;
-            case "usageprofile":
-                urlFile = "custom-usageprofile";
-                break;
-            default:
-                urlFile = "custom.env";  // Default provides the env
-                break;
-        }
-        Path filePath = paths.customFile(urlFile);
+    private String getCustomContent(CustomHook hook) throws IOException {
+        Path filePath = paths.customFile(hook);
         if (Files.exists(filePath)) {
             return new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8)
                     .replace("\r\n", "\n").replace("\r", "\n");
@@ -157,7 +174,7 @@ public class ScriptGenerator {
                 bw.write(sb.toString());
                 bw.write("\n");
             }
-            log.info("Files successfully created.");
+            log.debug("File {} created from {}", outputFile, inputTemplate);
         }
     }
 
@@ -182,19 +199,6 @@ public class ScriptGenerator {
         if (in == null) {
             throw new IllegalStateException("Template resource not found on classpath: " + fileName);
         }
-        return new BufferedReader(new InputStreamReader(in));
-    }
-
-    public void generateScriptsCOI() throws IOException {
-        Path coiDir = paths.coiScriptsDir();
-        checkFolderExists(coiDir);
-        Map<String, String> mapValues = new HashMap<>();
-        mapValues.put("${CUSTOM_SETUP_COI_COMMANDS}", getCustomContent("coi-setup"));
-        mapValues.put("${CUSTOM_TEARDOWN_COI_COMMANDS}", getCustomContent("coi-teardown"));
-        mapValues.put("${PROFILING_EXPORT_COMMAND}", config.profiling()
-                ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" export" : "");
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_SETUP_TEMPLATE, coiDir.resolve("coi-setup.sh"));
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_TEARDOWN_TEMPLATE, coiDir.resolve("coi-teardown.sh"));
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE, paths.scriptsDir().resolve("savetjoblifecycledata.sh"));
+        return new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
     }
 }

@@ -13,6 +13,7 @@ import giis.retorch.orchestration.model.ElasticityModel;
 import giis.retorch.orchestration.model.Resource;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -115,7 +116,7 @@ public class ResourceSerializer {
      */
     private void writeSerializationToFile(String filePath, String output) throws IOException {
         Path path = Paths.get(filePath);
-        Files.write(path, output.getBytes());
+        Files.write(path, output.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -128,7 +129,7 @@ public class ResourceSerializer {
      *                     read
      */
     public <T> T deserialize(String filePath, TypeReference<T> typeRef) throws IOException {
-        String json = new String(Files.readAllBytes(Paths.get(filePath)));
+        String json = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
         return mapper.readValue(json, typeRef);
     }
 

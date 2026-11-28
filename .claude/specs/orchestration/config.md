@@ -7,7 +7,9 @@ other class hard-codes a `.retorch/...` path or reads a property by name.
 ## Public API
 - `RetorchPaths(Path root)` (default: the working directory): `retorchDir`, `configurationsDir`, `ciPropertiesFile`,
   `resourcesFile(systemName)`, `scriptsDir`, `tjobScriptsDir` (`scripts/tjoblifecycles`), `coiScriptsDir`
-  (`scripts/coilifecycles`), `envFilesDir`, `customScriptsDir`, `customFile(name)`, `executionPlanFile`.
+  (`scripts/coilifecycles`), `envFilesDir`, `customScriptsDir`, `executionPlanFile`.
+- `CustomHook` enum: the optional user hooks and their file in `.retorch/customscriptscode/` (`COI_SETUP`, `COI_TEARDOWN`,
+  `TJOB_SETUP`, `TJOB_TEARDOWN`, `USAGE_PROFILE`, `JENKINS_POST`, `ENV`); the table is in `orchestration/orchestrator.md`.
 - `RetorchConfig`: `load(paths)` (throws `IOException` naming the file if it does not exist), `withProfiling(Boolean)`
   (copy with the flag forced; `null` keeps it), `agentCIName`, `sutLocation`, `appUrl(tJobName)` (replaces
   `$TJOB_NAME` by the lower case name), `sutWaitHtml`, `testsBasePath` (all required), `profiling` (default `false`),

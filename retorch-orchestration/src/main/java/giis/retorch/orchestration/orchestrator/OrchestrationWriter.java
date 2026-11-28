@@ -4,6 +4,7 @@
  */
 package giis.retorch.orchestration.orchestrator;
 
+import giis.retorch.orchestration.config.CustomHook;
 import giis.retorch.orchestration.config.RetorchConfig;
 import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.Activity;
@@ -65,7 +66,7 @@ public class OrchestrationWriter {
      * {@code post { always { } }} block (e.g. to publish a coverage report); empty if the file does not exist.
      */
     private String readCustomJenkinsPostSteps() throws IOException {
-        Path path = paths.customFile("custom-jenkins-post");
+        Path path = paths.customFile(CustomHook.JENKINS_POST);
         if (!Files.exists(path)) {
             return "";
         }

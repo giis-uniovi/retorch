@@ -31,6 +31,11 @@ public class RetorchClassifier {
 
     private static final Logger log = LoggerFactory.getLogger(RetorchClassifier.class);
 
+    /** Default of the string attributes of the RETORCH annotations: the attribute was not specified. */
+    private static final String NOT_SPECIFIED = "None";
+    /** Default of the numeric attributes of the RETORCH annotations (elasticity, cost, concurrency). */
+    private static final int NOT_SPECIFIED_NUMBER = -1;
+
     private static final String CHORUS_ATTRIBUTES = " is not present";
     private static final String NO_EXIST = " doesn't exist";
     private static final String JACOCO_INIT_METHOD = "$jacocoInit";
@@ -288,7 +293,7 @@ public class RetorchClassifier {
                 .filter(meth -> !meth.isSynthetic()) // Filter out compiler-generated lambdas and bridge methods
                 .filter(meth -> !meth.getName().equals(JACOCO_INIT_METHOD)) // Filter out JaCoCo instrumentation methods
                 .collect(Collectors.toList());// Collect results to a list
-        methods.forEach(meth -> log.info("The method name its : {}", meth.getName()));
+        methods.forEach(meth -> log.debug("The method name its : {}", meth.getName()));
         return methods;
     }
 
@@ -313,13 +318,13 @@ public class RetorchClassifier {
      */
     private boolean resourceChecker(Resource resource) {
         List<String> listMessages = new LinkedList<>();
-        if (resource.getHierarchyParent().contains("None")) {
+        if (resource.getHierarchyParent().contains(NOT_SPECIFIED)) {
             listMessages.add(String.format("The Hierarchy Parent Attribute in resource %s%s",resource.getResourceID(), CHORUS_ATTRIBUTES));
         }
-        if (resource.getReplaceable().size() == 1 && resource.getReplaceable().get(0).equals("None")) {
+        if (resource.getReplaceable().size() == 1 && resource.getReplaceable().get(0).equals(NOT_SPECIFIED)) {
             listMessages.add(String.format("The Replaceable Attribute in resource %s%s",resource.getResourceID(), CHORUS_ATTRIBUTES));
         }
-        if (resource.getResourceID().equals("None")) {
+        if (resource.getResourceID().equals(NOT_SPECIFIED)) {
             listMessages.add(String.format("The ResourceID Attribute in the res:%s %s", resource.getResourceID(),CHORUS_ATTRIBUTES));
         }
         if (resource.getHierarchyParent().size() > 1) {
@@ -335,9 +340,9 @@ public class RetorchClassifier {
      * @param resource   Resource  with all the attributes
      */
     private boolean elasticityChecker(Resource resource) {
-        boolean isOutElasticityID = resource.getElasticityModel().getElasticityID().equals("None");
-        boolean isOutElasticity = resource.getElasticityModel().getElasticity() == -1;
-        boolean isOutElasticityCost = resource.getElasticityModel().getElasticityCost() == -1;
+        boolean isOutElasticityID = resource.getElasticityModel().getElasticityID().equals(NOT_SPECIFIED);
+        boolean isOutElasticity = resource.getElasticityModel().getElasticity() == NOT_SPECIFIED_NUMBER;
+        boolean isOutElasticityCost = resource.getElasticityModel().getElasticityCost() == NOT_SPECIFIED_NUMBER;
         List<String> listMessages = new LinkedList<>();
         if (isOutElasticity && isOutElasticityCost && isOutElasticityID) {
             listMessages.add(String.format("No Elasticity Annotation Specified in the resource %s", resource.getResourceID()));
@@ -374,7 +379,7 @@ public class RetorchClassifier {
         List<String> listMessages = new LinkedList<>();
 
         checkConcurrency(accessModeTag, methodName, listMessages);
-        if ("None".equals(accessModeTag.resID())) {
+        if (NOT_SPECIFIED.equals(accessModeTag.resID())) {
             listMessages.add(String.format("The ResourceID Attribute in method %s%s", methodName, CHORUS_ATTRIBUTES));
         }
         checkAccessModeType(accessModeTag, methodName, listMessages);
@@ -383,7 +388,7 @@ public class RetorchClassifier {
     }
 
     private void checkConcurrency(giis.retorch.annotations.AccessMode accessModeTag, String methodName, List<String> listMessages) {
-        if (accessModeTag.concurrency() == -1) {
+        if (accessModeTag.concurrency() == NOT_SPECIFIED_NUMBER) {
             listMessages.add(String.format("The Concurrency Attribute in method %s%s", methodName, CHORUS_ATTRIBUTES));
         }
 

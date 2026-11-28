@@ -21,6 +21,8 @@ Resource Identification phase: turns annotated test classes into a `SystemUnderT
   accepts the resources already loaded (`RetorchClassifier(Map<String,Resource>)`) so the JSON is not read again;
   `ResourceSerializer(RetorchPaths)` for another folder.
 
+- The annotation defaults `"None"` and `-1` (attribute not specified) are named constants of the classifier; per-method
+  discovery is logged at DEBUG. Resource JSON files are read and written as UTF-8.
 - Current behavior (known issue): tests without valid access modes are dropped and only logged; no exception.
 
 ## Tests

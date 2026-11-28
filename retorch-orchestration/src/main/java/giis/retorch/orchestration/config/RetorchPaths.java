@@ -73,9 +73,9 @@ public class RetorchPaths {
         return retorchDir().resolve("customscriptscode");
     }
 
-    /** One file of {@link #customScriptsDir()}, e.g. {@code custom-tjob-setup} or {@code custom.env}. */
-    public Path customFile(String fileName) {
-        return customScriptsDir().resolve(fileName);
+    /** File of a user hook inside {@link #customScriptsDir()}. */
+    public Path customFile(CustomHook hook) {
+        return customScriptsDir().resolve(hook.fileName());
     }
 
     /** The execution graph written for the usage profile. */

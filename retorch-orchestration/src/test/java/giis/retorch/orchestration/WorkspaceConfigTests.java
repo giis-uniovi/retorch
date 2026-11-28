@@ -40,7 +40,7 @@ public class WorkspaceConfigTests {
         RetorchPaths paths = new RetorchPaths(Paths.get("ws"));
         assertEquals(Paths.get("ws", ".retorch", "configurations", "XSystemResources.json"), paths.resourcesFile("X"));
         assertEquals(Paths.get("ws", ".retorch", "scripts", "tjoblifecycles"), paths.tjobScriptsDir());
-        assertEquals(Paths.get("ws", ".retorch", "customscriptscode", "custom.env"), paths.customFile("custom.env"));
+        assertEquals(Paths.get("ws", ".retorch", "customscriptscode", "custom.env"), paths.customFile(giis.retorch.orchestration.config.CustomHook.ENV));
         assertEquals(Paths.get("ws", ".retorch", "executionplan.json"), paths.executionPlanFile());
     }
 

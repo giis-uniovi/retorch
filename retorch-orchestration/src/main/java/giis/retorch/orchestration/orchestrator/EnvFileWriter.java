@@ -4,6 +4,7 @@
  */
 package giis.retorch.orchestration.orchestrator;
 
+import giis.retorch.orchestration.config.CustomHook;
 import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.TJob;
 
@@ -43,7 +44,7 @@ public class EnvFileWriter {
                     .append(entry.getValue())
                     .append("\n");
         }
-        Path customEnv = paths.customFile("custom.env");
+        Path customEnv = paths.customFile(CustomHook.ENV);
         if (Files.exists(customEnv)) {
             contentEnvFile.append(readUnixText(customEnv));
         }

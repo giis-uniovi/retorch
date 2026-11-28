@@ -14,7 +14,8 @@ pipeline runs.
   (`ExecutionPlanWriter`). Returns the Jenkinsfile text; where to write it is up to the caller
   (`OrchestrationGenerator`). It reads the optional `custom-jenkins-post` hook and gives it to the renderer.
 - `ScriptGenerator(RetorchConfig, RetorchPaths)`: `generateScriptsTJob()`, `generateScriptsCOI()`,
-  `replacePlaceholderTemplate`.
+  `replacePlaceholderTemplate`. One internal table maps every template to its output (folder, name, step, profiling
+  only); all text files are read and written as UTF-8. Per-file generation is logged at DEBUG.
 - `ExecutionPlanWriter(RetorchPaths)`, `EnvFileWriter(RetorchPaths)`.
 - Every path comes from `RetorchPaths` and every property from `RetorchConfig` (see `orchestration/config.md`).
 - The renderer throws `IllegalStateException` for a missing required property; a resource without a
@@ -33,7 +34,7 @@ system property `retorch.profiling` is still read for one release, deprecated). 
 fails with a message naming it (`orchestration/config.md`). In the pipeline, the environment variables `AZURE_REGIONS` / `AWS_REGIONS` override the two region
 properties without regenerating.
 
-## Custom hooks (`.retorch/customscriptscode/`, all optional)
+## Custom hooks (`.retorch/customscriptscode/`, all optional; the `CustomHook` enum)
 | File | Inserted in | When it runs |
 |---|---|---|
 | `custom-coi-setup` | `coi-setup.sh` | during the COI set-up |

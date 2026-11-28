@@ -84,7 +84,7 @@ public class SystemUnderTest {
     public void addResourceClass(Resource resource) {
         if (!this.resources.contains(resource)) {
             this.resources.add(resource);
-        } else logSystemClass.info("The resource {} is contained in the system", resource.getResourceID());
+        } else logSystemClass.debug("The resource {} is contained in the system", resource.getResourceID());
         this.resources.sort(Comparator.comparing(Resource::getResourceID));
     }
 
