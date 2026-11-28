@@ -190,7 +190,7 @@ public class UsageProfileGeneratorTests {
         new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out)
                 .prices(smallCatalog()).executionPlan(DATA + "executionplan.json").build());
         String content = html(Paths.get(out));
-        for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "/*I18N*/", "<!--HEADER_LOGO_SVG-->",
+        for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "/*I18N*/", "/*ICONS*/", "<!--HEADER_LOGO_SVG-->",
                 "<!--FOOTER_SVG-->"}) {
             assertFalse(placeholder, content.contains(placeholder));
         }
@@ -258,7 +258,7 @@ public class UsageProfileGeneratorTests {
         int libStart = page.indexOf("Licensed to the Apache Software Foundation");
         int libEnd = page.indexOf("</script>", libStart);
         assertTrue(libStart >= 0 && libEnd > libStart);
-        String own = page.substring(0, libStart) + page.substring(libEnd);
+        String own = (page.substring(0, libStart) + page.substring(libEnd)).replace("<img class=\"prov-icon\" src=\"${", "");
         String[] forbidden = {"<script src", "<img ", "<iframe", "@import", "url(http", "url('http",
             "url(" + (char) 34 + "http", "fetch(", "XMLHttpRequest", "src=" + (char) 34, "import("};
         for (String reference : forbidden) {

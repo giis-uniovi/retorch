@@ -1,0 +1,8 @@
+# Provider label (as in alternatives[].provider) = icon file of this folder. A provider without a line shows no icon.
+# New provider icon: 1. add providers/<id>.svg  2. add a line here.
+AWS=aws.svg
+AWS Device Farm=aws.svg
+Azure=azure.svg
+GCP=gcp.svg
+Oracle Cloud=oracle.svg
+IBM Cloud=ibm.svg

@@ -4,6 +4,7 @@
  */
 package giis.retorch.profiling.usageprofile.report;
 
+import giis.retorch.profiling.usageprofile.dto.cost.AlternativeDTO;
 import giis.retorch.profiling.usageprofile.dto.cost.CostReportDTO;
 import giis.retorch.profiling.usageprofile.dto.measurement.TimelineSeriesDTO;
 import giis.retorch.profiling.usageprofile.dto.plan.ExecutionGraphDTO;
@@ -14,6 +15,7 @@ import giis.retorch.profiling.usageprofile.measurement.Slice;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 
 import java.io.ByteArrayOutputStream;
@@ -26,7 +28,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Writes the interactive usage profile: a single self-contained HTML file (data and Apache ECharts are inlined, so
@@ -41,6 +47,9 @@ public class UsageProfileGenerator {
     private static final String SCRIPT_END_ESCAPED = "<\\/script";
     /** The list of the page scripts, one file of {@code js/} per line, in the order they are concatenated (blank lines and # comments ignored). */
     static final String SCRIPT_LIST = DIR + "js/scripts.txt";
+
+    /** Provider label to icon file mapping (see {@link #icons}). */
+    static final String ICON_LIST = DIR + "providers/icons.txt";
 
     /** The languages of the page: one {@code i18n/<language>.json} each, with the same keys as English (a test checks it). */
     static final List<String> LANGUAGES = Collections.unmodifiableList(Arrays.asList("es", "en", "fr", "de"));
@@ -71,6 +80,7 @@ public class UsageProfileGenerator {
                 .replace("/*ECHARTS*/", inlineScript(resource(DIR + "echarts.min.js")))
                 .replace("/*APP*/", inlineScript(appScript()))
                 .replace("/*I18N*/", translations().replace("</", "<\\/"))
+                .replace("/*ICONS*/", icons(providersOf(report)).replace("</", "<\\/"))
                 .replace("/*DATA*/", toJson(data).replace("</", "<\\/"));
         if (output.getParent() != null) {
             Files.createDirectories(output.getParent());
@@ -112,6 +122,48 @@ public class UsageProfileGenerator {
             json.append('"').append(language).append("\":").append(resource(DIR + "i18n/" + language + ".json").trim());
         }
         return json.append('}').toString();
+    }
+
+    /** The providers of the alternatives, sorted. */
+    private static Set<String> providersOf(CostReportDTO report) {
+        Set<String> providers = new TreeSet<>();
+        for (AlternativeDTO alternative : report.alternatives) {
+            providers.add(alternative.provider);
+        }
+        return providers;
+    }
+
+    /**
+     * The icons of the given providers in one JSON object {@code {"<provider>":"<svg>"}}, read by the page from #icons. The
+     * mapping is {@code providers/icons.txt}; a provider without a line has no icon; the XML prolog and the DOCTYPE are
+     * removed from the SVG and its line breaks collapsed. Only the given providers are included, so unused icons cost nothing.
+     */
+    static String icons(Set<String> providers) throws IOException {
+        ObjectNode json = MAPPER.createObjectNode();
+        Map<String, String> files = iconFiles();
+        for (String provider : providers) {
+            if (files.containsKey(provider)) {
+                json.put(provider, inlineSvg(resource(DIR + "providers/" + files.get(provider))));
+            }
+        }
+        return json.toString();
+    }
+
+    /** The provider label -> icon file mapping of {@code providers/icons.txt} (blank lines and # comments ignored). */
+    static Map<String, String> iconFiles() throws IOException {
+        Map<String, String> files = new LinkedHashMap<>();
+        for (String line : resource(ICON_LIST).split("\\R")) {
+            String entry = line.trim();
+            int eq = entry.lastIndexOf('=');
+            if (!entry.isEmpty() && !entry.startsWith("#") && eq > 0) {
+                files.put(entry.substring(0, eq).trim(), entry.substring(eq + 1).trim());
+            }
+        }
+        return files;
+    }
+
+    private static String inlineSvg(String svg) {
+        return svg.replaceAll("<\\?xml[^>]*\\?>", "").replaceAll("(?s)<!DOCTYPE[^>]*>", "").trim().replaceAll("\\s*\\R\\s*", " ");
     }
 
     static String toJson(UsageProfileDTO data) throws IOException {

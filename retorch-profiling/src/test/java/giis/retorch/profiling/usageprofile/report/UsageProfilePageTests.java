@@ -170,6 +170,67 @@ public class UsageProfilePageTests {
         }
     }
 
+    // ---- provider icons ----
+
+    private static final String ICON_DIR = "src/main/resources/usageprofile/providers/";
+
+    private static JsonNode iconsOf(String html) throws IOException {
+        String open = "<script type=\"application/json\" id=\"icons\">";
+        int start = html.indexOf(open) + open.length();
+        assertTrue("the page has the icons block", start >= open.length());
+        return MAPPER.readTree(html.substring(start, html.indexOf("</script>", start)).replace("<\\/", "</"));
+    }
+
+    @Test
+    public void testThePageCarriesTheIconsOfTheProvidersOfItsAlternativesOnly() throws IOException {
+        String html = new String(Files.readAllBytes(writeFixturePage(Paths.get(SMOKE_PAGE))), StandardCharsets.UTF_8);
+        assertFalse(html.contains("/*ICONS*/"));
+        JsonNode icons = iconsOf(html);
+        Set<String> providers = new TreeSet<>();
+        for (JsonNode alternative : MAPPER.readTree(html.substring(html.indexOf("id=\"data\">") + 10,
+                html.indexOf("</script>", html.indexOf("id=\"data\">")))).get("alternatives")) {
+            providers.add(alternative.get("provider").asText());
+        }
+        assertEquals(new TreeSet<>(Arrays.asList("AWS", "AWS Device Farm", "Azure")), providers);
+        assertEquals(providers, keys(icons));
+        for (JsonNode svg : icons) {
+            assertTrue(svg.asText().startsWith("<svg"));
+            assertFalse(svg.asText().contains("<?xml"));
+            assertFalse(svg.asText().contains("<!DOCTYPE"));
+        }
+        assertFalse("GCP is not in the report", icons.has("GCP"));
+    }
+
+    @Test
+    public void testTheIconMappingOnlyReferencesExistingWellFormedSvgFiles() throws Exception {
+        java.util.Map<String, String> files = UsageProfileGenerator.iconFiles();
+        assertEquals("aws.svg", files.get("AWS"));
+        assertEquals("aws.svg", files.get("AWS Device Farm"));
+        assertEquals("azure.svg", files.get("Azure"));
+        assertEquals("gcp.svg", files.get("GCP"));
+        assertEquals("oracle.svg", files.get("Oracle Cloud"));
+        assertEquals("ibm.svg", files.get("IBM Cloud"));
+        Set<String> used = new TreeSet<>(files.values());
+        for (String file : used) {
+            Path svg = Paths.get(ICON_DIR + file);
+            assertTrue(file + " does not exist", Files.exists(svg));
+            javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+            factory.setValidating(false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            assertEquals(file, "svg", factory.newDocumentBuilder().parse(svg.toFile()).getDocumentElement().getNodeName());
+        }
+        for (String file : new java.io.File(ICON_DIR).list()) {
+            assertTrue(file + " is not used by icons.txt", file.equals("icons.txt") || used.contains(file));
+        }
+    }
+
+    @Test
+    public void testOnlyTheRequestedProvidersGetAnIconAndUnknownOnesNone() throws IOException {
+        JsonNode icons = MAPPER.readTree(UsageProfileGenerator.icons(new TreeSet<>(Arrays.asList("GCP", "Nobody"))));
+        assertEquals(new TreeSet<>(Arrays.asList("GCP")), keys(icons));
+        assertEquals("{}", UsageProfileGenerator.icons(new TreeSet<String>()));
+    }
+
     // ---- the list of scripts ----
 
     private static void collectScripts(java.io.File dir, String prefix, Set<String> found) {
