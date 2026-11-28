@@ -4,6 +4,7 @@
  */
 package giis.retorch.profiling.usageprofile;
 
+import giis.retorch.profiling.usageprofile.measurement.TJobMetrics;
 import giis.retorch.profiling.usageprofile.ExecutionPlanReader.PlanNode;
 import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;

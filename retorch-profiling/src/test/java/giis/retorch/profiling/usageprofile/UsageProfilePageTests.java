@@ -4,6 +4,9 @@
  */
 package giis.retorch.profiling.usageprofile;
 
+import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
+import giis.retorch.profiling.usageprofile.measurement.Timeline;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import giis.retorch.profiling.usageprofile.dto.CostReport;

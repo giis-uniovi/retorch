@@ -2,11 +2,11 @@
  * Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
  * All intellectual property rights on this file belong to GIIS.
  */
-package giis.retorch.profiling.usageprofile;
+package giis.retorch.profiling.usageprofile.measurement;
 
-import giis.retorch.profiling.usageprofile.UsageData.ContainerInfo;
-import giis.retorch.profiling.usageprofile.UsageData.Sample;
-import giis.retorch.profiling.usageprofile.UsageData.Window;
+import giis.retorch.profiling.usageprofile.measurement.UsageData.ContainerInfo;
+import giis.retorch.profiling.usageprofile.measurement.UsageData.Sample;
+import giis.retorch.profiling.usageprofile.measurement.UsageData.Window;
 import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
 
 import java.util.ArrayList;

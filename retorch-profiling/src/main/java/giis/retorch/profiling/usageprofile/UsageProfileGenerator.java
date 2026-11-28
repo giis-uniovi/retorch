@@ -4,6 +4,10 @@
  */
 package giis.retorch.profiling.usageprofile;
 
+import giis.retorch.profiling.usageprofile.measurement.Load;
+import giis.retorch.profiling.usageprofile.measurement.Slice;
+import giis.retorch.profiling.usageprofile.measurement.Timeline;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
 import giis.retorch.profiling.usageprofile.dto.SutInfo;

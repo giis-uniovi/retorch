@@ -4,6 +4,8 @@
  */
 package giis.retorch.profiling.usageprofile;
 
+import giis.retorch.profiling.usageprofile.measurement.Timeline;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

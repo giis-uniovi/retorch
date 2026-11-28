@@ -4,10 +4,13 @@
  */
 package giis.retorch.profiling.usageprofile;
 
+import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
+import giis.retorch.profiling.usageprofile.measurement.Load;
+import giis.retorch.profiling.usageprofile.measurement.Slice;
+import giis.retorch.profiling.usageprofile.measurement.Timeline;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import giis.retorch.profiling.usageprofile.dto.Alternative;
-import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
 import giis.retorch.profiling.usageprofile.dto.CostItem;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
 import giis.retorch.profiling.usageprofile.dto.UsageProfileData;
@@ -28,15 +31,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import static giis.retorch.profiling.usageprofile.TestFixtures.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -44,62 +45,8 @@ import static org.junit.Assert.assertTrue;
 
 public class UsageProfileTests {
 
-    private static final String DATA = "src/test/java/giis/retorch/profiling/testdata/usageprofile/";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
-
-    private Timeline timeline() throws IOException {
-        return ExecutionMeasurements.read(Paths.get(DATA + "usage.csv")).toTimeline();
-    }
-
-    private static PriceCatalog.VmOffer vm(String provider, String name, double vcpu, double mem, double hourly) {
-        return new PriceCatalog.VmOffer(provider, "r1", name, vcpu, mem, hourly);
-    }
-
-    private static boolean hasItem(Alternative alt, String object, String tjob, String phase) {
-        for (CostItem i : alt.items) {
-            if (object.equals(i.object) && tjob.equals(i.tjob) && phase.equals(i.phase)) return true;
-        }
-        return false;
-    }
-
-    private static List<String> texts(JsonNode array) {
-        List<String> out = new ArrayList<>();
-        for (JsonNode n : array) {
-            out.add(n.asText());
-        }
-        return out;
-    }
-
-    private static Set<String> names(JsonNode node) {
-        Set<String> result = new HashSet<>();
-        Iterator<String> it = node.fieldNames();
-        while (it.hasNext()) result.add(it.next());
-        return result;
-    }
-
-    private static Set<String> set(String... values) {
-        return new HashSet<>(Arrays.asList(values));
-    }
-
-    private static PriceCatalog smallCatalog() {
-        return smallCatalogBuilder().build();
-    }
-
-    private static PriceCatalog.Builder smallCatalogBuilder() {
-        return PriceCatalog.builder().fetchedAt(1700000000000L)
-                .addVm(vm("P", "big", 4, 8, 3.6))
-                .addContainer(new PriceCatalog.ContainerRate("P", "r1", "Serverless", 1, 1))
-                .addStorage(new PriceCatalog.StorageRate("P", "r1", "ssd", 0.1));
-    }
-
-    private static JsonNode embeddedJson(String html) throws IOException {
-        int start = html.indexOf("{\"plan\":");
-        assertTrue(start >= 0);
-        return MAPPER.readTree(html.substring(start)); // reads the first value, ignores what follows
-    }
 
     @Test
     public void testJsonContractMatchesWhatTheUsageProfilePageReads() throws IOException {
@@ -168,43 +115,6 @@ public class UsageProfileTests {
         assertEquals(n, timeline.get("cpu").size());
         assertEquals(n, timeline.get("memGb").size());
         assertEquals(n, timeline.get("diskGb").size());
-    }
-
-    @Test
-    public void testTimelineJoinsPhasesAndResources() throws IOException {
-        Timeline t = timeline();
-        assertEquals(81, t.slices.size());
-        assertEquals(ExecutionMeasurements.COI_SETUP, t.slices.get(0).coiPhase);
-        assertEquals(null, t.slices.get(30).coiPhase);
-        assertEquals(ExecutionMeasurements.COI_TEARDOWN, t.slices.get(75).coiPhase);
-        assertEquals(1.5, t.peak("cpu"), 1e-9);
-        assertEquals(1.5, t.peak("mem"), 1e-9);
-        assertEquals(1.0, t.peak("disk"), 1e-9);
-        // at second 25 both TJobs run their test execution
-        assertEquals(2, t.slices.get(25).loads.size());
-        assertEquals("tjob-testexec", t.slices.get(25).loads.get(0).phase);
-    }
-
-    @Test
-    public void testRealJenkinsRunIsReadFromASingleFile() throws IOException {
-        Timeline t = ExecutionMeasurements.read(Paths.get(DATA + "real-run.csv")).toTimeline();
-        // 10 TJobs measured by the pipeline; the execution lasts from the COI set-up to the COI tear-down (316 s)
-        assertEquals(317, t.slices.size());
-        assertTrue(t.peak("cpu") > 1.0);
-        assertTrue(t.peak("mem") > 0.1);
-        java.util.Set<String> tjobs = new java.util.HashSet<>();
-        for (Slice s : t.slices) {
-            for (Load l : s.loads) tjobs.add(l.tjob);
-        }
-        assertEquals(10, tjobs.size());
-    }
-
-    @Test(expected = IOException.class)
-    public void testIncompletePhasesAreRejected() throws IOException {
-        Path file = tmp.newFile("incomplete.csv").toPath();
-        Files.write(file, ("kind;tjobname;stage;item;start;end;cpu_percent;mem_bytes;disk_bytes\n"
-                + "phase;tjoba;0;tjob-setup;1700000010;1700000020;;;\n").getBytes(StandardCharsets.UTF_8));
-        ExecutionMeasurements.read(file);
     }
 
     @Test
@@ -464,11 +374,6 @@ public class UsageProfileTests {
         assertTrue(PricingFetcher.split(null).isEmpty());
     }
 
-
-    private static String html(Path out) throws IOException {
-        return new String(Files.readAllBytes(out), StandardCharsets.UTF_8);
-    }
-
     @Test
     public void testExecutionPlanIsRead() throws IOException {
         java.util.List<ExecutionPlanReader.PlanNode> plan = ExecutionPlanReader.read(Paths.get(DATA + "executionplan.json"));
@@ -479,24 +384,6 @@ public class UsageProfileTests {
         assertEquals(Arrays.asList("CartTest#addItem"), plan.get(1).tests);
         assertEquals(Arrays.asList("tjoba"), plan.get(1).predecessors);
         assertTrue(plan.get(2).tests.isEmpty());
-    }
-
-    @Test
-    public void testTJobMetricsComeFromPhasesAndTimeline() throws IOException {
-        ExecutionMeasurements m = ExecutionMeasurements.read(Paths.get(DATA + "usage.csv"));
-        Map<String, TJobMetrics> metrics = m.tjobMetrics(m.toTimeline());
-        assertEquals(2, metrics.size());
-        TJobMetrics a =metrics.get("tjoba");
-        assertEquals(10.0, a.startSec, 1e-9);
-        assertEquals(10.0, metrics.get("tjobb").startSec, 1e-9);
-        assertEquals(10.0, a.setupSec, 1e-9);
-        assertEquals(40.0, a.execSec, 1e-9);
-        assertEquals(10.0, a.teardownSec, 1e-9);
-        assertEquals(1.0, a.peakCpu, 1e-9);
-        assertEquals(1.0, a.peakMemGb, 1e-9);
-        assertEquals(20.0, metrics.get("tjobb").execSec, 1e-9);
-        assertEquals(0.5, metrics.get("tjobb").peakCpu, 1e-9);
-        assertEquals(0.5, metrics.get("tjobb").peakMemGb, 1e-9);
     }
 
     @Test
@@ -531,51 +418,6 @@ public class UsageProfileTests {
         JsonNode without = MAPPER.readTree(UsageProfileGenerator.toJson(new UsageProfileData("P", 1L, report, series, null)));
         assertTrue(without.has("graph"));
         assertTrue(without.get("graph").isNull());
-    }
-
-    private static ExecutionMeasurements containers() throws IOException {
-        return ExecutionMeasurements.read(Paths.get(DATA + "usage-containers.csv"));
-    }
-
-    @Test
-    public void testPeakDiskIncludesImagesAndVolumesAndSharedImagesCountOncePerTJob() throws IOException {
-        Timeline t = containers().toTimeline();
-        // second 12: tjoba = web layer 0.25 + app:1 image 1; tjobb = redis:7 image 2
-        assertEquals(3.25, t.slices.get(12).loads.get(0).diskGb + t.slices.get(12).loads.get(1).diskGb, 1e-9);
-        // second 22: db-1 appears (shares app:1, adds a 0.5 GB volume); web layer 0.5 -> tjoba = 0.5 + 0.5 + 1; tjobb = 2
-        assertEquals(4.0, t.peak("disk"), 1e-9);
-        assertEquals(4.0, t.peak("cpu"), 1e-9); // second 32: tjoba 2 + 1.5, tjobb 0.5 (not affected by storage)
-        assertEquals(1.0, ExecutionMeasurements.read(Paths.get(DATA + "usage.csv")).toTimeline().peak("disk"), 1e-9);
-    }
-
-    @Test
-    public void testContainerUsageHasPeaksAveragesAndStorage() throws IOException {
-        Map<String, List<ContainerUsage>> usage = containers().containerUsage();
-        assertEquals(set("tjoba", "tjobb"), usage.keySet());
-        List<ContainerUsage> a = usage.get("tjoba");
-        assertEquals(2, a.size());
-        ContainerUsage db = a.get(0);
-        assertEquals("db-1", db.name);
-        assertEquals("app:1", db.image);
-        assertEquals(1.5, db.peakCpu, 1e-9);
-        assertEquals(1.0, db.avgCpu, 1e-9);
-        assertEquals(0.5, db.peakMemGb, 1e-9);
-        assertEquals(0.5, db.avgMemGb, 1e-9);
-        assertEquals(0.0, db.layerGb, 1e-9);
-        assertEquals(1.0, db.imageGb, 1e-9);
-        assertEquals(0.5, db.volumeGb, 1e-9);
-        assertEquals(1.5, db.storageGb, 1e-9);
-        ContainerUsage web = a.get(1);
-        assertEquals("web-1", web.name);
-        assertEquals(2.0, web.peakCpu, 1e-9);
-        assertEquals(1.5, web.avgCpu, 1e-9);
-        assertEquals(2.0, web.peakMemGb, 1e-9);
-        assertEquals(1.5, web.avgMemGb, 1e-9);
-        assertEquals(0.5, web.layerGb, 1e-9);
-        assertEquals(1.0, web.imageGb, 1e-9); // a shared image counts fully in each container row
-        assertEquals(1.5, web.storageGb, 1e-9);
-        assertEquals("redis:7", usage.get("tjobb").get(0).image);
-        assertEquals(2.0, usage.get("tjobb").get(0).imageGb, 1e-9);
     }
 
     @Test
@@ -761,6 +603,7 @@ public class UsageProfileTests {
         }
         return false;
     }
+
     private static String deviceFarmProduct(String sku, String usage, String price) {
         return "\"" + sku + "\":{\"sku\":\"" + sku + "\",\"attributes\":{\"usagetype\":\"" + usage
                 + "\",\"regionCode\":\"us-west-2\"}}|\"" + sku + "\":{\"T\":{\"priceDimensions\":{\"D\":{\"pricePerUnit\":{\"USD\":\""

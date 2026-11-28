@@ -4,6 +4,9 @@
  */
 package giis.retorch.profiling.usageprofile;
 
+import giis.retorch.profiling.usageprofile.measurement.Load;
+import giis.retorch.profiling.usageprofile.measurement.Slice;
+import giis.retorch.profiling.usageprofile.measurement.Timeline;
 import giis.retorch.profiling.usageprofile.dto.Alternative;
 import giis.retorch.profiling.usageprofile.dto.CostItem;
 import giis.retorch.profiling.usageprofile.dto.Phase;
