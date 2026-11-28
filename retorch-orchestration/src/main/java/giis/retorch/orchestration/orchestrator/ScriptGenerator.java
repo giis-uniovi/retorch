@@ -4,6 +4,8 @@
  */
 package giis.retorch.orchestration.orchestrator;
 
+import giis.retorch.orchestration.config.RetorchConfig;
+import giis.retorch.orchestration.config.RetorchPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +21,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * The {@code ScriptGenerator}  provides the methods that generate the different scripts for set-up, execute and
@@ -27,8 +28,6 @@ import java.util.Properties;
  */
 public class ScriptGenerator {
 
-    private static final String DIRECTORY_TJOBS_NAME = ".retorch/scripts/tjoblifecycles/";
-    private static final String DIRECTORY_COI_NAME = ".retorch/scripts/coilifecycles/";
     private static final String DIRECTORY_TEMPLATES = "generictemplates/";
 
     private static final String INPUT_FILE_TJOB_SETUP_TEMPLATE = DIRECTORY_TEMPLATES + "basetjob-setup.sh";
@@ -44,49 +43,14 @@ public class ScriptGenerator {
     private static final String INPUT_FILE_COI_TEARDOWN_TEMPLATE = DIRECTORY_TEMPLATES + "basecoi-teardown.sh";
     private static final String INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE = DIRECTORY_TEMPLATES + "base" + "-savetjoblifecycledata.sh";
 
-    private static final String OUTPUT_FILE_TJOB_SETUP = DIRECTORY_TJOBS_NAME + "tjob-setup.sh";
-    private static final String OUTPUT_FILE_TJOB_TESTEXECUTION = DIRECTORY_TJOBS_NAME + "tjob-testexecution.sh";
-    private static final String OUTPUT_FILE_TJOB_TEARDOWN = DIRECTORY_TJOBS_NAME + "tjob-teardown.sh";
-    private static final String OUTPUT_FILE_WAITER = ".retorch/scripts/waitforSUT.sh";
-    private static final String OUTPUT_FILE_RESOURCE_MONITOR = ".retorch/scripts/resourcemonitor.sh";
-    private static final String OUTPUT_FILE_USAGE_PROFILE = ".retorch/scripts/generateusageprofile.sh";
-    private static final String OUTPUT_FILE_CONTAINER_LOGS = ".retorch/scripts/storeContainerLogs.sh";
-    private static final String OUTPUT_FILE_LOGGING = ".retorch/scripts/printLog.sh";
-    private static final String OUTPUT_FILE_WRITE_TIME = ".retorch/scripts/writetime.sh";
-    private static final String OUTPUT_FILE_COI_SETUP = DIRECTORY_COI_NAME + "coi-setup.sh";
-    private static final String OUTPUT_FILE_COI_TEARDOWN = DIRECTORY_COI_NAME + "coi-teardown.sh";
-    private static final String OUTPUT_FILE_SAVE_ALL_TJOBS = ".retorch/scripts/savetjoblifecycledata.sh";
-
-    /** Where the profiling jar is downloaded from when the project does not prepare it (e.g. a released jar). */
-    private static final String DEFAULT_PROFILING_JAR_URL =
-            "https://github.com/giis-uniovi/retorch/releases/latest/download/retorch-profiling-cli.jar";
 
     private static final Logger log = LoggerFactory.getLogger(ScriptGenerator.class);
-    private final Properties ciConfiguration;
+    private final RetorchConfig config;
+    private final RetorchPaths paths;
 
-    /** Property of retorchCI.properties that enables the resource measurement and the usage profile. */
-    public static final String PROFILING_PROPERTY = "profiling";
-
-    public static boolean isProfilingEnabled(Properties ciConfiguration) {
-        return Boolean.parseBoolean(ciConfiguration.getProperty(PROFILING_PROPERTY, "false").trim());
-    }
-
-    public ScriptGenerator(Properties ciConfiguration) {
-        this.ciConfiguration = ciConfiguration;
-    }
-
-    public ScriptGenerator() {
-        this(loadProperties());
-    }
-
-    private static Properties loadProperties() {
-        Properties props = new Properties();
-        try (InputStream input = Files.newInputStream(Paths.get(".retorch/configurations/retorchCI.properties"))) {
-            props.load(input);
-        } catch (IOException e) {
-            log.error("Not possible to load properties file due to: {} ", e.getMessage());
-        }
-        return props;
+    public ScriptGenerator(RetorchConfig config, RetorchPaths paths) {
+        this.config = config;
+        this.paths = paths;
     }
 
     /**
@@ -94,34 +58,36 @@ public class ScriptGenerator {
      * in the continuous integration system.
      */
     public void generateScriptsTJob() throws IOException {
-        checkFolderExists(DIRECTORY_TJOBS_NAME);
+        Path tjobDir = paths.tjobScriptsDir();
+        Path scriptsDir = paths.scriptsDir();
+        checkFolderExists(tjobDir);
         Map<String, String> mapValues = new HashMap<>();
-        mapValues.put("${SUT-WAIT-HTML}", ciConfiguration.getProperty("sut-wait-html"));
+        mapValues.put("${SUT-WAIT-HTML}", config.sutWaitHtml());
         mapValues.put("${PROFILING_JAR_URL_PLACEHOLDER}",
-                ciConfiguration.getProperty("profiling-jar-url", DEFAULT_PROFILING_JAR_URL));
+                config.profilingJarUrl());
         mapValues.put("${CUSTOM_USAGEPROFILE_COMMANDS}", getCustomContent("usageprofile"));
-        mapValues.put("${AZURE_REGION_PLACEHOLDER}", ciConfiguration.getProperty("azure-region", "westeurope"));
-        mapValues.put("${AWS_REGION_PLACEHOLDER}", ciConfiguration.getProperty("aws-region", "eu-west-1"));
+        mapValues.put("${AZURE_REGION_PLACEHOLDER}", config.azureRegion());
+        mapValues.put("${AWS_REGION_PLACEHOLDER}", config.awsRegion());
         mapValues.put("${CUSTOM_SETUP_TJOB_COMMANDS}", getCustomContent("tjob-setup"));
         mapValues.put("${CUSTOM_TEARDOWN_TJOB_COMMANDS}", getCustomContent("tjob-teardown"));
-        boolean profiling = isProfilingEnabled(ciConfiguration);
+        boolean profiling = config.profiling();
         mapValues.put("${PROFILING_START_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" start \"$1\"" : "");
         mapValues.put("${PROFILING_STOP_COMMAND}", profiling ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" stop \"$1\"" : "");
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_SETUP_TEMPLATE, OUTPUT_FILE_TJOB_SETUP);
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TESTEXECUTION_TEMPLATE, OUTPUT_FILE_TJOB_TESTEXECUTION);
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TEARDOWN_TEMPLATE, OUTPUT_FILE_TJOB_TEARDOWN);
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_WAITER_TEMPLATE, OUTPUT_FILE_WAITER);
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_WRITE_TIME_TEMPLATE, OUTPUT_FILE_WRITE_TIME);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_SETUP_TEMPLATE, tjobDir.resolve("tjob-setup.sh"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TESTEXECUTION_TEMPLATE, tjobDir.resolve("tjob-testexecution.sh"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_TJOB_TEARDOWN_TEMPLATE, tjobDir.resolve("tjob-teardown.sh"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_WAITER_TEMPLATE, scriptsDir.resolve("waitforSUT.sh"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_WRITE_TIME_TEMPLATE, scriptsDir.resolve("writetime.sh"));
         if (profiling) {
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_RESOURCE_MONITOR, OUTPUT_FILE_RESOURCE_MONITOR);
-            replacePlaceholderTemplate(mapValues, INPUT_FILE_USAGE_PROFILE, OUTPUT_FILE_USAGE_PROFILE);
+            replacePlaceholderTemplate(mapValues, INPUT_FILE_RESOURCE_MONITOR, scriptsDir.resolve("resourcemonitor.sh"));
+            replacePlaceholderTemplate(mapValues, INPUT_FILE_USAGE_PROFILE, scriptsDir.resolve("generateusageprofile.sh"));
         }
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_CONTAINER_LOGS, OUTPUT_FILE_CONTAINER_LOGS);
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_LOGGING, OUTPUT_FILE_LOGGING);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_CONTAINER_LOGS, scriptsDir.resolve("storeContainerLogs.sh"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_LOGGING, scriptsDir.resolve("printLog.sh"));
     }
 
-    public static void checkFolderExists(String path) throws IOException {
-        Path directoryPath = Paths.get(path);
+    public static void checkFolderExists(Path directoryPath) throws IOException {
+        String path = directoryPath.toString();
 
         if (!Files.exists(directoryPath)) {
             Files.createDirectories(directoryPath);
@@ -139,29 +105,29 @@ public class ScriptGenerator {
      * @throws IOException if an I/O error occurs
      */
     private String getCustomContent(String phase) throws IOException {
-        // Map the phase to the corresponding file path
+        // Map the phase to the corresponding file
         String urlFile;
         switch (phase) {
             case "tjob-setup":
-                urlFile = ".retorch/customscriptscode/custom-tjob-setup";
+                urlFile = "custom-tjob-setup";
                 break;
             case "tjob-teardown":
-                urlFile = ".retorch/customscriptscode/custom-tjob-teardown";
+                urlFile = "custom-tjob-teardown";
                 break;
             case "coi-setup":
-                urlFile = ".retorch/customscriptscode/custom-coi-setup";
+                urlFile = "custom-coi-setup";
                 break;
             case "coi-teardown":
-                urlFile = ".retorch/customscriptscode/custom-coi-teardown";
+                urlFile = "custom-coi-teardown";
                 break;
             case "usageprofile":
-                urlFile = ".retorch/customscriptscode/custom-usageprofile";
+                urlFile = "custom-usageprofile";
                 break;
             default:
-                urlFile = ".retorch/customscriptscode/custom.env";  // Default provides the env
+                urlFile = "custom.env";  // Default provides the env
                 break;
         }
-        Path filePath = Paths.get(urlFile);
+        Path filePath = paths.customFile(urlFile);
         if (Files.exists(filePath)) {
             return new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8)
                     .replace("\r\n", "\n").replace("\r", "\n");
@@ -177,11 +143,11 @@ public class ScriptGenerator {
      * @param values        the map with the different configuration values
      * @param outputFile    String with the location of the output file
      */
-    public void replacePlaceholderTemplate(Map<String, String> values, String inputTemplate, String outputFile)
+    public void replacePlaceholderTemplate(Map<String, String> values, String inputTemplate, Path outputFile)
             throws IOException {
         try (BufferedReader br = getFileFromResource(inputTemplate);
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
-                     Files.newOutputStream(Paths.get(outputFile)), StandardCharsets.UTF_8))) {
+                     Files.newOutputStream(outputFile), StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 StringBuilder sb = getStringBuilder(values, line);
@@ -220,14 +186,15 @@ public class ScriptGenerator {
     }
 
     public void generateScriptsCOI() throws IOException {
-        checkFolderExists(DIRECTORY_COI_NAME);
+        Path coiDir = paths.coiScriptsDir();
+        checkFolderExists(coiDir);
         Map<String, String> mapValues = new HashMap<>();
         mapValues.put("${CUSTOM_SETUP_COI_COMMANDS}", getCustomContent("coi-setup"));
         mapValues.put("${CUSTOM_TEARDOWN_COI_COMMANDS}", getCustomContent("coi-teardown"));
-        mapValues.put("${PROFILING_EXPORT_COMMAND}", isProfilingEnabled(ciConfiguration)
+        mapValues.put("${PROFILING_EXPORT_COMMAND}", config.profiling()
                 ? "\"$SCRIPTS_FOLDER/resourcemonitor.sh\" export" : "");
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_SETUP_TEMPLATE, OUTPUT_FILE_COI_SETUP);
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_TEARDOWN_TEMPLATE, OUTPUT_FILE_COI_TEARDOWN);
-        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE, OUTPUT_FILE_SAVE_ALL_TJOBS);
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_SETUP_TEMPLATE, coiDir.resolve("coi-setup.sh"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_COI_TEARDOWN_TEMPLATE, coiDir.resolve("coi-teardown.sh"));
+        replacePlaceholderTemplate(mapValues, INPUT_FILE_SAVE_ALL_TJOBS_TEMPLATE, paths.scriptsDir().resolve("savetjoblifecycledata.sh"));
     }
 }

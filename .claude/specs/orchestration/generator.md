@@ -4,6 +4,8 @@
 Facade of the orchestration pipeline: classifier -> aggregator -> scheduler -> orchestrator.
 
 ## Public API
+- `OrchestrationGenerator()` (working directory) or `OrchestrationGenerator(RetorchPaths)` (any folder);
+  `withProfiling(Boolean)` forces profiling on/off (`null` keeps `retorchCI.properties`).
 - `OrchestrationGenerator.generateJenkinsfile(rootPackageNameTests, systemName, jenkinsFilePath)`: runs the whole
   pipeline, writes `Jenkinsfile` (into `jenkinsFilePath`, or `./Jenkinsfile` if that directory does not exist), the
   scripts under `.retorch/scripts` and the TJob env files, and returns the pipeline text.
@@ -11,9 +13,10 @@ Facade of the orchestration pipeline: classifier -> aggregator -> scheduler -> o
   the profiling module).
 
 ## Behavior
-- Profiling is not a parameter here: `JenkinsOrchestrator` decides it (property `profiling` in
-  `retorchCI.properties`, overridable by the `retorch.profiling` JVM system property set by `RetorchMain`).
-  See `orchestration/orchestrator.md`.
+- Profiling is decided by `RetorchConfig` (property `profiling` in `retorchCI.properties`, overridden by
+  `withProfiling`, which `RetorchMain` calls for `--profiling/--no-profiling`). See `orchestration/orchestrator.md`.
+- The configuration is loaded once and the resources JSON is deserialized once; the same map is given to the classifier,
+  the aggregator and the orchestrator. A missing `retorchCI.properties` fails with an `IOException` naming the file.
 - Errors of the intermediate steps propagate as the checked exceptions of the signature.
 
 ## Tests

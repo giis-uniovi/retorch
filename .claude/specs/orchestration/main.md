@@ -10,7 +10,8 @@ java -jar retorch-orchestration-<version>-standalone.jar <rootPackageNameTests> 
 - `--profiling`: the generated pipeline measures resources and publishes the usage profile.
 - `--no-profiling`: it does not, even if `retorchCI.properties` has `profiling=true`.
 - No flag: the `profiling` property of `retorchCI.properties` decides (default `false`).
-- The flag reaches the orchestrator through the JVM system property `retorch.profiling` (`true`/`false`).
+- The flag reaches the orchestrator as a profiling override of `OrchestrationGenerator.withProfiling(Boolean)` (no JVM
+  system property is set; `RetorchConfig` still reads `retorch.profiling` for one release for old launchers).
 
 ## Behavior
 - Wrong number of arguments or an unknown 4th argument: usage message and exit code 1.

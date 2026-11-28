@@ -50,13 +50,11 @@ public class RetorchMain {
         String rootPackageNameTests = args[0];
         String systemName = args[1];
         String jenkinsFilePath = args[2];
-        if (args.length == 4) {
-            System.setProperty("retorch.profiling", String.valueOf("--profiling".equals(args[3])));
-        }
+        Boolean profiling = args.length == 4 ? Boolean.valueOf("--profiling".equals(args[3])) : null;
 
         try {
             extendClasspathFromCwd();
-            OrchestrationGenerator generator = new OrchestrationGenerator();
+            OrchestrationGenerator generator = new OrchestrationGenerator().withProfiling(profiling);
             generator.generateJenkinsfile(rootPackageNameTests, systemName, jenkinsFilePath);
             log.info("Jenkinsfile and scripts generated successfully in: {}", jenkinsFilePath);
         } catch (Exception e) {

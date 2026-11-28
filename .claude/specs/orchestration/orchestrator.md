@@ -5,11 +5,14 @@ Turns the ordered `Activity`s into a Jenkins declarative pipeline, the per-TJob 
 pipeline runs.
 
 ## Public API
-- `IRetorchOrchestrator`, `JenkinsOrchestrator(activities, systemName)`: `generatePipeline(sortedActivities)`,
-  `getExecutionPlan`, `setExecutionPlan`, `generateDockerComposeEnvironmentFiles`. Exceptions:
-  `NoFinalActivitiesException`.
-- `ScriptGenerator(Properties)`: `generateScriptsTJob()`, `generateScriptsCOI()`, `replacePlaceholderTemplate`.
-  `ScriptGenerator.isProfilingEnabled(Properties)`.
+- `IRetorchOrchestrator`, `JenkinsOrchestrator(activities, systemName[, paths])` or
+  `JenkinsOrchestrator(activities, resources, config, paths)` (resources and configuration loaded once by the caller):
+  `generatePipeline(sortedActivities)`, `getExecutionPlan`, `setExecutionPlan`, `generateDockerComposeEnvironmentFiles`.
+  Exceptions: `NoFinalActivitiesException`.
+- `ScriptGenerator(RetorchConfig, RetorchPaths)`: `generateScriptsTJob()`, `generateScriptsCOI()`,
+  `replacePlaceholderTemplate`.
+- `ExecutionPlanWriter(RetorchPaths)`.
+- Every path comes from `RetorchPaths` and every property from `RetorchConfig` (see `orchestration/config.md`).
 
 ## Configuration (`.retorch/configurations/retorchCI.properties`)
 | Property | Meaning | Default |
@@ -19,8 +22,9 @@ pipeline runs.
 | `profiling-jar-url` | where `generateusageprofile.sh` downloads `retorch-profiling-cli.jar` from when `$HOME/.retorch/retorch-profiling-cli.jar` does not exist | GitHub `releases/latest/download/retorch-profiling-cli.jar` |
 | `azure-region`, `aws-region` | comma separated cloud regions whose prices are compared; empty disables the provider | `westeurope`, `eu-west-1` |
 
-The JVM system property `retorch.profiling` (`true`/`false`, set by `RetorchMain --profiling/--no-profiling`) overrides
-`profiling`. In the pipeline, the environment variables `AZURE_REGIONS` / `AWS_REGIONS` override the two region
+The `--profiling/--no-profiling` flag of `RetorchMain` overrides `profiling` (passed as a `RetorchConfig` override; the JVM
+system property `retorch.profiling` is still read for one release, deprecated). A required property that is missing
+fails with a message naming it (`orchestration/config.md`). In the pipeline, the environment variables `AZURE_REGIONS` / `AWS_REGIONS` override the two region
 properties without regenerating.
 
 ## Custom hooks (`.retorch/customscriptscode/`, all optional)
@@ -79,5 +83,5 @@ project has it (`$WORKSPACE/.retorch/executionplan.json`, versioned with the pro
   `savetjoblifecycledata.sh`.
 
 ## Tests
-`JenkinsOrchestratorTests`: default mode against `expected_out/` (`scriptler/`, `outputTest*`); profiling mode against
+`WorkspaceConfigTests` (generation in a temporary workspace). `JenkinsOrchestratorTests`: default mode against `expected_out/` (`scriptler/`, `outputTest*`); profiling mode against
 `expected_out/profiling/`; profiling off generates no profiling script and no usage profile stage.

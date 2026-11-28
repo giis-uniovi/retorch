@@ -17,7 +17,9 @@ Resource Identification phase: turns annotated test classes into a `SystemUnderT
   missing it is an empty list.
 - Only methods carrying the RETORCH annotations become `TestCase`s; each access mode is bound to the `Resource`
   declared in the JSON file.
-- The resources file path is relative to the working directory.
+- The resources file path comes from `RetorchPaths` (default: relative to the working directory). `RetorchClassifier`
+  accepts the resources already loaded (`RetorchClassifier(Map<String,Resource>)`) so the JSON is not read again;
+  `ResourceSerializer(RetorchPaths)` for another folder.
 
 - Current behavior (known issue): tests without valid access modes are dropped and only logged; no exception.
 

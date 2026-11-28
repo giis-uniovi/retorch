@@ -9,6 +9,7 @@ a package must be reflected in its spec **in the same change**.
 |---|---|---|
 | retorch-annotations | `giis.retorch.annotations` | [annotations/annotations.md](annotations/annotations.md) |
 | retorch-orchestration | `giis.retorch.orchestration.classifier` | [orchestration/classifier.md](orchestration/classifier.md) |
+| retorch-orchestration | `giis.retorch.orchestration.config` | [orchestration/config.md](orchestration/config.md) |
 | retorch-orchestration | `giis.retorch.orchestration.generator` | [orchestration/generator.md](orchestration/generator.md) |
 | retorch-orchestration | `giis.retorch.orchestration.main` | [orchestration/main.md](orchestration/main.md) |
 | retorch-orchestration | `giis.retorch.orchestration.model` | [orchestration/model.md](orchestration/model.md) |

@@ -6,9 +6,13 @@ package giis.retorch.orchestration.generator;
 
 
 import giis.retorch.orchestration.classifier.EmptyInputException;
+import giis.retorch.orchestration.classifier.ResourceSerializer;
 import giis.retorch.orchestration.classifier.RetorchClassifier;
+import giis.retorch.orchestration.config.RetorchConfig;
+import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.Activity;
 import giis.retorch.orchestration.model.ExecutionPlan;
+import giis.retorch.orchestration.model.Resource;
 import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
 import giis.retorch.orchestration.orchestrator.JenkinsOrchestrator;
@@ -25,11 +29,33 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 /**
  * The {@code OrchestrationGenerator} class provides several method that allow to generate and obtain the Execution
  * Plan and the Jenkinsfiles and scripting code, orchestrating.
  */
 public class OrchestrationGenerator {
+
+    private final RetorchPaths paths;
+    private Boolean profilingOverride;
+
+    /** Generator that reads and writes under the working directory. */
+    public OrchestrationGenerator() {
+        this(new RetorchPaths());
+    }
+
+    public OrchestrationGenerator(RetorchPaths paths) {
+        this.paths = paths;
+    }
+
+    /**
+     * Forces profiling on or off for the next generations, overriding {@code retorchCI.properties}.
+     * @param profiling {@code null} (default) keeps the configured value
+     */
+    public OrchestrationGenerator withProfiling(Boolean profiling) {
+        this.profilingOverride = profiling;
+        return this;
+    }
 
     /**
      * Main method of RETORCH  prototype. This method given root package name where tests are located and the system name,
@@ -78,15 +104,18 @@ public class OrchestrationGenerator {
      * @param systemName   String with the system name (must coincide with the SystemResources.json file).
      * @param rootPackageNameTests String with root package name where tests are located.
      */
-    private static JenkinsOrchestrator getJenkinsOrchestrator(String rootPackageNameTests, String systemName) throws
+    private JenkinsOrchestrator getJenkinsOrchestrator(String rootPackageNameTests, String systemName) throws
             EmptyInputException, IOException, ClassNotFoundException, URISyntaxException, NotValidSystemException,
             NoTGroupsInTheSchedulerException, NoFinalActivitiesException {
-        RetorchClassifier classifier = new RetorchClassifier();
+        RetorchConfig config = RetorchConfig.load(paths).withProfiling(profilingOverride);
+        // the resources JSON is read once and shared by the three phases
+        Map<String, Resource> resources = new ResourceSerializer(paths).deserializeResources(systemName);
+        RetorchClassifier classifier = new RetorchClassifier(resources);
         SystemUnderTest currentSystem = classifier.getSystemFromPackage(systemName, rootPackageNameTests);
-        RetorchAggregator aggregator = new RetorchAggregator(currentSystem);
+        RetorchAggregator aggregator = new RetorchAggregator(currentSystem, resources);
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
         RetorchScheduler scheduler = new RetorchScheduler(tGroupsOutputAggregator);
         List<Activity> listActivities = scheduler.generateActivities();
-        return new JenkinsOrchestrator(listActivities, systemName);
+        return new JenkinsOrchestrator(listActivities, resources, config, paths);
     }
 }

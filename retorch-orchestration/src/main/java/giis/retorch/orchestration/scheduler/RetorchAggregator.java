@@ -26,12 +26,20 @@ public class RetorchAggregator {
     private Map<String, Resource> mapAvailableResources;
 
     public RetorchAggregator(SystemUnderTest system) throws NotValidSystemException, IOException {
+        this(system, null);
+    }
+
+    /**
+     * @param resources resources of the system by id, already loaded by the caller; {@code null} reads the JSON file
+     */
+    public RetorchAggregator(SystemUnderTest system, Map<String, Resource> resources)
+            throws NotValidSystemException, IOException {
         boolean isValid = validateSystem(system);
         this.aggregatorSystem = isValid ? system : new SystemUnderTest("EmptySystem ERROR");
         this.mapTGroups = new HashMap<>();
         if (isValid) {
-            ResourceSerializer serializer = new ResourceSerializer();
-            this.mapAvailableResources = serializer.deserializeResources(system.getName());
+            this.mapAvailableResources = resources != null
+                    ? resources : new ResourceSerializer().deserializeResources(system.getName());
         }
     }
 

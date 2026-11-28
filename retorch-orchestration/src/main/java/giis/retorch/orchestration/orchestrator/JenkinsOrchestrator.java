@@ -6,17 +6,16 @@ package giis.retorch.orchestration.orchestrator;
 
 import giis.retorch.orchestration.classifier.EmptyInputException;
 import giis.retorch.orchestration.classifier.ResourceSerializer;
+import giis.retorch.orchestration.config.RetorchConfig;
+import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.io.FileUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 /**
  * The {@code JenkinsOrchestrator} class provides several method that enable the derivation from a {@code ExecutionPlan}
@@ -27,34 +26,47 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
 
     private static final String TJOB_BASE_PATH = "testsBasePath";
     private static final String APP_URL_PROPERTY = "app-url";
-    private static final String ENVIRONMENT_FOLDER_NAME = ".retorch/envfiles/";
     private static final Logger log = LoggerFactory.getLogger(JenkinsOrchestrator.class);
     private static final String SH_COMMAND = "          sh '";
-    private final Properties ciConfiguration;
+    private final RetorchConfig config;
+    private final RetorchPaths paths;
     private ExecutionPlan executionPlan;
     private final Map<String, Resource> listAllResources;
-    private final ResourceSerializer deserializer;
+
     /**
-     * Default constructor, gets a list of {@code Activity} and deserialize the ResourceJSON.json and retorchCI properties
-     * the files, filling the different structures that would be used by the JenkinsOrchestrator
+     * Gets a list of {@code Activity}, deserializes the ResourceJSON.json and reads retorchCI.properties of the working
+     * directory.
      * @param activityEntityListFromScheduler List of {@code Activity} that would be the input of the {@code JenkinsOrchestrator}
      */
     public JenkinsOrchestrator(List<Activity> activityEntityListFromScheduler, String systemName) throws EmptyInputException,
             NoFinalActivitiesException, IOException {
-        deserializer= new ResourceSerializer();
-        this.executionPlan = new ExecutionPlan("defaultName", activityEntityListFromScheduler);
-        this.listAllResources = deserializer.deserializeResources(systemName);
-        ciConfiguration = new Properties();
-        try (InputStream input = Files.newInputStream(Paths.get(".retorch/configurations/retorchCI.properties"))) {
-            ciConfiguration.load(input);
-        } catch (IOException e) {
-            log.error("Not possible to load properties file due to: {} ", e.getMessage());
-        }
-        // The command line (--profiling / --no-profiling) takes precedence over retorchCI.properties
-        String profilingOverride = System.getProperty("retorch.profiling");
-        if (profilingOverride != null) {
-            ciConfiguration.setProperty(ScriptGenerator.PROFILING_PROPERTY, profilingOverride);
-        }
+        this(activityEntityListFromScheduler, systemName, new RetorchPaths());
+    }
+
+    public JenkinsOrchestrator(List<Activity> activityEntityListFromScheduler, String systemName, RetorchPaths paths)
+            throws EmptyInputException, NoFinalActivitiesException, IOException {
+        this(new ExecutionPlan("defaultName", activityEntityListFromScheduler),
+                new ResourceSerializer(paths).deserializeResources(systemName), RetorchConfig.load(paths), paths);
+    }
+
+    /**
+     * @param activityEntityListFromScheduler activities to orchestrate
+     * @param resources resources of the system by id, loaded once by the caller
+     * @param config the CI configuration
+     * @param paths where the files are read and written
+     */
+    public JenkinsOrchestrator(List<Activity> activityEntityListFromScheduler, Map<String, Resource> resources,
+                               RetorchConfig config, RetorchPaths paths) throws EmptyInputException,
+            NoFinalActivitiesException {
+        this(new ExecutionPlan("defaultName", activityEntityListFromScheduler), resources, config, paths);
+    }
+
+    private JenkinsOrchestrator(ExecutionPlan plan, Map<String, Resource> resources, RetorchConfig config,
+                                RetorchPaths paths) {
+        this.executionPlan = plan;
+        this.listAllResources = resources;
+        this.config = config;
+        this.paths = paths;
     }
 
     @Override
@@ -73,7 +85,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         List<TestCase> testCases = tJobWithTestCases.getListTestCases();
         StringBuilder strBuilder = new StringBuilder();
         strBuilder.append(SH_COMMAND).append("$SCRIPTS_FOLDER/tjoblifecycles/tjob-testexecution.sh");
-        String url = ciConfiguration.getProperty(APP_URL_PROPERTY).replace("$TJOB_NAME",tJobId.toLowerCase(Locale.ROOT));
+        String url = config.appUrl(tJobId);
 
         strBuilder.append(" ").append(tJobId.toLowerCase(Locale.ROOT)).append(" ").append(stage).append(" ")
                 .append(url).append(" \"");
@@ -150,16 +162,16 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         StringBuilder stringBuilder = new StringBuilder();
         Integer maxStagesValue = Collections.max(listActivities.keySet());
         //Remove scripts directory to avoid
-        if (Files.exists(Paths.get(".retorch/scripts"))) {
-            FileUtils.deleteDirectory(new File(".retorch/scripts"));
+        if (Files.exists(paths.scriptsDir())) {
+            FileUtils.deleteDirectory(paths.scriptsDir().toFile());
         }
-        Files.deleteIfExists(Paths.get(ExecutionPlanWriter.FILE)); // never keep the plan of a previous generation
-        ScriptGenerator scriptler = new ScriptGenerator(this.ciConfiguration);
+        Files.deleteIfExists(paths.executionPlanFile()); // never keep the plan of a previous generation
+        ScriptGenerator scriptler = new ScriptGenerator(config, paths);
         stringBuilder.append("pipeline {\n")
-                .append("  agent {label '").append(this.ciConfiguration.getProperty("agentCIName")).append("'}\n")
+                .append("  agent {label '").append(config.agentCIName()).append("'}\n")
                 .append("  environment {\n")
                 .append("    SELENOID_PRESENT = \"TRUE\"\n")
-                .append("    SUT_LOCATION = \"").append(ciConfiguration.getProperty("sut-location")).append("\"\n")
+                .append("    SUT_LOCATION = \"").append(config.sutLocation()).append("\"\n")
                 .append("    SCRIPTS_FOLDER = \"$WORKSPACE/.retorch/scripts\"\n")
                 .append("  } // EndEnvironment\n")
                 .append("  options {\n")
@@ -202,7 +214,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         }
 
         generateInfrastructureTearDown(stringBuilder);
-        if (ScriptGenerator.isProfilingEnabled(ciConfiguration)) {
+        if (config.profiling()) {
             generateUsageProfile(stringBuilder);
         }
         stringBuilder.append("} // EndStagesPipeline\n")
@@ -211,8 +223,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
 
         scriptler.generateScriptsTJob();
         scriptler.generateScriptsCOI();
-        if (ScriptGenerator.isProfilingEnabled(ciConfiguration)) {
-            new ExecutionPlanWriter().write(listActivities);
+        if (config.profiling()) {
+            new ExecutionPlanWriter(paths).write(listActivities);
         }
 
         return stringBuilder.toString();
@@ -247,7 +259,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
      */
     private String generateDisposingDirective() throws IOException {
         log.debug("Executing the disposing directive");
-        String usageProfilePublication = ScriptGenerator.isProfilingEnabled(ciConfiguration)
+        String usageProfilePublication = config.profiling()
                 ? "        archiveArtifacts artifacts: 'artifacts/usageprofile/*.html', allowEmptyArchive: true\n"
                 + "        publishHTML(target: [reportDir: 'artifacts/usageprofile', reportFiles: 'usageprofile.html', "
                 + "reportName: 'RETORCH Usage Profile', keepAll: true, alwaysLinkToLastBuild: true, "
@@ -269,8 +281,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
      * {@code post { always { } }} block (e.g. to publish a coverage report); empty if the file does not exist.
      */
     private String customJenkinsPostSteps() throws IOException {
-        String path = ".retorch/customscriptscode/custom-jenkins-post";
-        if (!Files.exists(Paths.get(path))) {
+        Path path = paths.customFile("custom-jenkins-post");
+        if (!Files.exists(path)) {
             return "";
         }
         String content = readFileContent(path).replace("\r\n", "\n");
@@ -301,9 +313,9 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
         String tJobNameLower = tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT);
         Map<String, String> mapData = new HashMap<>();
         mapData.put("tjob_name", tJobNameLower);
-        mapData.put(TJOB_BASE_PATH, ciConfiguration.getProperty(TJOB_BASE_PATH));
+        mapData.put(TJOB_BASE_PATH, config.testsBasePath());
         mapData.putAll(mapWithDockerImages);
-        mapData.put(APP_URL_PROPERTY, ciConfiguration.getProperty(APP_URL_PROPERTY).replace("$TJOB_NAME", tJobNameLower));
+        mapData.put(APP_URL_PROPERTY, config.appUrl(tJobNameLower));
         return mapData;
     }
 
@@ -314,8 +326,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
      * @param mapProperties Dictionary with the different placeholders values
      */
     public void generateDockerComposeEnvironmentFiles(Map<String, String> mapProperties, TJob tJobWithTestCases) throws IOException {
-        String resourcePath = ENVIRONMENT_FOLDER_NAME;
-        Files.createDirectories(Paths.get(resourcePath));
+        Path envFolder = paths.envFilesDir();
+        Files.createDirectories(envFolder);
         StringBuilder contentEnvFile = new StringBuilder();
         contentEnvFile.append("# Environment file for the TJob: ").append(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT));
         contentEnvFile.append("\n# like ports, docker images or the tjobname itself.\n");
@@ -325,10 +337,10 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                     .append(entry.getValue())
                     .append("\n");
         }
-        if (Files.exists(Paths.get(".retorch/customscriptscode/custom.env"))) {
-            contentEnvFile.append(readFileContent(".retorch/customscriptscode/custom.env"));
+        if (Files.exists(paths.customFile("custom.env"))) {
+            contentEnvFile.append(readFileContent(paths.customFile("custom.env")));
         }
-        Path envFilePath = Paths.get(resourcePath + tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT) + ".env");
+        Path envFilePath = envFolder.resolve(tJobWithTestCases.getIdTJob().toLowerCase(Locale.ROOT) + ".env");
         Files.write(envFilePath, contentEnvFile.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
@@ -338,8 +350,8 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
                   .toUpperCase(Locale.ROOT);
     }
 
-    private String readFileContent(String filePath) throws IOException {
-        byte[] bytes = Files.readAllBytes(Paths.get(filePath));
+    private String readFileContent(Path filePath) throws IOException {
+        byte[] bytes = Files.readAllBytes(filePath);
         return new String(bytes, java.nio.charset.StandardCharsets.UTF_8)
                 .replace("\r\n", "\n").replace("\r", "\n");
     }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.ElasticityModel;
 import giis.retorch.orchestration.model.Resource;
 
@@ -26,7 +27,7 @@ import java.util.*;
 public class ResourceSerializer {
 
     private final Logger logSerializer = LoggerFactory.getLogger(ResourceSerializer.class);
-    private static final String FOLDER_RESOURCES = ".retorch/configurations/";//Base path of the resource files
+    private final RetorchPaths paths;
 
     final HashMap<String, Resource> resourcesToSerialize;//Map with the dictionary of resources to serialize
     final ObjectMapper mapper;
@@ -36,6 +37,11 @@ public class ResourceSerializer {
      * RETORCH entities that they want to serialize in these files.
      */
     public ResourceSerializer() {
+        this(new RetorchPaths());
+    }
+
+    public ResourceSerializer(RetorchPaths paths) {
+        this.paths = paths;
         resourcesToSerialize = new HashMap<>();
         mapper = new ObjectMapper();
     }
@@ -96,8 +102,8 @@ public class ResourceSerializer {
      * @param name String with the system name
      */
     public void serializeResources(String name) throws IOException {
-        Files.createDirectories(Paths.get(FOLDER_RESOURCES));
-        writeSerializationToFile(FOLDER_RESOURCES + name + "SystemResources.json",
+        Files.createDirectories(paths.configurationsDir());
+        writeSerializationToFile(paths.resourcesFile(name).toString(),
                 mapper.writeValueAsString(resourcesToSerialize));
     }
 
@@ -135,7 +141,7 @@ public class ResourceSerializer {
      *                     read
      */
     public Map<String, Resource> deserializeResources(String name) throws IOException {
-        return deserialize(FOLDER_RESOURCES + name + "SystemResources.json", new TypeReference<Map<String, Resource>>() {
+        return deserialize(paths.resourcesFile(name).toString(), new TypeReference<Map<String, Resource>>() {
         });
     }
 }

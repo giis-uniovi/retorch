@@ -1,0 +1,25 @@
+# Spec: `giis.retorch.orchestration.config`
+
+## Purpose
+Where RETORCH reads and writes (`RetorchPaths`) and the typed view of `retorchCI.properties` (`RetorchConfig`), so no
+other class hard-codes a `.retorch/...` path or reads a property by name.
+
+## Public API
+- `RetorchPaths(Path root)` (default: the working directory): `retorchDir`, `configurationsDir`, `ciPropertiesFile`,
+  `resourcesFile(systemName)`, `scriptsDir`, `tjobScriptsDir` (`scripts/tjoblifecycles`), `coiScriptsDir`
+  (`scripts/coilifecycles`), `envFilesDir`, `customScriptsDir`, `customFile(name)`, `executionPlanFile`.
+- `RetorchConfig`: `load(paths)` (throws `IOException` naming the file if it does not exist), `withProfiling(Boolean)`
+  (copy with the flag forced; `null` keeps it), `agentCIName`, `sutLocation`, `appUrl(tJobName)` (replaces
+  `$TJOB_NAME` by the lower case name), `sutWaitHtml`, `testsBasePath` (all required), `profiling` (default `false`),
+  `profilingJarUrl`, `azureRegion`, `awsRegion` (defaults in `orchestration/orchestrator.md`).
+
+## Behavior
+- A missing required property fails with `IllegalStateException("The required property '<name>' is missing in <file>")`.
+- Profiling precedence: explicit `withProfiling` (CLI) > deprecated JVM system property `retorch.profiling` (still read
+  by `load` for one release) > `profiling` in the file.
+- The layout under the root is the one documented in `orchestration/orchestrator.md`; with the default root every path is
+  relative to the working directory, as before.
+
+## Tests
+`WorkspaceConfigTests` (paths layout, generator running in a temporary folder with the same pipeline as
+`expected_out/outputTestIntegration`, profiling override, missing property and missing file messages).

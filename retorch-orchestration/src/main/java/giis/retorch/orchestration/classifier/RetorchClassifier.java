@@ -5,6 +5,7 @@
 package giis.retorch.orchestration.classifier;
 
 import giis.retorch.annotations.AccessModes;
+import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.*;
 import giis.retorch.orchestration.model.SystemUnderTest;
 import org.slf4j.Logger;
@@ -34,12 +35,34 @@ public class RetorchClassifier {
     private static final String NO_EXIST = " doesn't exist";
     private static final String JACOCO_INIT_METHOD = "$jacocoInit";
     private final ResourceSerializer deserializer; //Serializer employed to deserialize the resources info
+    private final Map<String, Resource> loadedResources; //Resources given by the caller, null to read the JSON
 
     /**
      * Empty constructor used to validate RETORCH in the test case
      */
     public RetorchClassifier() {
-        deserializer = new ResourceSerializer();
+        this(new ResourceSerializer(), null);
+    }
+
+    public RetorchClassifier(RetorchPaths paths) {
+        this(new ResourceSerializer(paths), null);
+    }
+
+    /**
+     * Classifier that uses the resources already loaded by the caller (so the JSON is read once per generation).
+     * @param resources resources of the system by id
+     */
+    public RetorchClassifier(Map<String, Resource> resources) {
+        this(new ResourceSerializer(), resources);
+    }
+
+    private RetorchClassifier(ResourceSerializer deserializer, Map<String, Resource> resources) {
+        this.deserializer = deserializer;
+        this.loadedResources = resources;
+    }
+
+    private Map<String, Resource> resourcesOf(String systemName) throws IOException {
+        return loadedResources != null ? loadedResources : deserializer.deserializeResources(systemName);
     }
     /**
      * This method gets the file specified as package, in order to do this, instantiates the classLoader
@@ -109,7 +132,7 @@ public class RetorchClassifier {
     public SystemUnderTest getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
             IOException, ClassNotFoundException, URISyntaxException {
         Map<String, Resource> validatedResources = new HashMap<>();
-        for (Resource res : deserializer.deserializeResources(systemName).values()) {
+        for (Resource res : resourcesOf(systemName).values()) {
             if (resourceChecker(res)) {
                 validatedResources.put(res.getResourceID(), res);
             }
@@ -148,7 +171,7 @@ public class RetorchClassifier {
      */
     public SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
             IOException {
-        Map<String, Resource> resourceMap = deserializer.deserializeResources(systemName);
+        Map<String, Resource> resourceMap = resourcesOf(systemName);
         return getSystemFromClass(systemName, testCaseClass, resourceMap);
     }
 
