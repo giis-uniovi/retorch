@@ -6,7 +6,6 @@ package giis.retorch.profiling.usageprofile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import giis.retorch.profiling.usageprofile.ExecutionMeasurements.Timeline;
 import giis.retorch.profiling.usageprofile.dto.Alternative;
 import giis.retorch.profiling.usageprofile.dto.ContainerUsage;
 import giis.retorch.profiling.usageprofile.dto.CostItem;
@@ -210,8 +209,8 @@ public class UsageProfileTests {
         assertTrue(t.peak("cpu") > 1.0);
         assertTrue(t.peak("mem") > 0.1);
         java.util.Set<String> tjobs = new java.util.HashSet<>();
-        for (ExecutionMeasurements.Slice s : t.slices) {
-            for (ExecutionMeasurements.Load l : s.loads) tjobs.add(l.tjob);
+        for (Slice s : t.slices) {
+            for (Load l : s.loads) tjobs.add(l.tjob);
         }
         assertEquals(10, tjobs.size());
     }
@@ -273,8 +272,8 @@ public class UsageProfileTests {
         // vCPU-seconds: tjoba uses 1 vCPU for the 10+40+10... the samples hold between 12 s and 70 s
         double cpuSeconds = 0;
         Timeline t = timeline();
-        for (ExecutionMeasurements.Slice s : t.slices) {
-            for (ExecutionMeasurements.Load l : s.loads) cpuSeconds += l.cpu;
+        for (Slice s : t.slices) {
+            for (Load l : s.loads) cpuSeconds += l.cpu;
         }
         assertEquals(cpuSeconds, alt.total, 1e-6);
         for (CostItem i : alt.items) {
@@ -516,9 +515,9 @@ public class UsageProfileTests {
     @Test
     public void testTJobMetricsComeFromPhasesAndTimeline() throws IOException {
         ExecutionMeasurements m = ExecutionMeasurements.read(Paths.get(DATA + "usage.csv"));
-        Map<String, ExecutionMeasurements.TJobMetrics> metrics = m.tjobMetrics(m.toTimeline());
+        Map<String, TJobMetrics> metrics = m.tjobMetrics(m.toTimeline());
         assertEquals(2, metrics.size());
-        ExecutionMeasurements.TJobMetrics a = metrics.get("tjoba");
+        TJobMetrics a =metrics.get("tjoba");
         assertEquals(10.0, a.startSec, 1e-9);
         assertEquals(10.0, metrics.get("tjobb").startSec, 1e-9);
         assertEquals(10.0, a.setupSec, 1e-9);

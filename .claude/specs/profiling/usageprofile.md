@@ -19,6 +19,7 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
   properties ignored). The profiling module has its own small classes for it (no dependency on the orchestration module).
 
 ## Components
+- Reading is split in three package-private collaborators behind the facade `ExecutionMeasurements` (same public API): `UsageCsvReader` (parsing and validation, produces `UsageData`), `TimelineBuilder` (resampling and storage rule) and `TJobMetricsCalculator` (TJob metrics and container usage). `Load`, `Slice`, `Timeline` and `TJobMetrics` are immutable top-level public classes of the package (public final fields, unmodifiable lists).
 - `ExecutionMeasurements.read(usageFile).toTimeline()`: resamples at 1 second. Each container holds its last
   sample; a sample is assigned to the phase its TJob is in at that second (setup / testexec / teardown, by start
   boundaries). `Slice.coiPhase` is `COI-setup` or `coi-teardown` while the COI lifecycle is running.

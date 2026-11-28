@@ -11,6 +11,7 @@ import giis.retorch.profiling.usageprofile.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.ExecutionPlanReader;
 import giis.retorch.profiling.usageprofile.PriceCatalog;
 import giis.retorch.profiling.usageprofile.PriceSource;
+import giis.retorch.profiling.usageprofile.Timeline;
 import giis.retorch.profiling.usageprofile.dto.CostReport;
 import giis.retorch.profiling.usageprofile.dto.SutInfo;
 import giis.retorch.profiling.usageprofile.dto.ExecutionGraph;
@@ -68,7 +69,7 @@ public class UsageProfilerToolBox {
                                   String executionPlanJson) throws IOException {
         Path out = Paths.get(outputHtml);
         ExecutionMeasurements measurements = ExecutionMeasurements.read(Paths.get(usageCsv));
-        ExecutionMeasurements.Timeline timeline = measurements.toTimeline();
+        Timeline timeline = measurements.toTimeline();
         List<ExecutionPlanReader.PlanNode> plan = readPlan(executionPlanJson);
         CostReport report = new CostCalculator().calculate(timeline, catalog, browserTjobs(plan));
         ExecutionGraph graph = plan == null ? null
