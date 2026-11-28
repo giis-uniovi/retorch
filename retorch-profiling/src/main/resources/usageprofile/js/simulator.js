@@ -171,31 +171,30 @@ const Simulator = (function () {
 
   const utilText = function (row) {
     if (row.util === null) { return '–'; }
-    return Fmt.num(row.util * 100, 0) + ' %' + (row.fits ? '' : ' · <b class="nofit">' + t('sim.nofit') + '</b>');
+    return Html.t`${Fmt.num(row.util * 100, 0) + ' %'}${row.fits ? '' : Html.t` · <b class="nofit">${t('sim.nofit')}</b>`}`;
   };
 
   /* ---- results ---- */
   const cell = function (key, text, cls) {
-    return '<td' + (cls ? ' class="' + cls + '"' : '') + ' data-label="' + Fmt.esc(t(key)) + '">' + text + '</td>';
+    return Html.t`<td${cls ? Html.t` class="${cls}"` : ''} data-label="${t(key)}">${text}</td>`;
   };
 
   /* keys: header texts; the ones in `numeric` are right aligned like their cells. */
   const head = function (keys, numeric) {
-    return '<thead><tr>' + keys.map(function (k) {
-      return '<th scope="col"' + (numeric.indexOf(k) >= 0 ? ' class="num"' : '') + '>' + Fmt.esc(t(k)) + '</th>';
-    }).join('') + '</tr></thead>';
+    return Html.t`<thead><tr>${keys.map(function (k) {
+      return Html.t`<th scope="col"${numeric.indexOf(k) >= 0 ? Html.raw(' class="num"') : ''}>${t(k)}</th>`;
+    })}</tr></thead>`;
   };
 
   function resultsTable(model, p) {
     const rows = model.rows.map(function (r) {
       const isBest = r === model.best;
-      return '<tr' + (isBest ? ' class="best"' : '') + '><th scope="row">' + Fmt.esc(helpers.label(r.alt)) +
-        (isBest ? '<span class="tag">' + t('sim.cheapest') + '</span>' : '') + '</th>' + cell('sim.col.mode', Fmt.esc(modeLabel(r, p))) +
-        cell('sim.col.month', Fmt.usd(r.monthly), 'num') + cell('sim.col.year', Fmt.usd(r.monthly * 12), 'num') +
-        cell('sim.col.util', utilText(r), 'num') + '</tr>';
-    }).join('');
-    el('simTable').innerHTML = '<caption class="vh">' + Fmt.esc(t('sim.cap')) + '</caption>' +
-      head(['sim.col.alt', 'sim.col.mode', 'sim.col.month', 'sim.col.year', 'sim.col.util'], ['sim.col.month', 'sim.col.year', 'sim.col.util']) + '<tbody>' + rows + '</tbody>';
+      return Html.t`<tr${isBest ? Html.raw(' class="best"') : ''}><th scope="row">${helpers.label(r.alt)}${isBest ? Html.t`<span class="tag">${t('sim.cheapest')}</span>` : ''}</th>${
+        cell('sim.col.mode', modeLabel(r, p))}${cell('sim.col.month', Fmt.usd(r.monthly), 'num')}${cell('sim.col.year', Fmt.usd(r.monthly * 12), 'num')}${
+        cell('sim.col.util', utilText(r), 'num')}</tr>`;
+    });
+    Html.set(el('simTable'), Html.t`<caption class="vh">${t('sim.cap')}</caption>${
+      head(['sim.col.alt', 'sim.col.mode', 'sim.col.month', 'sim.col.year', 'sim.col.util'], ['sim.col.month', 'sim.col.year', 'sim.col.util'])}<tbody>${rows}</tbody>`);
   }
 
   function summaryText(model) {
@@ -213,7 +212,7 @@ const Simulator = (function () {
       list.push(['warn', t('sim.nofitWarn', {n: misfit, runs: Fmt.num(p.runs, 1), dur: Fmt.dur(data.durationSec),
         h: Fmt.num(calc.availableHours(p.pattern, p.hours), 1)})]);
     }
-    return list.map(function (n) { return '<div class="' + n[0] + '">' + Fmt.esc(n[1]) + '</div>'; }).join('');
+    return list.map(function (n) { return Html.t`<div class="${n[0]}">${n[1]}</div>`; });
   }
 
   const verdictText = function (row) {
@@ -227,17 +226,16 @@ const Simulator = (function () {
   }
 
   function breakEvenTable(rows) {
-    if (!rows.length) { el('simBe').innerHTML = ''; return; }
+    if (!rows.length) { Html.set(el('simBe'), ''); return; }
     const num = function (v, digits) { return isFinite(v) ? Fmt.num(v, digits) : '–'; };
     const body = rows.map(function (r) {
-      return '<tr><th scope="row">' + Fmt.esc(helpers.label(r.alt)) + '</th>' +
-        cell('sim.be.always', r.priced ? Fmt.usd(r.always) : '–', 'num') + cell('sim.be.perRun', Fmt.usd(r.perRun), 'num') +
-        cell('sim.be.runs', r.priced ? num(r.runs, 1) : '–', 'num') + cell('sim.be.max', num(r.max, 0), 'num') +
-        cell('sim.be.verdict', Fmt.esc(verdictText(r))) + '</tr>';
-    }).join('');
-    el('simBe').innerHTML = '<caption class="vh">' + Fmt.esc(t('sim.be.cap')) + '</caption>' +
+      return Html.t`<tr><th scope="row">${helpers.label(r.alt)}</th>${cell('sim.be.always', r.priced ? Fmt.usd(r.always) : '–', 'num')}${
+        cell('sim.be.perRun', Fmt.usd(r.perRun), 'num')}${cell('sim.be.runs', r.priced ? num(r.runs, 1) : '–', 'num')}${
+        cell('sim.be.max', num(r.max, 0), 'num')}${cell('sim.be.verdict', verdictText(r))}</tr>`;
+    });
+    Html.set(el('simBe'), Html.t`<caption class="vh">${t('sim.be.cap')}</caption>${
       head(['sim.col.alt', 'sim.be.always', 'sim.be.perRun', 'sim.be.runs', 'sim.be.max', 'sim.be.verdict'],
-        ['sim.be.always', 'sim.be.perRun', 'sim.be.runs', 'sim.be.max']) + '<tbody>' + body + '</tbody>';
+        ['sim.be.always', 'sim.be.perRun', 'sim.be.runs', 'sim.be.max'])}<tbody>${body}</tbody>`);
   }
 
   /* ---- chart: monthly cost vs runs per day ---- */
@@ -310,7 +308,7 @@ const Simulator = (function () {
   function renderResults() {
     const model = current;
     el('simSummary').textContent = summaryText(model);
-    el('simNotes').innerHTML = notes(model, model.p, model.hasReservations);
+    Html.set(el('simNotes'), notes(model, model.p, model.hasReservations));
     resultsTable(model, model.p);
     el('simBeIntro').textContent = t('sim.be.intro', {buy: buyLabel(model.p.buy)});
     breakEvenTable(breakEvenRows(model.p));
@@ -329,9 +327,9 @@ const Simulator = (function () {
   function renderOptions() {
     const keys = ['od'].concat(reservationKeys(data.alternatives));
     const select = el('simBuy');
-    select.innerHTML = keys.map(function (k) {
-      return '<option value="' + Fmt.esc(k) + '"' + (k === wantedBuy ? ' selected' : '') + '>' + Fmt.esc(buyLabel(k)) + '</option>';
-    }).join('');
+    Html.set(select, keys.map(function (k) {
+      return Html.t`<option value="${k}"${k === wantedBuy ? Html.raw(' selected') : ''}>${buyLabel(k)}</option>`;
+    }));
     if (keys.indexOf(wantedBuy) < 0) { wantedBuy = 'od'; select.value = 'od'; }
   }
 

@@ -99,8 +99,8 @@ every deployment alternative split by TJob, lifecycle phase and cloud object.
   - Cost items are unique per (cloud object, tjob, phase). The sum of items equals the total.
 - `UsageProfileGenerator.generate(plan, timeline, report, catalog, graph[, sut], output)` (`graph` nullable; `UsageProfilerToolBox` passes `SutInfo.detect()`): one self-contained HTML
   (no external requests). It fills `resources/usageprofile/usageprofile.html` by replacing `/*CSS*/` with `usageprofile.css`, `/*ECHARTS*/`
-  with Apache ECharts 5.6.0 (`echarts.min.js`, Apache License 2.0, its licence header is kept), `/*APP*/` with the six
-  `js/*.js` files joined with a newline in the order `i18n, format, theme, charts, graph, simulator, app` (constant `APP_SCRIPTS`; one
+  with Apache ECharts 5.6.0 (`echarts.min.js`, Apache License 2.0, its licence header is kept), `/*APP*/` with the
+  `js/*.js` files joined with a newline in the order `i18n, format, html, theme, charts, graph, simulator, app` (constant `APP_SCRIPTS`; one
   script, one global scope), `<!--HEADER_LOGO_SVG-->` with `giis-logo.svg`, `<!--FOOTER_SVG-->` with `giis-footer.svg`, `/*FAVICON*/` with the
   Base64 of `giis-logo.svg` (page icon as a data URI) and
   `/*DATA*/` with the JSON (replaced last so user data is never scanned for placeholders). `</script` is escaped as
@@ -125,7 +125,7 @@ Output rule: the profile is **one self-contained HTML file** (CSS, JS, ECharts, 
 request; the only URL is the footer link to the group site; the only `<link>` is the page icon, the GIIS logo as a data URI). A test enforces it.
 
 Source layout: `usageprofile.html` (structure and placeholders), `usageprofile.css` (themes through CSS variables) and one
-namespace per concern in `js/`: `i18n.js` (`I18n`), `format.js` (`Fmt`: formats, colours, phase order), `theme.js`
+namespace per concern in `js/`: `i18n.js` (`I18n`), `format.js` (`Fmt`: formats, colours, phase order), `html.js` (`Html`: tagged template `Html.t` that escapes every interpolated value (`& < > " '`), `Html.raw` for trusted fragments, `Html.join`, `Html.set`; no HTML is concatenated by hand, translations and data are escaped alike), `theme.js`
 (`Theme`), `charts.js` (`Charts`), `graph.js` (`Graph`), `app.js` (`App`, ends with `App.init()`). Plain ES2015, no build
 step. The files carry the GIIS notice; ECharts and the SVG logos are third party / assets.
 
@@ -180,7 +180,7 @@ The page must provide:
 
 ## Tests
 `UsageProfileTests` (timeline from synthetic and real Jenkins data, incomplete phases, VM and container cost conservation and oversubscription, no-fit warning, Azure/AWS parsers
-Device Farm parsing (only metered browsers and devices, per-minute price), browser-service alternatives (cheapest alternative + browser minutes of the TJobs given, warning without TJobs), and streaming reader, cache and regions parsing, cache with another or no `schemaVersion` ignored, Azure reservations (all upfront per term), AWS `terms.Reserved` streaming (standard only, No/All Upfront, 1/3 years), `reservations` property in the JSON of VM and container alternatives, self-contained HTML, JSON contract property names incl. `graph` null / non-null, timeline downsampled to at most 600 points, plan reader, TJob metrics, graph merge with nulls, assembled page without leftover placeholders and with both logos and the data-URI icon (the only `<link>`), `SutInfo` from the Jenkins environment (credentials removed, ssh converted) and from `.git` files, `sut` in the JSON, the six scripts in order and the `app.title` key, missing plan file means no graph, 12-column file with `container` rows: peak disk includes images and volumes, shared image counted once per TJob, per-container peaks/averages/storage, `containers` JSON property and field names, 9-column file yields `containers: []`). Fixtures `testdata/usageprofile/usage-containers.csv` (12 columns, container rows), `usage.csv` and `real-run.csv` (9 columns) and `executionplan.json` (TJobs of `usage.csv` plus a gateway node). Network is never used in tests.
+Device Farm parsing (only metered browsers and devices, per-minute price), browser-service alternatives (cheapest alternative + browser minutes of the TJobs given, warning without TJobs), and streaming reader, cache and regions parsing, cache with another or no `schemaVersion` ignored, Azure reservations (all upfront per term), AWS `terms.Reserved` streaming (standard only, No/All Upfront, 1/3 years), `reservations` property in the JSON of VM and container alternatives, self-contained HTML, JSON contract property names incl. `graph` null / non-null, timeline downsampled to at most 600 points, plan reader, TJob metrics, graph merge with nulls, assembled page without leftover placeholders and with both logos and the data-URI icon (the only `<link>`), `SutInfo` from the Jenkins environment (credentials removed, ssh converted) and from `.git` files, `sut` in the JSON, the scripts in order and the `app.title` key, missing plan file means no graph, 12-column file with `container` rows: peak disk includes images and volumes, shared image counted once per TJob, per-container peaks/averages/storage, `containers` JSON property and field names, 9-column file yields `containers: []`). Fixtures `testdata/usageprofile/usage-containers.csv` (12 columns, container rows), `usage.csv` and `real-run.csv` (9 columns) and `executionplan.json` (TJobs of `usage.csv` plus a gateway node). Network is never used in tests.
 
 ### JS tests (dashboard)
 Not part of the default build (no Node needed for `mvn test`): they run with `mvn test -pl retorch-profiling -am -Pjs-tests`
@@ -191,7 +191,7 @@ Not part of the default build (no Node needed for `mvn test`): they run with `mv
   fixtures `usage-containers.csv` + `executionplan.json` with a catalog of two providers, three regions, reservations, a container
   service and two browser services, a fixed SUT (`petclinic`, `main`) and plan `FixturePlan`: it is deterministic.
 - `*.test.mjs` (`node --test`): pure logic, loading the scripts of `js/` in a `vm` context with browser stubs
-  (`helpers/load.mjs`): formats and escaping (`format.test.mjs`) and the simulator formulas (`simulator.test.mjs`).
+  (`helpers/load.mjs`): formats and escaping (`format.test.mjs`), HTML escaping with `<"'&>` (`html.test.mjs`) and the simulator formulas (`simulator.test.mjs`).
 - `smoke.mjs`: opens the fixture page in headless Chrome / Edge through the DevTools protocol (no dependency but `axe-core`; it is
   skipped, exit 0, when there is no browser unless `SMOKE_REQUIRE=1`; `BROWSER` and `AXE_CORE` override the executables). Checks: no
   exception or `console.error`; every chart, table and the list of TJobs render; title and header; usage chart and execution graph

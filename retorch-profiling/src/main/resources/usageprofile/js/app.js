@@ -80,8 +80,10 @@ const App = (function () {
   }
 
   /* ---- controls ---- */
+  const SELECTED = Html.raw(' selected');
+  const CHECKED = Html.raw(' checked');
   const option = function (value, text, current) {
-    return '<option value="' + Fmt.esc(value) + '"' + (value === current ? ' selected' : '') + '>' + Fmt.esc(text) + '</option>';
+    return Html.t`<option value="${value}"${value === current ? SELECTED : ''}>${text}</option>`;
   };
 
   /* Checks the radio with this value and moves the sliding indicator of the segmented control. */
@@ -96,22 +98,20 @@ const App = (function () {
   function renderControls() {
     syncSegment('langGroup', I18n.lang());
     syncSegment('themeGroup', Theme.mode());
-    el('providerBoxes').innerHTML = providers.map(function (p) {
-      return '<label class="chk"><input type="checkbox" value="' + Fmt.esc(p) + '"' + (S.offProviders.has(p) ? '' : ' checked') + '> ' + Fmt.esc(p) + '</label>';
-    }).join(' ');
-    el('kind').innerHTML = option('', I18n.t('filter.all'), S.kind) +
-      kinds.map(function (k) { return option(k, I18n.t('kind.' + k), S.kind); }).join('');
-    el('region').innerHTML = option('', I18n.t('filter.all'), S.region) +
-      regions.map(function (r) { return option(r, r, S.region); }).join('');
+    Html.set(el('providerBoxes'), Html.join(providers.map(function (p) {
+      return Html.t`<label class="chk"><input type="checkbox" value="${p}"${S.offProviders.has(p) ? '' : CHECKED}> ${p}</label>`;
+    }), ' '));
+    Html.set(el('kind'), [option('', I18n.t('filter.all'), S.kind)].concat(kinds.map(function (k) { return option(k, I18n.t('kind.' + k), S.kind); })));
+    Html.set(el('region'), [option('', I18n.t('filter.all'), S.region)].concat(regions.map(function (r) { return option(r, r, S.region); })));
     el('showOver').checked = S.showOver;
-    el('metric').innerHTML = ['usd', 'pct'].map(function (m) { return option(m, I18n.t('metric.' + m), S.metric); }).join('');
-    el('sort').innerHTML = ['cost', 'provider', 'over'].map(function (k) { return option(k, I18n.t('sort.' + k), S.sort); }).join('');
+    Html.set(el('metric'), ['usd', 'pct'].map(function (m) { return option(m, I18n.t('metric.' + m), S.metric); }));
+    Html.set(el('sort'), ['cost', 'provider', 'over'].map(function (k) { return option(k, I18n.t('sort.' + k), S.sort); }));
   }
 
   const tabs = function (current, items) {
-    return items.map(function (t) {
-      return '<button type="button" data-v="' + t[0] + '" class="' + (current === t[0] ? 'on' : '') + '" aria-pressed="' + (current === t[0]) + '">' + I18n.t(t[1]) + '</button>';
-    }).join(' ');
+    return Html.join(items.map(function (t) {
+      return Html.t`<button type="button" data-v="${t[0]}" class="${current === t[0] ? 'on' : ''}" aria-pressed="${String(current === t[0])}">${I18n.t(t[1])}</button>`;
+    }), ' ');
   };
 
   /* SUT name linked to its repository (only an https address is ever linked) and branch, when the execution knows them. */
@@ -120,12 +120,12 @@ const App = (function () {
     const facts = [];
     if (sut.name) {
       const link = /^https:\/\//.test(sut.url)
-        ? '<a href="' + Fmt.esc(sut.url) + '" target="_blank" rel="noopener noreferrer">' + Fmt.esc(sut.name) + '<span class="vh"> ' + I18n.t('head.newTab') + '</span></a>'
-        : Fmt.esc(sut.name);
-      facts.push('<span class="fact"><span class="fact-k">' + I18n.t('head.sut') + '</span> ' + link + '</span>');
+        ? Html.t`<a href="${sut.url}" target="_blank" rel="noopener noreferrer">${sut.name}<span class="vh"> ${I18n.t('head.newTab')}</span></a>`
+        : sut.name;
+      facts.push(Html.t`<span class="fact"><span class="fact-k">${I18n.t('head.sut')}</span> ${link}</span>`);
     }
-    if (sut.branch) { facts.push('<span class="fact"><span class="fact-k">' + I18n.t('head.branch') + '</span> <code>' + Fmt.esc(sut.branch) + '</code></span>'); }
-    el('facts').innerHTML = facts.join('');
+    if (sut.branch) { facts.push(Html.t`<span class="fact"><span class="fact-k">${I18n.t('head.branch')}</span> <code>${sut.branch}</code></span>`); }
+    Html.set(el('facts'), facts);
     el('facts').hidden = !facts.length;
   }
 
@@ -133,16 +133,15 @@ const App = (function () {
     renderFacts();
     el('sub').textContent = I18n.t('app.subtitle', {plan: D.plan, date: Fmt.date(D.pricesFetchedAt)});
     document.title = I18n.t('app.title') + (D.sut && D.sut.name ? ' · ' + D.sut.name : '') + (D.plan ? ' · ' + D.plan : '');
-    el('warnings').innerHTML = D.warnings.map(function (w) { return '<div class="warn">' + Fmt.esc(w) + '</div>'; }).join('');
+    Html.set(el('warnings'), D.warnings.map(function (w) { return Html.t`<div class="warn">${w}</div>`; }));
     const kpis = [['kpi.duration', Fmt.dur(D.durationSec)], ['kpi.peakCpu', Fmt.num(D.peakCpu, 2) + ' vCPU'],
       ['kpi.peakMem', Fmt.num(D.peakMemGb, 2) + ' GB'], ['kpi.peakDisk', Fmt.num(D.peakDiskGb, 2) + ' GB', I18n.t('kpi.peakDiskHint')],
       ['kpi.alternatives', D.alternatives.length]];
-    el('kpis').innerHTML = kpis.map(function (k) { return kpiCard(I18n.t(k[0]), k[1], k[2]); }).join('');
+    Html.set(el('kpis'), kpis.map(function (k) { return kpiCard(I18n.t(k[0]), k[1], k[2]); }));
   }
 
   const kpiCard = function (name, value, hint) {
-    return '<div class="card kpi"><dt>' + Fmt.esc(name) + '</dt><dd>' + Fmt.esc(value) + '</dd>' +
-      (hint ? '<dd class="hint">' + Fmt.esc(hint) + '</dd>' : '') + '</div>';
+    return Html.t`<div class="card kpi"><dt>${name}</dt><dd>${value}</dd>${hint ? Html.t`<dd class="hint">${hint}</dd>` : ''}</div>`;
   };
 
   /* ---- sections ---- */
@@ -163,22 +162,20 @@ const App = (function () {
   /* Wide: a table with sticky header. Narrow (container query in the CSS): one card per alternative, built from data-label. */
   function renderTable(alts) {
     const cols = [['table.alt', 'alt'], ['table.type', 'type'], ['table.region', 'region'], ['table.total', 'total'], ['table.used', 'used'], ['table.over', 'over']];
-    const head = '<caption id="tableCaption" class="vh">' + Fmt.esc(I18n.t('table.title')) + '</caption><thead><tr><th scope="col"><span class="vh">' +
-      Fmt.esc(I18n.t('cmp.pick')) + '</span></th>' + cols.map(function (c) { return '<th scope="col">' + Fmt.esc(I18n.t(c[0])) + '</th>'; }).join('') + '</tr></thead>';
-    const cell = function (key, text) { return '<td data-label="' + Fmt.esc(I18n.t('table.' + key)) + '">' + text + '</td>'; };
+    const head = Html.t`<caption id="tableCaption" class="vh">${I18n.t('table.title')}</caption><thead><tr><th scope="col"><span class="vh">${I18n.t('cmp.pick')}</span></th>${
+      cols.map(function (c) { return Html.t`<th scope="col">${I18n.t(c[0])}</th>`; })}</tr></thead>`;
+    const cell = function (key, text) { return Html.t`<td data-label="${I18n.t('table.' + key)}">${text}</td>`; };
     const rows = alts.map(function (a) {
       const picked = a.id === S.selected;
-      return '<tr class="alt ' + (picked ? 'sel' : '') + '" data-id="' + Fmt.esc(a.id) + '">' +
-        '<td class="c-pick"><label class="cell-check"><input type="checkbox" data-cmp="' + Fmt.esc(a.id) + '" aria-label="' + Fmt.esc(I18n.t('cmp.pick') + ' ' + label(a)) + '"' +
-        (S.compared.has(a.id) ? ' checked' : '') + '></label></td>' +
-        '<th scope="row"><button type="button" class="link" data-select="' + Fmt.esc(a.id) + '"' + (picked ? ' aria-current="true"' : '') + '>' + Fmt.esc(label(a)) + '</button></th>' +
-        cell('type', I18n.t('kind.' + a.kind)) + cell('region', Fmt.esc(a.region)) + cell('total', Fmt.usd(a.total)) +
-        cell('used', Fmt.usd(a.total - idle(a))) + cell('over', Fmt.usd(idle(a))) + '</tr>';
-    }).join('');
-    el('table').innerHTML = head + '<tbody>' + rows + '</tbody>';
-    el('cmpHelpers').innerHTML = [['all', 'cmp.all'], ['none', 'cmp.none'], ['cheapest', 'cmp.cheapest']].map(function (h) {
-      return '<button type="button" data-helper="' + h[0] + '">' + I18n.t(h[1]) + '</button>';
-    }).join(' ');
+      return Html.t`<tr class="alt ${picked ? 'sel' : ''}" data-id="${a.id}"><td class="c-pick"><label class="cell-check"><input type="checkbox" data-cmp="${a.id}" aria-label="${I18n.t('cmp.pick') + ' ' + label(a)}"${
+        S.compared.has(a.id) ? CHECKED : ''}></label></td><th scope="row"><button type="button" class="link" data-select="${a.id}"${
+        picked ? Html.raw(' aria-current="true"') : ''}>${label(a)}</button></th>${cell('type', I18n.t('kind.' + a.kind))}${cell('region', a.region)}${
+        cell('total', Fmt.usd(a.total))}${cell('used', Fmt.usd(a.total - idle(a)))}${cell('over', Fmt.usd(idle(a)))}</tr>`;
+    });
+    Html.set(el('table'), Html.t`${head}<tbody>${rows}</tbody>`);
+    Html.set(el('cmpHelpers'), Html.join([['all', 'cmp.all'], ['none', 'cmp.none'], ['cheapest', 'cmp.cheapest']].map(function (h) {
+      return Html.t`<button type="button" data-helper="${h[0]}">${I18n.t(h[1])}</button>`;
+    }), ' '));
   }
 
   /* Data table of a stacked chart: one row per category, one column per stack. */
@@ -189,7 +186,7 @@ const App = (function () {
 
   function renderCompared() {
     const alts = D.alternatives.filter(function (a) { return S.compared.has(a.id); });
-    el('cmpTabs').innerHTML = tabs(S.cmpGroup, [['phase', 'cmp.byPhase'], ['tjob', 'cmp.byTjob']]);
+    Html.set(el('cmpTabs'), tabs(S.cmpGroup, [['phase', 'cmp.byPhase'], ['tjob', 'cmp.byTjob']]));
     el('cmpCount').textContent = I18n.t('cmp.selected', {n: alts.length});
     const byPhase = S.cmpGroup === 'phase';
     const keys = byPhase ? Fmt.PHASES : Array.from(new Set([].concat.apply([], alts.map(function (a) { return a.items.map(function (i) { return i.tjob; }); })))).sort();
@@ -229,17 +226,17 @@ const App = (function () {
     if (!a) { return; }
     const over = idle(a);
     el('detailTitle').textContent = label(a) + ' (' + a.region + ')';
-    el('detailKpis').innerHTML = [
+    Html.set(el('detailKpis'), [
       [I18n.t('detail.total'), Fmt.usd(a.total)], [I18n.t('detail.used'), Fmt.usd(a.total - over)],
       [I18n.t('detail.over'), Fmt.usd(over) + (a.total ? ' (' + Fmt.num(100 * over / a.total, 0) + '%)' : '')],
       [I18n.t('detail.price'), a.kind === 'VM' ? Fmt.usd(a.hourlyPrice) + ' ' + I18n.t('detail.perHour') : I18n.t('detail.perUse')]
-    ].map(function (k) { return kpiCard(k[0], k[1]); }).join('');
+    ].map(function (k) { return kpiCard(k[0], k[1]); }));
 
     const phases = Fmt.PHASES.filter(function (p) { return sum(a.items, function (i) { return i.phase === p; }) > 0; });
     const objects = Array.from(new Set(a.items.map(function (i) { return i.object; })));
     renderPies(a, phases, objects);
     renderBreakdown(a, phases, objects);
-    el('tabs').innerHTML = tabs(S.group, [['phase', 'detail.tabPhase'], ['object', 'detail.tabObject']]);
+    Html.set(el('tabs'), tabs(S.group, [['phase', 'detail.tabPhase'], ['object', 'detail.tabObject']]));
   }
 
   /* Stacked bars: X = TJob stacked by phase, or X = phase stacked by cloud object. */

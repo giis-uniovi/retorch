@@ -95,12 +95,12 @@ const Graph = (function () {
     return function (p) {
       if (p.seriesType !== 'custom') { return ''; }
       const r = lay.byId[p.data[5]];
-      const lines = ['<b>' + Fmt.esc(r.node.id) + '</b> · ' + I18n.t('graph.stage', {n: r.node.stage})];
-      if (r.noData) { return lines.concat(['<i>' + I18n.t('graph.noData') + '</i>']).join('<br>'); }
-      return lines.concat([
-        I18n.t('graph.start') + ': ' + Fmt.dur(r.start), I18n.t('graph.setup') + ': ' + Fmt.dur(r.setup),
-        I18n.t('graph.exec') + ': ' + Fmt.dur(r.exec), I18n.t('graph.teardown') + ': ' + Fmt.dur(r.tear),
-        '<b>' + I18n.t('graph.duration') + ': ' + Fmt.dur(r.end - r.start) + '</b>']).join('<br>');
+      const lines = [Html.t`<b>${r.node.id}</b> · ${I18n.t('graph.stage', {n: r.node.stage})}`];
+      if (r.noData) { return Html.str(Html.join(lines.concat([Html.t`<i>${I18n.t('graph.noData')}</i>`]), '<br>')); }
+      return Html.str(Html.join(lines.concat([
+        Html.t`${I18n.t('graph.start')}: ${Fmt.dur(r.start)}`, Html.t`${I18n.t('graph.setup')}: ${Fmt.dur(r.setup)}`,
+        Html.t`${I18n.t('graph.exec')}: ${Fmt.dur(r.exec)}`, Html.t`${I18n.t('graph.teardown')}: ${Fmt.dur(r.tear)}`,
+        Html.t`<b>${I18n.t('graph.duration')}: ${Fmt.dur(r.end - r.start)}</b>`]), '<br>'));
     };
   }
 
@@ -168,9 +168,9 @@ const Graph = (function () {
     const key = I18n.lang() + '|' + nodes.map(function (n) { return n.id; }).join(',');
     if (key !== listKey) {
       listKey = key;
-      list.innerHTML = nodes.map(function (n) {
-        return '<li><button type="button" data-node="' + Fmt.esc(n.id) + '">' + Fmt.esc(itemText(n)) + '</button></li>';
-      }).join('');
+      Html.set(list, nodes.map(function (n) {
+        return Html.t`<li><button type="button" data-node="${n.id}">${itemText(n)}</button></li>`;
+      }));
     }
     list.onclick = function (e) {
       const button = e.target.closest('button');
@@ -194,39 +194,39 @@ const Graph = (function () {
 
   /* ---- side panel ---- */
   function row(labelKey, value) {
-    return '<dt>' + I18n.t(labelKey) + '</dt><dd>' + value + '</dd>';
+    return Html.t`<dt>${I18n.t(labelKey)}</dt><dd>${value}</dd>`;
   }
 
   function costRows(items, caption) {
     const total = items.reduce(function (s, i) { return s + i.cost; }, 0);
-    if (!total) { return '<p class="muted">' + I18n.t('graph.noCost') + '</p>'; }
+    if (!total) { return Html.t`<p class="muted">${I18n.t('graph.noCost')}</p>`; }
     const rows = Fmt.PHASES.map(function (phase) {
       const sum = items.filter(function (i) { return i.phase === phase; }).reduce(function (s, i) { return s + i.cost; }, 0);
-      return sum > 0 ? '<tr><th scope="row"><span class="dot" aria-hidden="true" style="background:' + Fmt.PHASE_COLORS[phase] + '"></span>' +
-        I18n.t('phase.' + phase) + '</th><td>' + Fmt.usd(sum) + '</td></tr>' : '';
-    }).join('');
-    return '<table class="mini"><caption class="vh">' + Fmt.esc(caption) + '</caption><tbody>' + rows +
-      '<tr class="total"><th scope="row">' + I18n.t('graph.total') + '</th><td>' + Fmt.usd(total) + '</td></tr></tbody></table>';
+      return sum > 0 ? Html.t`<tr><th scope="row"><span class="dot" aria-hidden="true" style="background:${Fmt.PHASE_COLORS[phase]}"></span>${
+        I18n.t('phase.' + phase)}</th><td>${Fmt.usd(sum)}</td></tr>` : '';
+    });
+    return Html.t`<table class="mini"><caption class="vh">${caption}</caption><tbody>${rows}<tr class="total"><th scope="row">${
+      I18n.t('graph.total')}</th><td>${Fmt.usd(total)}</td></tr></tbody></table>`;
   }
 
   function measures(n) {
     const parts = [n.setupSec, n.execSec, n.teardownSec].filter(isNum);
     const total = parts.length ? parts.reduce(function (s, v) { return s + v; }, 0) : null;
-    return '<dl class="measures">' + row('graph.start', Fmt.orDash(n.startSec, Fmt.dur)) + row('graph.setup', Fmt.orDash(n.setupSec, Fmt.dur)) +
-      row('graph.exec', Fmt.orDash(n.execSec, Fmt.dur)) + row('graph.teardown', Fmt.orDash(n.teardownSec, Fmt.dur)) +
-      row('graph.duration', Fmt.orDash(total, Fmt.dur)) +
-      row('graph.peakCpu', Fmt.orDash(n.peakCpu, function (v) { return Fmt.num(v, 2) + ' vCPU'; })) +
-      row('graph.peakMem', Fmt.orDash(n.peakMemGb, function (v) { return Fmt.num(v, 2) + ' GB'; })) + '</dl>';
+    return Html.t`<dl class="measures">${[row('graph.start', Fmt.orDash(n.startSec, Fmt.dur)), row('graph.setup', Fmt.orDash(n.setupSec, Fmt.dur)),
+      row('graph.exec', Fmt.orDash(n.execSec, Fmt.dur)), row('graph.teardown', Fmt.orDash(n.teardownSec, Fmt.dur)),
+      row('graph.duration', Fmt.orDash(total, Fmt.dur)),
+      row('graph.peakCpu', Fmt.orDash(n.peakCpu, function (v) { return Fmt.num(v, 2) + ' vCPU'; })),
+      row('graph.peakMem', Fmt.orDash(n.peakMemGb, function (v) { return Fmt.num(v, 2) + ' GB'; }))]}</dl>`;
   }
 
   function testList(n) {
-    if (!n.tests.length) { return '<p class="muted">' + I18n.t('graph.noTests') + '</p>'; }
-    return '<div class="tests-scroll" role="region" tabindex="0" aria-labelledby="graphTestsTitle"><ul class="tests">' +
-      n.tests.map(function (t) { return '<li>' + Fmt.esc(t) + '</li>'; }).join('') + '</ul></div>';
+    if (!n.tests.length) { return Html.t`<p class="muted">${I18n.t('graph.noTests')}</p>`; }
+    return Html.t`<div class="tests-scroll" role="region" tabindex="0" aria-labelledby="graphTestsTitle"><ul class="tests">${
+      n.tests.map(function (t) { return Html.t`<li>${t}</li>`; })}</ul></div>`;
   }
 
   function chips(list) {
-    return list.length ? list.map(function (r) { return '<span class="chip">' + Fmt.esc(r) + '</span>'; }).join(' ') : '–';
+    return list.length ? Html.join(list.map(function (r) { return Html.t`<span class="chip">${r}</span>`; }), ' ') : '–';
   }
 
   /* ---- resources of the TJob: one row (card on narrow panels) per container, plus the storage split chart ---- */
@@ -260,46 +260,43 @@ const Graph = (function () {
     const figures = [I18n.t('graph.sCpu') + ' ' + containerValue(CONTAINER_COLS[0], c) + ' vCPU',
       I18n.t('graph.sMem') + ' ' + containerValue(CONTAINER_COLS[2], c) + ' GB',
       I18n.t('graph.sDisk') + ' ' + containerValue(CONTAINER_COLS[7], c) + ' GB'];
-    return '<span class="name">' + Fmt.esc(c.name) + '</span><span class="cont-sum">' + Fmt.esc(figures.join(' · ')) + '</span>';
+    return Html.t`<span class="name">${c.name}</span><span class="cont-sum">${figures.join(' · ')}</span>`;
   }
 
   /* A container is collapsed until the user opens it (native disclosure: keyboard and screen reader support for free). */
   function containerItem(c) {
     const rows = CONTAINER_COLS.map(function (col) {
-      return '<dt>' + Fmt.esc(I18n.t(col[0])) + '</dt><dd>' + containerValue(col, c) + ' ' + col[2] + '</dd>';
-    }).join('');
-    const image = c.image ? '<p class="sub-name"><span class="muted">' + I18n.t('graph.cImage') + ':</span> ' + Fmt.esc(c.image) + '</p>' : '';
-    return '<details class="cont-item"><summary>' + containerSummary(c) + '</summary>' + image + '<dl class="measures">' + rows + '</dl></details>';
+      return Html.t`<dt>${I18n.t(col[0])}</dt><dd>${containerValue(col, c) + ' ' + col[2]}</dd>`;
+    });
+    const image = c.image ? Html.t`<p class="sub-name"><span class="muted">${I18n.t('graph.cImage')}:</span> ${c.image}</p>` : '';
+    return Html.t`<details class="cont-item"><summary>${containerSummary(c)}</summary>${image}<dl class="measures">${rows}</dl></details>`;
   }
 
   function containerList(n) {
-    return '<div class="cont-list" role="group" aria-labelledby="graphContTitle">' + n.containers.map(containerItem).join('') + '</div>';
+    return Html.t`<div class="cont-list" role="group" aria-labelledby="graphContTitle">${n.containers.map(containerItem)}</div>`;
   }
 
   function containerNotes(n) {
     const list = n.containers;
     const orDash = function (v, unit) { return Fmt.orDash(v, function (x) { return Fmt.num(x, 2) + ' ' + unit; }); };
-    return '<p class="muted small">' + Fmt.esc(I18n.t('graph.cPeaks', {cpu: Fmt.num(total(list, 'peakCpu'), 2) + ' vCPU', mem: Fmt.num(total(list, 'peakMemGb'), 2) + ' GB',
-      tcpu: orDash(n.peakCpu, 'vCPU'), tmem: orDash(n.peakMemGb, 'GB')})) + '</p>' +
-      '<p class="muted small">' + Fmt.esc(I18n.t('graph.cStorageTotal', {gb: gb(tjobStorage(list)) + ' GB'})) + '</p>';
+    return Html.t`<p class="muted small">${I18n.t('graph.cPeaks', {cpu: Fmt.num(total(list, 'peakCpu'), 2) + ' vCPU', mem: Fmt.num(total(list, 'peakMemGb'), 2) + ' GB',
+      tcpu: orDash(n.peakCpu, 'vCPU'), tmem: orDash(n.peakMemGb, 'GB')})}</p><p class="muted small">${I18n.t('graph.cStorageTotal', {gb: gb(tjobStorage(list)) + ' GB'})}</p>`;
   }
 
   function containerSection(n) {
     const list = n.containers || [];
-    const title = '<h4 id="graphContTitle">' + I18n.t('graph.containers') + '</h4>';
-    if (!list.length) { return title + '<p class="muted">' + I18n.t('graph.noContainers') + '</p>'; }
-    return title + containerNotes(n) + containerList(n);
+    const title = Html.t`<h4 id="graphContTitle">${I18n.t('graph.containers')}</h4>`;
+    if (!list.length) { return Html.t`${title}<p class="muted">${I18n.t('graph.noContainers')}</p>`; }
+    return Html.t`${title}${containerNotes(n)}${containerList(n)}`;
   }
 
   /* Always visible, right after the tests executed and before the measurements. */
   function containerChartSection(n) {
     if (!(n.containers || []).length) { return ''; }
     const picks = METRICS.map(function (m) {
-      return '<label><input type="radio" name="contMetric" value="' + m.id + '"' + (m.id === metricId ? ' checked' : '') + '><span>' + I18n.t(m.label) + '</span></label>';
-    }).join('');
-    return '<div id="graphContChartBox"><h4>' + I18n.t('graph.cChart') + '</h4>' +
-      '<div class="metric-pick" role="radiogroup" aria-label="' + Fmt.esc(I18n.t('graph.mLabel')) + '">' + picks + '</div>' +
-      '<div class="chart cont-chart" id="graphContChart" role="img"></div></div>';
+      return Html.t`<label><input type="radio" name="contMetric" value="${m.id}"${m.id === metricId ? Html.raw(' checked') : ''}><span>${I18n.t(m.label)}</span></label>`;
+    });
+    return Html.t`<div id="graphContChartBox"><h4>${I18n.t('graph.cChart')}</h4><div class="metric-pick" role="radiogroup" aria-label="${I18n.t('graph.mLabel')}">${picks}</div><div class="chart cont-chart" id="graphContChart" role="img"></div></div>`;
   }
 
   /* One bar group per container for the chosen resource: storage stacked (layer + image + volumes), memory and CPU as peak / average.
@@ -335,18 +332,11 @@ const Graph = (function () {
       return;
     }
     const items = alt ? alt.items.filter(function (i) { return i.tjob === node.id; }) : [];
-    panel.innerHTML =
-      '<div class="panel-head"><h3 id="graphPanelTitle" tabindex="-1">' + Fmt.esc(node.id) + '</h3>' +
-      '<button type="button" id="graphClose" class="icon" data-i18n-title="graph.close">×</button></div>' +
-      '<div class="muted">' + I18n.t('graph.stage', {n: node.stage}) + '</div>' +
-      (measured(node) ? '' : '<div class="warn small">' + I18n.t('graph.noData') + '</div>') +
-      (node.predecessors.length ? '<h4>' + I18n.t('graph.predecessors') + '</h4><div>' + chips(node.predecessors) + '</div>' : '') +
-      '<h4>' + I18n.t('graph.resources') + '</h4><div>' + chips(node.resources) + '</div>' +
-      '<h4 id="graphTestsTitle">' + I18n.t('graph.tests') + ' (' + node.tests.length + ')</h4>' + testList(node) +
-      containerChartSection(node) +
-      '<h4>' + I18n.t('graph.measures') + '</h4>' + measures(node) +
-      containerSection(node) +
-      '<h4>' + I18n.t('graph.cost', {alt: Fmt.esc(label || '')}) + '</h4>' + costRows(items, I18n.t('graph.cost', {alt: label || ''}));
+    Html.set(panel, Html.t`<div class="panel-head"><h3 id="graphPanelTitle" tabindex="-1">${node.id}</h3><button type="button" id="graphClose" class="icon" data-i18n-title="graph.close">×</button></div><div class="muted">${
+      I18n.t('graph.stage', {n: node.stage})}</div>${measured(node) ? '' : Html.t`<div class="warn small">${I18n.t('graph.noData')}</div>`}${
+      node.predecessors.length ? Html.t`<h4>${I18n.t('graph.predecessors')}</h4><div>${chips(node.predecessors)}</div>` : ''}<h4>${I18n.t('graph.resources')}</h4><div>${
+      chips(node.resources)}</div><h4 id="graphTestsTitle">${I18n.t('graph.tests') + ' (' + node.tests.length + ')'}</h4>${testList(node)}${containerChartSection(node)}<h4>${
+      I18n.t('graph.measures')}</h4>${measures(node)}${containerSection(node)}<h4>${I18n.t('graph.cost', {alt: label || ''})}</h4>${costRows(items, I18n.t('graph.cost', {alt: label || ''}))}`);
     I18n.apply();
     const box = document.getElementById('graphContChartBox');
     if (box) {

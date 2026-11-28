@@ -47,14 +47,11 @@ const Fmt = (function () {
     return v === null || v === undefined ? '–' : formatter(v);
   }
 
-  function esc(text) {
-    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
 
   function cycleColor(index) { return CYCLE_COLORS[index % CYCLE_COLORS.length]; }
 
   return {
     PHASES: PHASES, PHASE_COLORS: PHASE_COLORS, PHASE_PATTERNS: PHASE_PATTERNS, OBJECT_COLORS: OBJECT_COLORS, SERIES_COLORS: SERIES_COLORS,
-    num: num, usd: usd, pct: pct, dur: dur, date: date, orDash: orDash, esc: esc, cycleColor: cycleColor
+    num: num, usd: usd, pct: pct, dur: dur, date: date, orDash: orDash, cycleColor: cycleColor
   };
 })();

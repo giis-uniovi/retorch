@@ -168,12 +168,12 @@ const Charts = (function () {
   /* Semantic table with the data of a chart, inside a keyboard-scrollable labelled region. rows: [[rowHeader, cell...]] */
   function dataTable(id, caption, head, rows) {
     const capId = id + 'Cap';
-    const th = head.map(function (h) { return '<th scope="col">' + Fmt.esc(h) + '</th>'; }).join('');
+    const th = head.map(function (h) { return Html.t`<th scope="col">${h}</th>`; });
     const tr = rows.map(function (r) {
-      return '<tr><th scope="row">' + Fmt.esc(r[0]) + '</th>' + r.slice(1).map(function (v) { return '<td>' + Fmt.esc(v) + '</td>'; }).join('') + '</tr>';
-    }).join('');
-    document.getElementById(id).innerHTML = '<div class="data-scroll" role="region" tabindex="0" aria-labelledby="' + capId + '">' +
-      '<table><caption id="' + capId + '" class="vh">' + Fmt.esc(caption) + '</caption><thead><tr>' + th + '</tr></thead><tbody>' + tr + '</tbody></table></div>';
+      return Html.t`<tr><th scope="row">${r[0]}</th>${r.slice(1).map(function (v) { return Html.t`<td>${v}</td>`; })}</tr>`;
+    });
+    Html.set(document.getElementById(id), Html.t`<div class="data-scroll" role="region" tabindex="0" aria-labelledby="${capId}"><table><caption id="${capId}" class="vh">${
+      caption}</caption><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
   }
 
   function axis(f, extra) {
@@ -268,7 +268,7 @@ const Charts = (function () {
     const parts = entries.map(function (e) { return e.name + ' ' + Fmt.num(total ? 100 * e.value / total : 0, 0) + ' %'; }).join(', ');
     return mk(id, {
       aria: ARIA_DECAL,
-      tooltip: {trigger: 'item', formatter: function (p) { return Fmt.esc(p.name) + ': ' + Fmt.usd(p.value) + ' (' + Fmt.num(p.percent, 1) + '%)'; }},
+      tooltip: {trigger: 'item', formatter: function (p) { return Html.str(Html.t`${p.name}: ${Fmt.usd(p.value)} (${Fmt.num(p.percent, 1)}%)`); }},
       legend: legend(f, {bottom: 0, type: 'plain'}),
       series: [{type: 'pie', radius: ['38%', '64%'], center: ['50%', '40%'], label: {show: false},
         itemStyle: {borderColor: Theme.colors().card, borderWidth: 1},

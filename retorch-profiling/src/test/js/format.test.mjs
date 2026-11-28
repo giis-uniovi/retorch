@@ -8,10 +8,6 @@ import {load} from './helpers/load.mjs';
 
 const {Fmt, I18n} = load(['i18n.js', 'format.js'], ['Fmt', 'I18n']);
 
-test('esc escapes the five HTML special characters', () => {
-  assert.equal(Fmt.esc('<a href="x">&</a>'), '&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;');
-});
-
 test('usd uses more digits for small amounts', () => {
   I18n.set('en', false);
   assert.equal(Fmt.usd(12.3456), '$12.35');
