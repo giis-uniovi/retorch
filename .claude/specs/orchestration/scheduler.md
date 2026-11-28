@@ -6,7 +6,7 @@ Aggregates test cases into `TGroup`s and schedules them into ordered `Activity`s
 ## Public API
 - `RetorchAggregator`: `validateSystem` (non-empty lists, no resource without test cases, all requirements fulfilled,
   no duplicates; returns a boolean and logs the reason; it does not throw for those cases; the constructor replaces an
-  invalid system by `System("EmptySystem ERROR")`), `generateTGroups`, `addTestCaseToaTGroup`.
+  invalid system by `SystemUnderTest("EmptySystem ERROR")`), `generateTGroups`, `addTestCaseToaTGroup`.
 - `RetorchScheduler`: `generateActivities()` (works on the TGroups given to the scheduler) -> ordered activities (throws
   `NoTGroupsInTheSchedulerException` on empty input), `getAllResources`.
 - `Scheduling` / `ScheduleStruct`: chronological moments (stage -> TJobs and available resources).

@@ -51,7 +51,7 @@ public class JenkinsOrchestrator implements IRetorchOrchestrator {
             log.error("Not possible to load properties file due to: {} ", e.getMessage());
         }
         // The command line (--profiling / --no-profiling) takes precedence over retorchCI.properties
-        String profilingOverride = java.lang.System.getProperty("retorch.profiling");
+        String profilingOverride = System.getProperty("retorch.profiling");
         if (profilingOverride != null) {
             ciConfiguration.setProperty(ScriptGenerator.PROFILING_PROPERTY, profilingOverride);
         }

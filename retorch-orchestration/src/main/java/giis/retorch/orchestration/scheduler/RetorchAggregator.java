@@ -7,7 +7,7 @@ package giis.retorch.orchestration.scheduler;
 import giis.retorch.orchestration.classifier.ResourceSerializer;
 import giis.retorch.orchestration.model.*;
 
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -22,12 +22,12 @@ public class RetorchAggregator {
     private static final Logger logRetorchAggregator = LoggerFactory.getLogger(RetorchAggregator.class);
     private final Marker errorMarker = MarkerFactory.getMarker("ErrorMarker");
     private final HashMap<String, TGroup> mapTGroups;
-    private final System aggregatorSystem;
+    private final SystemUnderTest aggregatorSystem;
     private Map<String, Resource> mapAvailableResources;
 
-    public RetorchAggregator(System system) throws NotValidSystemException, IOException {
+    public RetorchAggregator(SystemUnderTest system) throws NotValidSystemException, IOException {
         boolean isValid = validateSystem(system);
-        this.aggregatorSystem = isValid ? system : new System("EmptySystem ERROR");
+        this.aggregatorSystem = isValid ? system : new SystemUnderTest("EmptySystem ERROR");
         this.mapTGroups = new HashMap<>();
         if (isValid) {
             ResourceSerializer serializer = new ResourceSerializer();
@@ -46,7 +46,7 @@ public class RetorchAggregator {
      * @param systemToCheck System object to check
      */
 
-    public boolean validateSystem(System systemToCheck) throws NotValidSystemException {
+    public boolean validateSystem(SystemUnderTest systemToCheck) throws NotValidSystemException {
         boolean hasResources = true;
         boolean hasTestCases = true;
         boolean areAllResourcesRequiredByTestCase;
@@ -98,7 +98,7 @@ public class RetorchAggregator {
      * Support method that checks if there are any orphan resources (resources without test cases)
      * @param systemToCheck System on which there are the resources and test cases to validate
      */
-    private boolean isRequiredByATestCase(System systemToCheck) {
+    private boolean isRequiredByATestCase(SystemUnderTest systemToCheck) {
         Set<String> requiredResourceIds = systemToCheck.getTestCases().stream()
                 .flatMap(tc -> tc.getAccessMode().stream())
                 .map(am -> am.getResource().getResourceID())
@@ -117,7 +117,7 @@ public class RetorchAggregator {
      * Supporting method that checks if all test cases have the required resources in the system*
      * @param systemToCheck System which remain the test cases to validate
      */
-    private boolean isAllTestCasesFullFill(System systemToCheck) throws NotValidSystemException {
+    private boolean isAllTestCasesFullFill(SystemUnderTest systemToCheck) throws NotValidSystemException {
         // Iterate over all test cases
         for (TestCase tc : systemToCheck.getTestCases()) {
             // Check if access mode is null

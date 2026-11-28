@@ -7,8 +7,8 @@ Domain entities of RETORCH. Plain data classes (Jackson-friendly).
 `Resource`, `ElasticityModel`, `Capacity` (valid names: memory, processor, slots, storage; an unknown name falls back
 to the default), `AccessMode`/`AccessModeTypes`, `TestCase`, `TGroup` (test cases that can run together), `TJob`
 (name, stage, resources; computes its total capacities), `Activity` (TJob + predecessors = execution order),
-`ExecutionPlan` (named, ordered TJobs; `getSortedActivities()` groups them by stage), `ResourceInstance`, `System`
-(resources + test cases of the system under test).
+`ExecutionPlan` (named, ordered TJobs; `getSortedActivities()` groups them by stage), `ResourceInstance`, `SystemUnderTest`
+(resources + test cases of the system under test; named so it does not shadow `java.lang.System`).
 
 ## Invariants
 - `minimalCapacities` of a `Resource` is **optional** (absent or null in the JSON -> empty list, never null). The real

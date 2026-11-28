@@ -5,7 +5,7 @@
 package giis.retorch.orchestration;
 
 import giis.retorch.orchestration.classifier.ResourceSerializer;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.*;
 import giis.retorch.orchestration.testdata.AggregatorClassTests;
 
@@ -66,8 +66,8 @@ public class SchedulerUtils extends GenericUtils {
         return tCHSeven;
     }
 
-    public System generateSystemAggregator() {
-        return new System("AggregatorUnitTests", this.aggregatorTestClasses(),
+    public SystemUnderTest generateSystemAggregator() {
+        return new SystemUnderTest("AggregatorUnitTests", this.aggregatorTestClasses(),
                 Arrays.asList(this.getLightElasticResource(),
                         this.getMockElasticResource(),
                         this.getMediumElasticResource(),
@@ -150,8 +150,8 @@ public class SchedulerUtils extends GenericUtils {
                 collect(Collectors.toList());
     }
 
-    public System getInvalidSystemAggregator() {
-        System outputSystem = new System("InvalidSystem");
+    public SystemUnderTest getInvalidSystemAggregator() {
+        SystemUnderTest outputSystem = new SystemUnderTest("InvalidSystem");
         TestCase tcWithNoResource = new TestCase("TCNoRequired", AggregatorClassTests.class);
         Resource inventedResource = getLightElasticResource();
         inventedResource.setResourceID("InventedResourceID");

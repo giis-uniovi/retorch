@@ -91,7 +91,7 @@ public class ResourceSerializer {
     }
 
     /**
-     * Support method used to give a System name, serialize the resources stored into the mapper struct.
+     * Support method used to give a SystemUnderTest name, serialize the resources stored into the mapper struct.
      *
      * @param name String with the system name
      */

@@ -123,7 +123,7 @@ public class JenkinsOrchestratorTests {
     @Test
     public void testUnitArchOrchProfilingOptionAddsMeasurementAndUsageProfile() throws EmptyInputException,
             NoFinalActivitiesException, IOException {
-        java.lang.System.setProperty("retorch.profiling", "true");
+        System.setProperty("retorch.profiling", "true");
         try {
             List<Activity> listSimpleActivities = utils.getListSimpleActivities();
             jenkinsOrchestrator = new JenkinsOrchestrator(listSimpleActivities, SYSTEM_NAME);
@@ -140,7 +140,7 @@ public class JenkinsOrchestratorTests {
             utils.compareFiles(expFolder + "generateusageprofile.sh", actualFolder + "generateusageprofile.sh");
             utils.compareFiles(expFolder + "executionplan.json", ".retorch/executionplan.json");
         } finally {
-            java.lang.System.clearProperty("retorch.profiling");
+            System.clearProperty("retorch.profiling");
         }
     }
 
@@ -195,7 +195,7 @@ public class JenkinsOrchestratorTests {
             NoFinalActivitiesException, IOException {
         java.nio.file.Path hook = java.nio.file.Paths.get(".retorch/customscriptscode/custom-usageprofile");
         java.nio.file.Files.write(hook, "echo preparing-the-profiling-jar".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        java.lang.System.setProperty("retorch.profiling", "true");
+        System.setProperty("retorch.profiling", "true");
         try {
             jenkinsOrchestrator = new JenkinsOrchestrator(utils.getListSimpleActivities(), SYSTEM_NAME);
             jenkinsOrchestrator.generatePipeline(jenkinsOrchestrator.getExecutionPlan().getSortedActivities());
@@ -205,7 +205,7 @@ public class JenkinsOrchestratorTests {
             org.junit.Assert.assertTrue("the hook runs before the jar is looked for",
                     script.indexOf("preparing-the-profiling-jar") < script.indexOf("Downloading the profiling tool"));
         } finally {
-            java.lang.System.clearProperty("retorch.profiling");
+            System.clearProperty("retorch.profiling");
             java.nio.file.Files.deleteIfExists(hook);
         }
     }

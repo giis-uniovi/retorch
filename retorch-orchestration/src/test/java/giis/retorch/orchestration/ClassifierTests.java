@@ -7,7 +7,7 @@ package giis.retorch.orchestration;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.classifier.EmptyInputException;
 import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.testdata.SyntheticInvalidClassTests;
@@ -52,16 +52,16 @@ public class ClassifierTests {
     public void testUnitArchIResValidPackage() throws EmptyInputException, IOException, ClassNotFoundException,
             URISyntaxException {
         String packageName = "giis.retorch.orchestration.testdata.synteticpackage";
-        System currentSystem = classifier.getSystemFromPackage(SYSTEM_NAME, packageName);
-        System expectedSystem = utilsClassifier.generateSystemPackage();
+        SystemUnderTest currentSystem = classifier.getSystemFromPackage(SYSTEM_NAME, packageName);
+        SystemUnderTest expectedSystem = utilsClassifier.generateSystemPackage();
         assertEquals(expectedSystem.toString(), currentSystem.toString());
     }
 
     @Test
     public void testUnitArchIResValidClass() throws EmptyInputException, IOException {
         Class<?> testClass = SyntheticClassOneTests.class;
-        System system = classifier.getSystemFromClass(SYSTEM_NAME, testClass);
-        System expectedSystem = utilsClassifier.generateSystemFromClass();
+        SystemUnderTest system = classifier.getSystemFromClass(SYSTEM_NAME, testClass);
+        SystemUnderTest expectedSystem = utilsClassifier.generateSystemFromClass();
         assertEquals(expectedSystem.toString(), system.toString());
     }
 

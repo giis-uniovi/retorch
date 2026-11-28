@@ -1,7 +1,7 @@
 # Spec: `giis.retorch.orchestration.classifier`
 
 ## Purpose
-Resource Identification phase: turns annotated test classes into a `System` (resources + test cases), and
+Resource Identification phase: turns annotated test classes into a `SystemUnderTest` (resources + test cases), and
 (de)serializes `Resource` configuration JSON files.
 
 ## Public API

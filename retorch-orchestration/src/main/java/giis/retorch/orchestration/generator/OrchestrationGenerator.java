@@ -9,7 +9,7 @@ import giis.retorch.orchestration.classifier.EmptyInputException;
 import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.model.Activity;
 import giis.retorch.orchestration.model.ExecutionPlan;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
 import giis.retorch.orchestration.orchestrator.JenkinsOrchestrator;
 import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
@@ -70,8 +70,8 @@ public class OrchestrationGenerator {
     }
 
     /**
-     * This  method  with the  system name and root package name where tests are located provided as input, creates a {@code Classifier} and gets the {@code System}
-     * from its package. With the {@code System} creates an {@code Aggregator}  who generate the {@code tGroup}s.
+     * This  method  with the  system name and root package name where tests are located provided as input, creates a {@code Classifier} and gets the {@code SystemUnderTest}
+     * from its package. With the {@code SystemUnderTest} creates an {@code Aggregator}  who generate the {@code tGroup}s.
      * This {@code tGroup}s are given as input to the {@code Scheduler} who generates the {@code Activity} Graph.
      * Finally, creates a {@code JenkinsOrchestrator} with the {@code Activity} Graph and the system name
      *
@@ -82,7 +82,7 @@ public class OrchestrationGenerator {
             EmptyInputException, IOException, ClassNotFoundException, URISyntaxException, NotValidSystemException,
             NoTGroupsInTheSchedulerException, NoFinalActivitiesException {
         RetorchClassifier classifier = new RetorchClassifier();
-        System currentSystem = classifier.getSystemFromPackage(systemName, rootPackageNameTests);
+        SystemUnderTest currentSystem = classifier.getSystemFromPackage(systemName, rootPackageNameTests);
         RetorchAggregator aggregator = new RetorchAggregator(currentSystem);
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
         RetorchScheduler scheduler = new RetorchScheduler(tGroupsOutputAggregator);

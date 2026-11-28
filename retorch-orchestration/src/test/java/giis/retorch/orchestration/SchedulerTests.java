@@ -9,7 +9,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import giis.retorch.orchestration.model.Activity;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
 import giis.retorch.orchestration.scheduler.NoTGroupsInTheSchedulerException;
 import giis.retorch.orchestration.scheduler.NotValidSystemException;
@@ -40,7 +40,7 @@ public class SchedulerTests {
     private RetorchAggregator aggregator;
     private RetorchScheduler scheduler;
     private SchedulerUtils utils;
-    private System baseSystem;
+    private SystemUnderTest baseSystem;
 
     @Before
     public void setUp() {
@@ -78,7 +78,7 @@ public class SchedulerTests {
     @Test
     public void testUnitArchAggInvalidEmptyTGroups() throws NotValidSystemException, IOException {
         baseSystem = utils.generateSystemAggregator();
-        aggregator = new RetorchAggregator(new System("EmptySystem"));
+        aggregator = new RetorchAggregator(new SystemUnderTest("EmptySystem"));
         ArgumentCaptor<LoggingEvent> argument = ArgumentCaptor.forClass(LoggingEvent.class);
         verify(appender, atLeast(2)).doAppend(argument.capture());
         List<LoggingEvent> listEvents = argument.getAllValues();

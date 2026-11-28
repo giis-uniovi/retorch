@@ -44,14 +44,14 @@ public class RetorchMain {
             log.error("  jenkinsFilePath      : directory path where the Jenkinsfile will be written");
             log.error("  --profiling          : (optional) add the resource measurement and the usage profile");
             log.error("  --no-profiling       : (optional) do not add them, overriding retorchCI.properties");
-            java.lang.System.exit(1);
+            System.exit(1);
         }
 
         String rootPackageNameTests = args[0];
         String systemName = args[1];
         String jenkinsFilePath = args[2];
         if (args.length == 4) {
-            java.lang.System.setProperty("retorch.profiling", String.valueOf("--profiling".equals(args[3])));
+            System.setProperty("retorch.profiling", String.valueOf("--profiling".equals(args[3])));
         }
 
         try {
@@ -61,7 +61,7 @@ public class RetorchMain {
             log.info("Jenkinsfile and scripts generated successfully in: {}", jenkinsFilePath);
         } catch (Exception e) {
             log.error("Failed to generate Jenkinsfile: {}", e.getMessage(), e);
-            java.lang.System.exit(2);
+            System.exit(2);
         }
     }
 

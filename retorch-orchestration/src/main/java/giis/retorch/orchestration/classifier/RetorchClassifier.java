@@ -6,7 +6,7 @@ package giis.retorch.orchestration.classifier;
 
 import giis.retorch.annotations.AccessModes;
 import giis.retorch.orchestration.model.*;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 /**
  * The {@code RetorchClassifier} class provides utilities for performing the Resource Identification phase. Provides
  * methods to retrieve the test cases from a package, reads the {@code AccessMode}, deserializes the Resource file, and
- * starts creating the different {@code Resources} and {@code TestCases} that compose the {@code System}
+ * starts creating the different {@code Resources} and {@code TestCases} that compose the {@code SystemUnderTest}
   */
 public class RetorchClassifier {
 
@@ -106,7 +106,7 @@ public class RetorchClassifier {
      * @param systemName  String with the system name (must be the same as specified in the resource attributes JSON
      *                    file
      */
-    public System getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
+    public SystemUnderTest getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
             IOException, ClassNotFoundException, URISyntaxException {
         Map<String, Resource> validatedResources = new HashMap<>();
         for (Resource res : deserializer.deserializeResources(systemName).values()) {
@@ -114,11 +114,11 @@ public class RetorchClassifier {
                 validatedResources.put(res.getResourceID(), res);
             }
         }
-        System systemRetorch = new System(systemName);
+        SystemUnderTest systemRetorch = new SystemUnderTest(systemName);
         File directory = getPackageSourceDirectory(packageName);
         List<Class<?>> listClassesPackage = findClasses(directory, packageName);
         for (Class<?> currentClass : listClassesPackage) {
-            System temporalSystem = getSystemFromClass(systemName, currentClass, validatedResources);
+            SystemUnderTest temporalSystem = getSystemFromClass(systemName, currentClass, validatedResources);
             addUniqueResources(systemRetorch, temporalSystem);
             systemRetorch.addListTestCases(temporalSystem.getTestCases());
         }
@@ -126,19 +126,19 @@ public class RetorchClassifier {
         return checkSystemClass(systemRetorch, validatedResources);
     }
 
-    private void addUniqueResources(System systemRetorch, System temporalSystem) {
+    private void addUniqueResources(SystemUnderTest systemRetorch, SystemUnderTest temporalSystem) {
         temporalSystem.getResources().stream()
                 .filter(res -> !systemRetorch.getResources().contains(res))
                 .forEach(systemRetorch::addResourceClass);
     }
 
-    private void sortSystemClass(System systemRetorch) {
+    private void sortSystemClass(SystemUnderTest systemRetorch) {
         systemRetorch.getTestCases().sort(Comparator.comparing(TestCase::getName));
         systemRetorch.getResources().sort(Comparator.comparing(Resource::toString));
     }
 
     /**
-     * This method given a Class file and a System name, retrieves the System that is on it. In order to accomplish
+     * This method given a Class file and a SystemUnderTest name, retrieves the System that is on it. In order to accomplish
      * with it first
      * retrieve the class methods.With these methods, iterate over them retrieving (1)The test method ant its access
      * mode
@@ -146,15 +146,15 @@ public class RetorchClassifier {
      * @param systemName    String with the system name
      * @param testCaseClass Class with the test cases annotated
      */
-    public System getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
+    public SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
             IOException {
         Map<String, Resource> resourceMap = deserializer.deserializeResources(systemName);
         return getSystemFromClass(systemName, testCaseClass, resourceMap);
     }
 
-    private System getSystemFromClass(String systemName, Class<?> testCaseClass, Map<String, Resource> resourceMap)
+    private SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass, Map<String, Resource> resourceMap)
             throws EmptyInputException {
-        System systemRetorch = new System(systemName);
+        SystemUnderTest systemRetorch = new SystemUnderTest(systemName);
         List<Method> listMethods = this.getClassMethods(testCaseClass);
         systemRetorch.addListOfResources(new ArrayList<>(resourceMap.values()));
         for (Method m : listMethods) {
@@ -385,8 +385,8 @@ public class RetorchClassifier {
      * @param systemToCheck System to check tag
      * @param resourceMap   Map of available resources
      */
-    private System checkSystemClass(System systemToCheck, Map<String, Resource> resourceMap) {
-        System systemOutput = new System(systemToCheck.getName());
+    private SystemUnderTest checkSystemClass(SystemUnderTest systemToCheck, Map<String, Resource> resourceMap) {
+        SystemUnderTest systemOutput = new SystemUnderTest(systemToCheck.getName());
         List<String> idResourcesList = resourceMap.values().stream()
                 .map(Resource::getResourceID).collect(Collectors.toList());
         systemToCheck.getResources().stream()

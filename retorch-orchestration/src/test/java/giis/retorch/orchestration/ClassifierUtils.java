@@ -5,7 +5,7 @@
 package giis.retorch.orchestration;
 
 import giis.retorch.orchestration.model.*;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.testdata.synteticpackage.SyntheticClassTwoTests;
 import giis.retorch.orchestration.testdata.synteticpackage.insidepackage.SyntheticClassOneTests;
 
@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 /**
  * {@code ClassifierUtils} class extends {@code GenericUtils}  providing a series of utils that generates
- * a {@code System} with its Lists of {@code TestCase} and {@code Resource} for being used
+ * a {@code SystemUnderTest} with its Lists of {@code TestCase} and {@code Resource} for being used
  * in the {@code ClassifierTests} class
  */
 public class ClassifierUtils extends GenericUtils {
@@ -45,8 +45,8 @@ public class ClassifierUtils extends GenericUtils {
         ).collect(Collectors.toList());
     }
 
-    public System generateSystemPackage() {
-        System expectedSystem = new System("ClassifierUnitTests");
+    public SystemUnderTest generateSystemPackage() {
+        SystemUnderTest expectedSystem = new SystemUnderTest("ClassifierUnitTests");
         expectedSystem.addResourceClass(this.getHeavyInelasticResource());
         expectedSystem.addResourceClass(this.getLightElasticResource());
         expectedSystem.addResourceClass(this.getMockElasticResource());
@@ -56,8 +56,8 @@ public class ClassifierUtils extends GenericUtils {
         return expectedSystem;
     }
 
-    public System generateSystemFromClass() {
-        return new System("ClassifierUnitTests", getFirstClassTestCases(), Arrays.asList(this.getHeavyInelasticResource(), this.getLightElasticResource(), this.getMockElasticResource()));
+    public SystemUnderTest generateSystemFromClass() {
+        return new SystemUnderTest("ClassifierUnitTests", getFirstClassTestCases(), Arrays.asList(this.getHeavyInelasticResource(), this.getLightElasticResource(), this.getMockElasticResource()));
     }
 
     private List<TestCase> getFirstClassTestCases() {

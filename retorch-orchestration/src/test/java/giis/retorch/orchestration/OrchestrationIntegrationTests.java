@@ -7,7 +7,7 @@ package giis.retorch.orchestration;
 import giis.retorch.orchestration.classifier.EmptyInputException;
 import giis.retorch.orchestration.classifier.RetorchClassifier;
 import giis.retorch.orchestration.model.Activity;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.TGroup;
 import giis.retorch.orchestration.orchestrator.JenkinsOrchestrator;
 import giis.retorch.orchestration.orchestrator.NoFinalActivitiesException;
@@ -56,8 +56,8 @@ public class OrchestrationIntegrationTests {
             NoTGroupsInTheSchedulerException, NoFinalActivitiesException, IOException, ClassNotFoundException,
             URISyntaxException {
         String packageName = "giis.retorch.orchestration.testdata.integration";
-        System currentSystem = classifier.getSystemFromPackage("SyntheticIntegration", packageName);
-        System expectedSystem = utils.getExpectedSystemIntegration();
+        SystemUnderTest currentSystem = classifier.getSystemFromPackage("SyntheticIntegration", packageName);
+        SystemUnderTest expectedSystem = utils.getExpectedSystemIntegration();
         assertEquals(expectedSystem.toString(), currentSystem.toString());
         RetorchAggregator aggregator = new RetorchAggregator(currentSystem);
         List<TGroup> tGroupsOutputAggregator = aggregator.generateTGroups();
