@@ -131,16 +131,16 @@ public class Resource {
         this.replaceable.sort(String::compareToIgnoreCase);
     }
 
-    /** Sorted copy (case insensitive), so the getters never mutate; null stays null. */
+    /** Sorted copy (case insensitive), so the getters never mutate; null becomes an empty list. */
     private static List<String> sortedIds(List<String> ids) {
-        if (ids == null) return null;
+        if (ids == null) return new LinkedList<>();
         List<String> copy = new LinkedList<>(ids);
         copy.sort(String::compareToIgnoreCase);
         return copy;
     }
 
     private static List<Capacity> sortedCapacities(List<Capacity> capacities) {
-        List<Capacity> copy = new java.util.ArrayList<>(capacities);
+        List<Capacity> copy = capacities == null ? new java.util.ArrayList<Capacity>() : new java.util.ArrayList<>(capacities);
         copy.sort(Comparator.comparing(Capacity::getName));
         return copy;
     }

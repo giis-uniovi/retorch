@@ -143,13 +143,13 @@ public class ClassifierTests {
         File jar = tmp.newFile("tests.jar");
         String packagePath = SYNTHETIC_PACKAGE.replace('.', '/');
         try (JarOutputStream out = new JarOutputStream(new FileOutputStream(jar))) {
-            String entryPrefix = "";
+            StringBuilder entryPrefix = new StringBuilder();
             for (String folder : packagePath.split("/")) {
-                entryPrefix += folder + "/";
-                out.putNextEntry(new JarEntry(entryPrefix));
+                entryPrefix.append(folder).append('/');
+                out.putNextEntry(new JarEntry(entryPrefix.toString()));
                 out.closeEntry();
             }
-            addToJar(out, new File("target/test-classes/" + packagePath), entryPrefix);
+            addToJar(out, new File("target/test-classes/" + packagePath), entryPrefix.toString());
         }
         ClassLoader original = Thread.currentThread().getContextClassLoader();
         // the parent hides the package, so the classes can only come from the jar

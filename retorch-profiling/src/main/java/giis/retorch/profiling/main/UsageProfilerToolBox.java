@@ -57,52 +57,6 @@ public class UsageProfilerToolBox {
         log.info("Usage profile written to {}", out);
     }
 
-    /**
-     * Generates the usage profile fetching the prices from the public price lists of Azure and AWS.
-     *
-     * @deprecated use {@link #generate(UsageProfileRequest)}
-     */
-    @Deprecated
-    public void generateUsageProfile(String planName, String usageCsv, String outputHtml, PriceSource prices)
-            throws IOException {
-        generate(UsageProfileRequest.builder(planName, usageCsv, outputHtml).prices(prices).build());
-    }
-
-    /**
-     * Same as above, adding the execution graph read from {@code executionPlanJson}; null or a missing file means no graph.
-     *
-     * @deprecated use {@link #generate(UsageProfileRequest)}
-     */
-    @Deprecated
-    public void generateUsageProfile(String planName, String usageCsv, String outputHtml, PriceSource prices,
-                                     String executionPlanJson) throws IOException {
-        generate(UsageProfileRequest.builder(planName, usageCsv, outputHtml).prices(prices)
-                .executionPlan(executionPlanJson).build());
-    }
-
-    /**
-     * Same as the first one with an already built {@link PriceCatalog}.
-     *
-     * @deprecated use {@link #generate(UsageProfileRequest)}
-     */
-    @Deprecated
-    public void generateUsageProfile(String planName, String usageCsv, String outputHtml, PriceCatalog catalog)
-            throws IOException {
-        generate(UsageProfileRequest.builder(planName, usageCsv, outputHtml).prices(catalog).build());
-    }
-
-    /**
-     * Same as above, adding the optional execution plan file.
-     *
-     * @deprecated use {@link #generate(UsageProfileRequest)}
-     */
-    @Deprecated
-    public void generateUsageProfile(String planName, String usageCsv, String outputHtml, PriceCatalog catalog,
-                                     String executionPlanJson) throws IOException {
-        generate(UsageProfileRequest.builder(planName, usageCsv, outputHtml).prices(catalog)
-                .executionPlan(executionPlanJson).build());
-    }
-
     /** The execution plan file, or null (no graph) if none was given or it does not exist; an empty plan is not null. */
     private static Path existingPlanFile(String executionPlanJson) {
         if (executionPlanJson == null || executionPlanJson.isEmpty() || !Files.exists(Paths.get(executionPlanJson))) {

@@ -43,6 +43,7 @@ public class RetorchClassifier {
     private static final String CHORUS_ATTRIBUTES = " is not present";
     private static final String NO_EXIST = " doesn't exist";
     private static final String JACOCO_INIT_METHOD = "$jacocoInit";
+    private static final String CLASS_EXTENSION = ".class";
     private final ResourceSerializer deserializer; //Serializer employed to deserialize the resources info
     private final Map<String, Resource> loadedResources; //Resources given by the caller, null to read the JSON
     private final List<String> problems = new ArrayList<>(); //Errors found while classifying (reported by the public methods)
@@ -134,12 +135,12 @@ public class RetorchClassifier {
             while (entries.hasMoreElements()) {
                 String entryName = entries.nextElement().getName();
                 String simpleName = entryName.substring(entryName.lastIndexOf('/') + 1);
-                if (entryName.startsWith(prefix) && entryName.endsWith(".class") && !simpleName.contains("$")) {
-                    classNames.add(entryName.substring(0, entryName.length() - ".class".length()).replace('/', '.'));
+                if (entryName.startsWith(prefix) && entryName.endsWith(CLASS_EXTENSION) && !simpleName.contains("$")) {
+                    classNames.add(entryName.substring(0, entryName.length() - CLASS_EXTENSION.length()).replace('/', '.'));
                 }
             }
         }
-        Collections.sort(classNames);
+        classNames.sort(null);
         List<Class<?>> classes = new ArrayList<>();
         for (String className : classNames) {
             classes.add(Class.forName(className, false, Thread.currentThread().getContextClassLoader()));
@@ -165,8 +166,8 @@ public class RetorchClassifier {
             for (File file : files) {
                 if (file.isDirectory()) {
                     classes.addAll(findClasses(file, packageName + "." + file.getName()));
-                } else if (file.getName().endsWith(".class") && !file.getName().contains("$")) {
-                    String className = packageName + '.' + file.getName().replace(".class", "");
+                } else if (file.getName().endsWith(CLASS_EXTENSION) && !file.getName().contains("$")) {
+                    String className = packageName + '.' + file.getName().replace(CLASS_EXTENSION, "");
                     classes.add(Class.forName(className, false, Thread.currentThread().getContextClassLoader()));
                 }
             }

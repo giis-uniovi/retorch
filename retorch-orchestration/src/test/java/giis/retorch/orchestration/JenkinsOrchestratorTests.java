@@ -29,7 +29,6 @@ public class JenkinsOrchestratorTests {
 
     private static final String EXPECTED_OUTPUT_PATH = "src/test/resources/expected_out/";
     private static final String OUTPUT_PATH_ENVFILES = ".retorch/envfiles/";
-    private static final String SYSTEM_NAME = "AggregatorUnitTests";
 
     private final Logger logger = LoggerFactory.getLogger(JenkinsOrchestratorTests.class);
     private ExecutionPlan plan;
@@ -51,15 +50,15 @@ public class JenkinsOrchestratorTests {
         plan = ExecutionPlan.fromActivities("defaultName", utils.getListComplexActivities());
         Map<Integer, LinkedList<Activity>> activities = plan.getSortedActivities();
 
-        giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.PlanFile plan =
+        giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.PlanFile planFile =
                 new giis.retorch.orchestration.orchestrator.ExecutionPlanWriter().toPlanFile(activities);
 
         java.util.Map<String, Integer> stageById = new java.util.HashMap<>();
-        for (giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.Node node : plan.tjobs) {
+        for (giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.Node node : planFile.tjobs) {
             stageById.put(node.id, node.stage);
         }
-        org.junit.Assert.assertEquals(activities.values().stream().mapToInt(List::size).sum(), plan.tjobs.size());
-        for (giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.Node node : plan.tjobs) {
+        org.junit.Assert.assertEquals(activities.values().stream().mapToInt(List::size).sum(), planFile.tjobs.size());
+        for (giis.retorch.orchestration.orchestrator.ExecutionPlanWriter.Node node : planFile.tjobs) {
             org.junit.Assert.assertEquals(node.id, node.id.toLowerCase(java.util.Locale.ROOT));
             org.junit.Assert.assertEquals("each dependency appears once", node.predecessors.size(),
                     new java.util.HashSet<>(node.predecessors).size());
@@ -77,7 +76,6 @@ public class JenkinsOrchestratorTests {
         List<Activity> listComplexActivities = utils.getListComplexActivities();
 
         plan = ExecutionPlan.fromActivities("defaultName", listComplexActivities);
-        Map<Integer, LinkedList<Activity>> listActivities = plan.getSortedActivities();
         String actualOutput = generate(plan);
 
         utils.compareOutputToFile(expectedOutputPath, actualOutput);
@@ -100,7 +98,6 @@ public class JenkinsOrchestratorTests {
 
         List<Activity> listSimpleActivities = utils.getListSimpleActivities();
         plan = ExecutionPlan.fromActivities("defaultName", listSimpleActivities);
-        Map<Integer, LinkedList<Activity>> listActivities = plan.getSortedActivities();
         String executionPipeline = generate(plan);
 
         utils.compareOutputToFile(expectedOutputPath, executionPipeline);

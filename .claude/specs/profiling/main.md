@@ -13,7 +13,7 @@ Instance JSON model) has been removed.
   `browserResourcePattern` (case-insensitive text a resource name of the plan contains to make its TJob a browser user; default `browser`, taken from the system
   property `usageprofile-browser-resources` when the builder is created, overridable with `browserResourcePattern(...)`, blank = default).
   `PriceSource` holds the regions (comma separated lists; `PriceSource.builder().regions(providerId, ...)` for any registered price provider), the price cache file and its maximum age in hours.
-  The four `generateUsageProfile(...)` overloads (PriceSource or PriceCatalog, with or without `executionPlanJson`) are `@Deprecated` and delegate to `generate`.
+  `generate(UsageProfileRequest)` is the only entry point: the former `generateUsageProfile(...)` overloads (never released) were removed.
 - `UsageProfileMain` (Main-Class of `retorch-profiling-<version>-cli.jar`, built by the shade plugin with the `cli`
   classifier):
   `java -jar retorch-profiling-<version>-cli.jar <planName> <usageCsv> <outputHtml> <azureRegions> <awsRegions> <priceCacheFile> [executionPlanJson]`.

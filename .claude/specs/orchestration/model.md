@@ -13,7 +13,7 @@ activities by stage, `getTJobs()` lists the TJobs with test cases), `ResourceIns
 (resources + test cases of the system under test; named so it does not shadow `java.lang.System`).
 
 ## Invariants
-- `minimalCapacities` of a `Resource` is **optional** (absent or null in the JSON -> empty list, never null). The real
+- `minimalCapacities` of a `Resource` is **optional** (absent or null in the JSON -> empty list, never null). The real `setReplaceable(null)` and `setMinimalCapacities(null)` also give an empty list, never null.
   CPU/memory/disk usage is measured while the pipeline runs (see `orchestration/orchestrator.md`); the property is only
   accepted for compatibility and nothing in the orchestration uses it (`TJob` no longer sums capacities). Existing JSON
   files that declare it keep working.

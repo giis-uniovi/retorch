@@ -36,19 +36,19 @@ final class UsageCsvReader {
 
     /** TJob name the COI lifecycle phases are exported under. */
     static final String COI_TJOB = "COI";
-    /** The columns of the file written by {@code resourcemonitor.sh export}; the last three are optional when reading. */
-    static final List<String> COLUMNS = java.util.Collections.unmodifiableList(java.util.Arrays.asList("kind",
-            CsvConstants.TJOB_HEADER, "stage", "item", "start", "end", "cpu_percent", "mem_bytes", "disk_bytes", "image",
-            "image_bytes", "volume_bytes"));
-    private static final double MILLIS_THRESHOLD = 1e11; // epoch seconds are ~1.7e9, epoch ms ~1.7e12
-    private static final double GB = 1024.0 * 1024 * 1024;
-    private static final String KIND_PHASE = "phase";
-    private static final String KIND_CONTAINER = "container";
     private static final String COL_START = "start";
     private static final String COL_ITEM = "item";
     private static final String COL_IMAGE = "image";
     private static final String COL_IMAGE_BYTES = "image_bytes";
     private static final String COL_VOLUME_BYTES = "volume_bytes";
+    /** The columns of the file written by {@code resourcemonitor.sh export}; the last three are optional when reading. */
+    static final List<String> COLUMNS = java.util.Collections.unmodifiableList(java.util.Arrays.asList("kind",
+            CsvConstants.TJOB_HEADER, "stage", COL_ITEM, COL_START, "end", "cpu_percent", "mem_bytes", "disk_bytes", COL_IMAGE,
+            COL_IMAGE_BYTES, COL_VOLUME_BYTES));
+    private static final double MILLIS_THRESHOLD = 1e11; // epoch seconds are ~1.7e9, epoch ms ~1.7e12
+    private static final double GB = 1024.0 * 1024 * 1024;
+    private static final String KIND_PHASE = "phase";
+    private static final String KIND_CONTAINER = "container";
 
     private final UsageData data = new UsageData();
 

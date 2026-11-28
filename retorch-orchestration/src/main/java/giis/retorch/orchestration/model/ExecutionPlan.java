@@ -71,14 +71,41 @@ public final class ExecutionPlan {
      * a predecessor must be one of the listed instances.
      */
     private static void validate(List<Activity> activities) throws InvalidPlanException {
-        Set<Activity> known = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
-        known.addAll(activities);
-        List<String> problems = new ArrayList<>();
-        boolean thereIsAnInitialActivity = false;
+        Set<Activity> known = identitySet(activities);
+        List<String> problems = unknownPredecessors(activities, known);
+        if (!hasInitialActivity(activities)) {
+            problems.add("There is no initial activity (every activity has predecessors)");
+        }
+        if (problems.isEmpty()) {
+            List<Activity> unreachable = unreachableActivities(activities, known);
+            if (!unreachable.isEmpty()) {
+                problems.add("The activities form a cycle or depend on one: " + describeAll(unreachable));
+            }
+        }
+        if (!problems.isEmpty()) {
+            throw new InvalidPlanException("The execution plan is not valid", problems);
+        }
+    }
+
+    private static Set<Activity> identitySet(List<Activity> activities) {
+        Set<Activity> set = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
+        set.addAll(activities);
+        return set;
+    }
+
+    private static boolean hasInitialActivity(List<Activity> activities) {
         for (Activity activity : activities) {
             if (activity.getListPredecessors().isEmpty()) {
-                thereIsAnInitialActivity = true;
+                return true;
             }
+        }
+        return false;
+    }
+
+    /** One message for every predecessor that is not one of the listed activities. */
+    private static List<String> unknownPredecessors(List<Activity> activities, Set<Activity> known) {
+        List<String> problems = new ArrayList<>();
+        for (Activity activity : activities) {
             for (Activity predecessor : activity.getListPredecessors()) {
                 if (!known.contains(predecessor)) {
                     problems.add(String.format("%s has the predecessor %s that is not part of the plan",
@@ -86,20 +113,15 @@ public final class ExecutionPlan {
                 }
             }
         }
-        if (!thereIsAnInitialActivity) {
-            problems.add("There is no initial activity (every activity has predecessors)");
+        return problems;
+    }
+
+    private static String describeAll(List<Activity> activities) {
+        StringBuilder text = new StringBuilder();
+        for (Activity activity : activities) {
+            text.append(text.length() == 0 ? "" : ", ").append(describe(activity));
         }
-        List<Activity> unreachable = unreachableActivities(activities, known);
-        if (!unreachable.isEmpty() && problems.isEmpty()) {
-            StringBuilder cycle = new StringBuilder();
-            for (Activity activity : unreachable) {
-                cycle.append(cycle.length() == 0 ? "" : ", ").append(describe(activity));
-            }
-            problems.add("The activities form a cycle or depend on one: " + cycle);
-        }
-        if (!problems.isEmpty()) {
-            throw new InvalidPlanException("The execution plan is not valid", problems);
-        }
+        return text.toString();
     }
 
     /** Activities that can never start: those on a cycle or that depend on one. */
@@ -150,16 +172,11 @@ public final class ExecutionPlan {
     }
 
     private static Map<Integer, LinkedList<Activity>> sortByStage(List<Activity> activities) {
-        Set<Activity> known = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
-        known.addAll(activities);
-        Map<Activity, Integer> stage = computeStages(activities, known);
+        Map<Activity, Integer> stage = computeStages(activities, identitySet(activities));
         Map<Integer, LinkedList<Activity>> byStage = new HashMap<>();
         for (Activity activity : activities) {
             int level = stage.get(activity);
-            if (!byStage.containsKey(level)) {
-                byStage.put(level, new LinkedList<Activity>());
-            }
-            byStage.get(level).add(activity);
+            byStage.computeIfAbsent(level, k -> new LinkedList<>()).add(activity);
         }
         return byStage;
     }

@@ -14,6 +14,7 @@ import giis.retorch.profiling.usageprofile.measurement.ExecutionMeasurements;
 import giis.retorch.profiling.usageprofile.measurement.Timeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import giis.retorch.profiling.main.UsageProfileRequest;
 import giis.retorch.profiling.main.UsageProfilerToolBox;
 import giis.retorch.profiling.usageprofile.pricing.PriceCatalog;
 import giis.retorch.profiling.usageprofile.cost.CostCalculator;
@@ -186,8 +187,8 @@ public class UsageProfileGeneratorTests {
     @Test
     public void testAssembledPageHasNoPlaceholdersAndInlinesEverything() throws IOException {
         String out = new File(tmp.getRoot(), "page/usageprofile.html").getPath();
-        new UsageProfilerToolBox().generateUsageProfile("MyPlan", DATA + "usage.csv", out, smallCatalog(),
-                DATA + "executionplan.json");
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out)
+                .prices(smallCatalog()).executionPlan(DATA + "executionplan.json").build());
         String content = html(Paths.get(out));
         for (String placeholder : new String[]{"/*CSS*/", "/*DATA*/", "/*ECHARTS*/", "/*APP*/", "/*I18N*/", "<!--HEADER_LOGO_SVG-->",
                 "<!--FOOTER_SVG-->"}) {
@@ -215,7 +216,8 @@ public class UsageProfileGeneratorTests {
     @Test
     public void testMissingPlanFileMeansNoGraph() throws IOException {
         String out = new File(tmp.getRoot(), "nograph/usageprofile.html").getPath();
-        new UsageProfilerToolBox().generateUsageProfile("MyPlan", DATA + "usage.csv", out, smallCatalog(), "no-such-file.json");
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out)
+                .prices(smallCatalog()).executionPlan("no-such-file.json").build());
         assertTrue(embeddedJson(html(Paths.get(out))).get("graph").isNull());
     }
 
@@ -224,7 +226,7 @@ public class UsageProfileGeneratorTests {
         PriceCatalog catalog = PriceCatalog.builder().fetchedAt(1700000000000L).addVm(vm("P", "big", 4, 8, 3.6)).build();
         String out = new File(tmp.getRoot(), "out/usageprofile.html").getPath();
 
-        new UsageProfilerToolBox().generateUsageProfile("MyPlan", DATA + "usage.csv", out, catalog);
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out).prices(catalog).build());
 
         Path html = Paths.get(out);
         assertTrue(Files.exists(html));
@@ -247,7 +249,8 @@ public class UsageProfileGeneratorTests {
         File outDir = new File(tmp.getRoot(), "single");
         String out = new File(outDir, "usageprofile.html").getPath();
 
-        new UsageProfilerToolBox().generateUsageProfile("MyPlan", DATA + "usage.csv", out, catalog, DATA + "executionplan.json");
+        new UsageProfilerToolBox().generate(UsageProfileRequest.builder("MyPlan", DATA + "usage.csv", out).prices(catalog)
+                .executionPlan(DATA + "executionplan.json").build());
 
         assertEquals("only the HTML file is written", 1, outDir.list().length);
         String page = new String(Files.readAllBytes(Paths.get(out)), StandardCharsets.UTF_8);
