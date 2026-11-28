@@ -35,8 +35,9 @@ public class Scheduling {
      * &lt;1, listTGJobs&gt;, &lt;2, listTJobs&gt; in order to allocate the TJob in some struct that has enough
      * {@code Resource} to deploy it.
      * @param tJob {@code TJob} that would be entered into the struct
+     * @return {@code false} if the TJob needs resources that are not in the base resources (it is not added)
      */
-    public void addTJob(TJob tJob) {
+    public boolean addTJob(TJob tJob) {
         int i = 1;
         if (baseResources.containsAll(tJob.getListResourceClasses())) {
             boolean isAdded = false;
@@ -58,6 +59,8 @@ public class Scheduling {
                 }
                 i += 1;
             }
+            return true;
         }
+        return false;
     }
 }

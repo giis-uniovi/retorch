@@ -1,0 +1,8 @@
+// Copyright (c) Software Engineering Research Group (GIIS), University of Oviedo.
+// All intellectual property rights on this file belong to GIIS.
+stage('Stage ${STAGE}') {
+  failFast false
+  parallel {
+    ${TJOBS}
+  } // End Parallel
+} // End Stage

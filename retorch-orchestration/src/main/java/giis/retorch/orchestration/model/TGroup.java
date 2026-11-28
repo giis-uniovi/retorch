@@ -7,6 +7,8 @@ package giis.retorch.orchestration.model;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.HashSet;
 
 /**
  * The {@code TGroup} class represents a set of  {@code TestCase}s that make a compatible use of {@code Resources}s
@@ -45,7 +47,7 @@ public class TGroup {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(new HashSet<>(testCases), new HashSet<>(resources));
     }
 
     @Override
@@ -53,8 +55,8 @@ public class TGroup {
         if (obj == null) return false;
         if (!obj.getClass().equals(this.getClass())) return false;
         TGroup currentType = ((TGroup) obj);
-        boolean containsAllTestCases = this.testCases.containsAll(currentType.getTGroupTestCases());
-        boolean containsAllResources = this.resources.containsAll(currentType.getTGroupResources());
+        boolean containsAllTestCases = new HashSet<>(this.testCases).equals(new HashSet<>(currentType.getTGroupTestCases()));
+        boolean containsAllResources = new HashSet<>(this.resources).equals(new HashSet<>(currentType.getTGroupResources()));
         return containsAllTestCases && containsAllResources;
     }
 

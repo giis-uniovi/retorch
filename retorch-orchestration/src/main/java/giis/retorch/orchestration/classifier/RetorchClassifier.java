@@ -5,13 +5,16 @@
 package giis.retorch.orchestration.classifier;
 
 import giis.retorch.annotations.AccessModes;
+import giis.retorch.orchestration.config.RetorchPaths;
+import giis.retorch.orchestration.exception.InvalidSystemException;
 import giis.retorch.orchestration.model.*;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.JarURLConnection;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,38 +22,88 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 /**
  * The {@code RetorchClassifier} class provides utilities for performing the Resource Identification phase. Provides
  * methods to retrieve the test cases from a package, reads the {@code AccessMode}, deserializes the Resource file, and
- * starts creating the different {@code Resources} and {@code TestCases} that compose the {@code System}
+ * starts creating the different {@code Resources} and {@code TestCases} that compose the {@code SystemUnderTest}
   */
 public class RetorchClassifier {
 
     private static final Logger log = LoggerFactory.getLogger(RetorchClassifier.class);
 
+    /** Default of the string attributes of the RETORCH annotations: the attribute was not specified. */
+    private static final String NOT_SPECIFIED = "None";
+    /** Default of the numeric attributes of the RETORCH annotations (elasticity, cost, concurrency). */
+    private static final int NOT_SPECIFIED_NUMBER = -1;
+
     private static final String CHORUS_ATTRIBUTES = " is not present";
     private static final String NO_EXIST = " doesn't exist";
     private static final String JACOCO_INIT_METHOD = "$jacocoInit";
     private final ResourceSerializer deserializer; //Serializer employed to deserialize the resources info
+    private final Map<String, Resource> loadedResources; //Resources given by the caller, null to read the JSON
+    private final List<String> problems = new ArrayList<>(); //Errors found while classifying (reported by the public methods)
+    private boolean lenient = false;
 
     /**
      * Empty constructor used to validate RETORCH in the test case
      */
     public RetorchClassifier() {
-        deserializer = new ResourceSerializer();
+        this(new ResourceSerializer(), null);
+    }
+
+    public RetorchClassifier(RetorchPaths paths) {
+        this(new ResourceSerializer(paths), null);
+    }
+
+    /**
+     * Classifier that uses the resources already loaded by the caller (so the JSON is read once per generation).
+     * @param resources resources of the system by id
+     */
+    public RetorchClassifier(Map<String, Resource> resources) {
+        this(new ResourceSerializer(), resources);
+    }
+
+    private RetorchClassifier(ResourceSerializer deserializer, Map<String, Resource> resources) {
+        this.deserializer = deserializer;
+        this.loadedResources = resources;
+    }
+
+    /**
+     * Strict by default: annotated tests or resources with errors make the classification fail with an
+     * {@link InvalidSystemException} that lists all of them. In lenient mode they are only logged and the affected
+     * tests are left out of the system (the previous behavior, which hides the error from the generated pipeline).
+     */
+    public RetorchClassifier lenient(boolean lenientMode) {
+        this.lenient = lenientMode;
+        return this;
+    }
+
+    private void throwIfProblems(String systemName) throws InvalidSystemException {
+        if (!lenient && !problems.isEmpty()) {
+            List<String> all = new ArrayList<>(new LinkedHashSet<>(problems));
+            problems.clear();
+            throw new InvalidSystemException("The annotated tests of the system " + systemName + " are not valid", all);
+        }
+        problems.clear();
+    }
+
+    private Map<String, Resource> resourcesOf(String systemName) throws IOException {
+        return loadedResources != null ? loadedResources : deserializer.deserializeResources(systemName);
     }
     /**
-     * This method gets the file specified as package, in order to do this, instantiates the classLoader
-     * and gets from it the File, replacing the dots by  the slash. If the file exist returns it, otherwise
-     * returns two types of exception
+     * Finds the classes of a package (and of its sub-packages) in the classpath: in a directory (compiled classes) or
+     * in a jar. Nested classes (names with {@code $}) are skipped.
+     *
      * @param packageName String with the package name
      * @throws IllegalStateException if the classLoader couldn't be found
      * @throws EmptyInputException   if the Package is not in the Classpath
      */
-
-    private static File getPackageSourceDirectory(String packageName) throws EmptyInputException, URISyntaxException {
+    private static List<Class<?>> findClassesOfPackage(String packageName) throws EmptyInputException,
+            URISyntaxException, ClassNotFoundException, IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         if (classLoader == null) {
             throw new IllegalStateException("ClassLoader could not be Loaded");
@@ -60,9 +113,38 @@ public class RetorchClassifier {
             log.error("Package {} not found on classpath.", packageName);
             throw new EmptyInputException("Package " + packageName + " not found on classpath.");
         }
-        URI uri = resourceURL.toURI();
-        Path path = Paths.get(uri);
-        return path.toFile();
+        if ("jar".equals(resourceURL.getProtocol())) {
+            return findClassesInJar(resourceURL, packageName);
+        }
+        return findClasses(Paths.get(resourceURL.toURI()).toFile(), packageName);
+    }
+
+    /**
+     * Lists the classes of a package that is inside a jar: the entries below the package folder, in name order.
+     * @param packageUrl URL of the package folder inside the jar ({@code jar:file:/x.jar!/my/package})
+     * @param packageName String with the package name
+     */
+    private static List<Class<?>> findClassesInJar(URL packageUrl, String packageName) throws IOException,
+            URISyntaxException, ClassNotFoundException {
+        JarURLConnection connection = (JarURLConnection) packageUrl.openConnection();
+        String prefix = packageName.replace('.', '/') + "/";
+        List<String> classNames = new ArrayList<>();
+        try (JarFile jar = new JarFile(new File(connection.getJarFileURL().toURI()))) {
+            Enumeration<JarEntry> entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                String entryName = entries.nextElement().getName();
+                String simpleName = entryName.substring(entryName.lastIndexOf('/') + 1);
+                if (entryName.startsWith(prefix) && entryName.endsWith(".class") && !simpleName.contains("$")) {
+                    classNames.add(entryName.substring(0, entryName.length() - ".class".length()).replace('/', '.'));
+                }
+            }
+        }
+        Collections.sort(classNames);
+        List<Class<?>> classes = new ArrayList<>();
+        for (String className : classNames) {
+            classes.add(Class.forName(className, false, Thread.currentThread().getContextClassLoader()));
+        }
+        return classes;
     }
 
     /**
@@ -106,39 +188,41 @@ public class RetorchClassifier {
      * @param systemName  String with the system name (must be the same as specified in the resource attributes JSON
      *                    file
      */
-    public System getSystemFromPackage(String systemName, String packageName) throws EmptyInputException,
+    public SystemUnderTest getSystemFromPackage(String systemName, String packageName) throws InvalidSystemException,
             IOException, ClassNotFoundException, URISyntaxException {
+        problems.clear();
         Map<String, Resource> validatedResources = new HashMap<>();
-        for (Resource res : deserializer.deserializeResources(systemName).values()) {
+        for (Resource res : resourcesOf(systemName).values()) {
             if (resourceChecker(res)) {
                 validatedResources.put(res.getResourceID(), res);
             }
         }
-        System systemRetorch = new System(systemName);
-        File directory = getPackageSourceDirectory(packageName);
-        List<Class<?>> listClassesPackage = findClasses(directory, packageName);
+        SystemUnderTest systemRetorch = new SystemUnderTest(systemName);
+        List<Class<?>> listClassesPackage = findClassesOfPackage(packageName);
         for (Class<?> currentClass : listClassesPackage) {
-            System temporalSystem = getSystemFromClass(systemName, currentClass, validatedResources);
+            SystemUnderTest temporalSystem = getSystemFromClass(systemName, currentClass, validatedResources);
             addUniqueResources(systemRetorch, temporalSystem);
             systemRetorch.addListTestCases(temporalSystem.getTestCases());
         }
         sortSystemClass(systemRetorch);
-        return checkSystemClass(systemRetorch, validatedResources);
+        SystemUnderTest checked = checkSystemClass(systemRetorch, validatedResources);
+        throwIfProblems(systemName);
+        return checked;
     }
 
-    private void addUniqueResources(System systemRetorch, System temporalSystem) {
+    private void addUniqueResources(SystemUnderTest systemRetorch, SystemUnderTest temporalSystem) {
         temporalSystem.getResources().stream()
                 .filter(res -> !systemRetorch.getResources().contains(res))
                 .forEach(systemRetorch::addResourceClass);
     }
 
-    private void sortSystemClass(System systemRetorch) {
+    private void sortSystemClass(SystemUnderTest systemRetorch) {
         systemRetorch.getTestCases().sort(Comparator.comparing(TestCase::getName));
         systemRetorch.getResources().sort(Comparator.comparing(Resource::toString));
     }
 
     /**
-     * This method given a Class file and a System name, retrieves the System that is on it. In order to accomplish
+     * This method given a Class file and a SystemUnderTest name, retrieves the System that is on it. In order to accomplish
      * with it first
      * retrieve the class methods.With these methods, iterate over them retrieving (1)The test method ant its access
      * mode
@@ -146,15 +230,18 @@ public class RetorchClassifier {
      * @param systemName    String with the system name
      * @param testCaseClass Class with the test cases annotated
      */
-    public System getSystemFromClass(String systemName, Class<?> testCaseClass) throws EmptyInputException,
+    public SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass) throws InvalidSystemException,
             IOException {
-        Map<String, Resource> resourceMap = deserializer.deserializeResources(systemName);
-        return getSystemFromClass(systemName, testCaseClass, resourceMap);
+        problems.clear();
+        Map<String, Resource> resourceMap = resourcesOf(systemName);
+        SystemUnderTest system = getSystemFromClass(systemName, testCaseClass, resourceMap);
+        throwIfProblems(systemName);
+        return system;
     }
 
-    private System getSystemFromClass(String systemName, Class<?> testCaseClass, Map<String, Resource> resourceMap)
+    private SystemUnderTest getSystemFromClass(String systemName, Class<?> testCaseClass, Map<String, Resource> resourceMap)
             throws EmptyInputException {
-        System systemRetorch = new System(systemName);
+        SystemUnderTest systemRetorch = new SystemUnderTest(systemName);
         List<Method> listMethods = this.getClassMethods(testCaseClass);
         systemRetorch.addListOfResources(new ArrayList<>(resourceMap.values()));
         for (Method m : listMethods) {
@@ -250,6 +337,7 @@ public class RetorchClassifier {
             return Optional.of(resourceMap.get(idResource));
         } else {
             log.error("The resource {} is not tagged", idResource);
+            problems.add(String.format("The resource %s is not tagged", idResource));
             return Optional.empty();
         }
     }
@@ -265,7 +353,7 @@ public class RetorchClassifier {
                 .filter(meth -> !meth.isSynthetic()) // Filter out compiler-generated lambdas and bridge methods
                 .filter(meth -> !meth.getName().equals(JACOCO_INIT_METHOD)) // Filter out JaCoCo instrumentation methods
                 .collect(Collectors.toList());// Collect results to a list
-        methods.forEach(meth -> log.info("The method name its : {}", meth.getName()));
+        methods.forEach(meth -> log.debug("The method name its : {}", meth.getName()));
         return methods;
     }
 
@@ -275,6 +363,7 @@ public class RetorchClassifier {
         } else {
             for (String message : messages) {
                 log.error(message);
+                problems.add(message);
             }
         }
         return messages.isEmpty();
@@ -290,13 +379,13 @@ public class RetorchClassifier {
      */
     private boolean resourceChecker(Resource resource) {
         List<String> listMessages = new LinkedList<>();
-        if (resource.getHierarchyParent().contains("None")) {
+        if (resource.getHierarchyParent().contains(NOT_SPECIFIED)) {
             listMessages.add(String.format("The Hierarchy Parent Attribute in resource %s%s",resource.getResourceID(), CHORUS_ATTRIBUTES));
         }
-        if (resource.getReplaceable().size() == 1 && resource.getReplaceable().get(0).equals("None")) {
+        if (resource.getReplaceable().size() == 1 && resource.getReplaceable().get(0).equals(NOT_SPECIFIED)) {
             listMessages.add(String.format("The Replaceable Attribute in resource %s%s",resource.getResourceID(), CHORUS_ATTRIBUTES));
         }
-        if (resource.getResourceID().equals("None")) {
+        if (resource.getResourceID().equals(NOT_SPECIFIED)) {
             listMessages.add(String.format("The ResourceID Attribute in the res:%s %s", resource.getResourceID(),CHORUS_ATTRIBUTES));
         }
         if (resource.getHierarchyParent().size() > 1) {
@@ -312,13 +401,13 @@ public class RetorchClassifier {
      * @param resource   Resource  with all the attributes
      */
     private boolean elasticityChecker(Resource resource) {
-        boolean isOutElasticityID = resource.getElasticityModel().getElasticityID().equals("None");
-        boolean isOutElasticity = resource.getElasticityModel().getElasticity() == -1;
-        boolean isOutElasticityCost = resource.getElasticityModel().getElasticityCost() == -1;
+        boolean isOutElasticityID = resource.getElasticityModel().getElasticityID().equals(NOT_SPECIFIED);
+        boolean isOutElasticity = resource.getElasticityModel().getElasticity() == NOT_SPECIFIED_NUMBER;
+        boolean isOutElasticityCost = resource.getElasticityModel().getElasticityCost() == NOT_SPECIFIED_NUMBER;
         List<String> listMessages = new LinkedList<>();
         if (isOutElasticity && isOutElasticityCost && isOutElasticityID) {
             listMessages.add(String.format("No Elasticity Annotation Specified in the resource %s", resource.getResourceID()));
-            return false;
+            return logAndReturn(listMessages, "ElasticityModel checking");
         }
         if (isOutElasticityID) {
             listMessages.add(String.format("The ElasticityId Attribute in the resource %s %s", resource.getResourceID(), CHORUS_ATTRIBUTES));
@@ -351,7 +440,7 @@ public class RetorchClassifier {
         List<String> listMessages = new LinkedList<>();
 
         checkConcurrency(accessModeTag, methodName, listMessages);
-        if ("None".equals(accessModeTag.resID())) {
+        if (NOT_SPECIFIED.equals(accessModeTag.resID())) {
             listMessages.add(String.format("The ResourceID Attribute in method %s%s", methodName, CHORUS_ATTRIBUTES));
         }
         checkAccessModeType(accessModeTag, methodName, listMessages);
@@ -360,7 +449,7 @@ public class RetorchClassifier {
     }
 
     private void checkConcurrency(giis.retorch.annotations.AccessMode accessModeTag, String methodName, List<String> listMessages) {
-        if (accessModeTag.concurrency() == -1) {
+        if (accessModeTag.concurrency() == NOT_SPECIFIED_NUMBER) {
             listMessages.add(String.format("The Concurrency Attribute in method %s%s", methodName, CHORUS_ATTRIBUTES));
         }
 
@@ -385,8 +474,8 @@ public class RetorchClassifier {
      * @param systemToCheck System to check tag
      * @param resourceMap   Map of available resources
      */
-    private System checkSystemClass(System systemToCheck, Map<String, Resource> resourceMap) {
-        System systemOutput = new System(systemToCheck.getName());
+    private SystemUnderTest checkSystemClass(SystemUnderTest systemToCheck, Map<String, Resource> resourceMap) {
+        SystemUnderTest systemOutput = new SystemUnderTest(systemToCheck.getName());
         List<String> idResourcesList = resourceMap.values().stream()
                 .map(Resource::getResourceID).collect(Collectors.toList());
         systemToCheck.getResources().stream()
@@ -394,7 +483,10 @@ public class RetorchClassifier {
                 .forEach(systemOutput::addResourceClass);
         systemToCheck.getResources().stream()
                 .filter(res -> !idResourcesList.containsAll(res.getReplaceable()))
-                .forEach(res -> log.error("The Replaceable of resource {}{}", res.getResourceID(), NO_EXIST));
+                .forEach(res -> {
+                    log.error("The Replaceable of resource {}{}", res.getResourceID(), NO_EXIST);
+                    problems.add(String.format("The Replaceable of resource %s%s", res.getResourceID(), NO_EXIST));
+                });
         systemOutput.addListTestCases(systemToCheck.getTestCases());
 
         return systemOutput;

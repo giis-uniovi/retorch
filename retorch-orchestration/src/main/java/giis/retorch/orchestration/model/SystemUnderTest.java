@@ -11,25 +11,26 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * The {@code System} class represents the whole RETORCH System composed by the Lists of {@code Resources} and {@code TestCase}
+ * The {@code SystemUnderTest} class represents the whole RETORCH System composed by the Lists of {@code Resources} and {@code TestCase}
  */
-public class System {
+public class SystemUnderTest {
 
-    private static final Logger logSystemClass = LoggerFactory.getLogger(System.class);
+    private static final Logger logSystemClass = LoggerFactory.getLogger(SystemUnderTest.class);
 
     private final String name;
     private final List<Resource> resources;
     private final List<TestCase> testCases;
 
-    public System(String name) {
+    public SystemUnderTest(String name) {
         this.name = name;
         this.testCases = new LinkedList<>();
         this.resources = new LinkedList<>();
     }
 
-    public System(String name, List<TestCase> testCases, List<Resource> resources) {
+    public SystemUnderTest(String name, List<TestCase> testCases, List<Resource> resources) {
         this.name = name;
         resources.sort(Comparator.comparing(Resource::getResourceID));
         testCases.sort(Comparator.comparing(TestCase::getName));
@@ -39,16 +40,16 @@ public class System {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(name, new HashSet<>(resources), new HashSet<>(testCases));
     }
 
     @Override
     public boolean equals(Object obj) {
         if ((obj == null)||(!obj.getClass().equals(this.getClass()))) return false;
-        System objectToCompare = ((System) obj);
-        if (!objectToCompare.getName().equals(this.name)) return false;
-        boolean containAllResources = new HashSet<>(objectToCompare.getResources()).containsAll(this.getResources());
-        boolean containsAllTestCases = new HashSet<>(objectToCompare.getTestCases()).containsAll(this.getTestCases());
+        SystemUnderTest objectToCompare = ((SystemUnderTest) obj);
+        if (!Objects.equals(objectToCompare.getName(), this.name)) return false;
+        boolean containAllResources = new HashSet<>(objectToCompare.getResources()).equals(new HashSet<>(this.getResources()));
+        boolean containsAllTestCases = new HashSet<>(objectToCompare.getTestCases()).equals(new HashSet<>(this.getTestCases()));
         return containAllResources && containsAllTestCases;
     }
     @Override
@@ -83,7 +84,7 @@ public class System {
     public void addResourceClass(Resource resource) {
         if (!this.resources.contains(resource)) {
             this.resources.add(resource);
-        } else logSystemClass.info("The resource {} is contained in the system", resource.getResourceID());
+        } else logSystemClass.debug("The resource {} is contained in the system", resource.getResourceID());
         this.resources.sort(Comparator.comparing(Resource::getResourceID));
     }
 

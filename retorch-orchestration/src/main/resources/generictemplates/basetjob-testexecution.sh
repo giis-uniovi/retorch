@@ -25,8 +25,10 @@ TEST_NAME="$4"
 "$SCRIPTS_FOLDER/printLog.sh" "DEBUG" "$1-test-execution" "Staring execution of TJOB $TJOB_NAME"
 
 # Run Maven test
-mvn test -Dtest="$TEST_NAME" -DTJOB_NAME="$TJOB_NAME" -DSUT_URL="$SUT_URL"
-MVN_EXIT_CODE=$?
+# (the "|| ..." keeps "set -e" from ending the script when the tests fail: the end time below must always be written,
+# otherwise the lifecycle columns of the CSV shift)
+MVN_EXIT_CODE=0
+mvn test -Dtest="$TEST_NAME" -DTJOB_NAME="$TJOB_NAME" -DSUT_URL="$SUT_URL" || MVN_EXIT_CODE=$?
 
 # Execute the script to write timestamp again
 "$SCRIPTS_FOLDER/writetime.sh" "$STAGE" "$TJOB_NAME"

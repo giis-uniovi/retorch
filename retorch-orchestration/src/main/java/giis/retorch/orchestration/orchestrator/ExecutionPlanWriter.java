@@ -6,6 +6,7 @@ package giis.retorch.orchestration.orchestrator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import giis.retorch.orchestration.config.RetorchPaths;
 import giis.retorch.orchestration.model.Activity;
 import giis.retorch.orchestration.model.Resource;
 import giis.retorch.orchestration.model.TJob;
@@ -29,7 +30,15 @@ import java.util.TreeMap;
  */
 public class ExecutionPlanWriter {
 
-    public static final String FILE = ".retorch/executionplan.json";
+    private final RetorchPaths paths;
+
+    public ExecutionPlanWriter() {
+        this(new RetorchPaths());
+    }
+
+    public ExecutionPlanWriter(RetorchPaths paths) {
+        this.paths = paths;
+    }
 
     /** One TJob of the graph. */
     public static final class Node {
@@ -91,9 +100,9 @@ public class ExecutionPlanWriter {
         return tjob.getIdTJob().toLowerCase(Locale.ROOT);
     }
 
-    /** Writes {@link #FILE} (creating {@code .retorch} if needed). */
+    /** Writes {@code .retorch/executionplan.json} (creating {@code .retorch} if needed). */
     public void write(Map<Integer, LinkedList<Activity>> activitiesByStage) throws IOException {
-        File file = new File(FILE);
+        File file = paths.executionPlanFile().toFile();
         if (file.getParentFile() != null) {
             file.getParentFile().mkdirs();
         }

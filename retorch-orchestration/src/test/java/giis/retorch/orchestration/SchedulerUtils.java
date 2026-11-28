@@ -5,7 +5,7 @@
 package giis.retorch.orchestration;
 
 import giis.retorch.orchestration.classifier.ResourceSerializer;
-import giis.retorch.orchestration.model.System;
+import giis.retorch.orchestration.model.SystemUnderTest;
 import giis.retorch.orchestration.model.*;
 import giis.retorch.orchestration.testdata.AggregatorClassTests;
 
@@ -66,8 +66,8 @@ public class SchedulerUtils extends GenericUtils {
         return tCHSeven;
     }
 
-    public System generateSystemAggregator() {
-        return new System("AggregatorUnitTests", this.aggregatorTestClasses(),
+    public SystemUnderTest generateSystemAggregator() {
+        return new SystemUnderTest("AggregatorUnitTests", this.aggregatorTestClasses(),
                 Arrays.asList(this.getLightElasticResource(),
                         this.getMockElasticResource(),
                         this.getMediumElasticResource(),
@@ -132,18 +132,16 @@ public class SchedulerUtils extends GenericUtils {
                 Arrays.asList(listAvailableResources.get(MEDIUM_INELASTIC_ID), listAvailableResources.get(LIGHT_ELASTIC_ID)));
         TGroup tGroupFour = new TGroup(Arrays.asList(tOneAgg, tSevenAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MOCK_ELASTIC_ID)));
-        TGroup tGroupFive = new TGroup(Arrays.asList(tThreeAgg, tFiveAgg, tSevenAgg),
+        TGroup tGroupFive = new TGroup(Collections.singletonList(tSevenAgg),
                 Arrays.asList(listAvailableResources.get(MEDIUM_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
         TGroup tGroupSix = new TGroup(Collections.singletonList(tTwoAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MOCK_ELASTIC_ID)));
-        List<TestCase> listTGroupSeven = Stream.concat(Stream.of(tOneAgg),
-                listTestCases.subList(2, 7).stream()).collect(Collectors.toList());
+        List<TestCase> listTGroupSeven = Arrays.asList(tOneAgg, listTestCases.get(3), tSevenAgg);
         TGroup tGroupSeven = new TGroup(listTGroupSeven,
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
         TGroup tGroupEight = new TGroup(Collections.singletonList(tTwoAgg),
                 Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID), listAvailableResources.get(MEDIUM_ELASTIC_ID)));
-        List<TestCase> listTGroupNine = Stream.concat(Stream.of(tOneAgg), listTestCases.subList(2, 7).stream()
-        ).collect(Collectors.toList());
+        List<TestCase> listTGroupNine = Arrays.asList(tOneAgg, tThreeAgg, tFiveAgg, listTestCases.get(5), tSevenAgg);
         TGroup tGroupNine = new TGroup(listTGroupNine, Arrays.asList(listAvailableResources.get(HEAVY_INELASTIC_ID),
                 listAvailableResources.get(LIGHT_ELASTIC_ID)));
 
@@ -152,8 +150,8 @@ public class SchedulerUtils extends GenericUtils {
                 collect(Collectors.toList());
     }
 
-    public System getInvalidSystemAggregator() {
-        System outputSystem = new System("InvalidSystem");
+    public SystemUnderTest getInvalidSystemAggregator() {
+        SystemUnderTest outputSystem = new SystemUnderTest("InvalidSystem");
         TestCase tcWithNoResource = new TestCase("TCNoRequired", AggregatorClassTests.class);
         Resource inventedResource = getLightElasticResource();
         inventedResource.setResourceID("InventedResourceID");
@@ -285,6 +283,16 @@ public class SchedulerUtils extends GenericUtils {
         return Arrays.asList(tGroupFive, tGroupSeven, tGroupEight, tGroupOne);
     }
 
+    /** A TGroup whose resource has no instances (elasticity 0), so its TJob can never be placed. */
+    public TGroup getUnplaceableTGroup() {
+        Resource noInstances = new Resource("noInstancesRes", new LinkedList<>(), new LinkedList<>(),
+                new ElasticityModel("noInstancesModel", 0, 1.0), Resource.type.LOGICAL, new LinkedList<>(), DOCKER_IMAGE);
+        TestCase testCase = new TestCase("tUnplaceable", AggregatorClassTests.class,
+                new LinkedList<>(Arrays.asList(new AccessMode(new AccessModeTypes("READONLY"), false, 1, noInstances))));
+        return new TGroup(new ArrayList<>(Collections.singletonList(testCase)),
+                new ArrayList<>(Collections.singletonList(noInstances)));
+    }
+
     public List<TGroup> getInvalidTGroups() {
         List<TestCase> listTestCases = schedulerTestCases();
 
@@ -325,7 +333,6 @@ public class SchedulerUtils extends GenericUtils {
         tJobFive.addResource(this.getMediumSchedulerElasticResource());
         Activity activityFive = new Activity(tJobFive);
         activityFive.addPredecessor(activityFour);
-        activityFive.addPredecessor(activityOne);
         currentActivities.add(activityFive);
         TJob tJobTwo = new TJob();
         tJobTwo.addTestCase(testCases.get(4));
@@ -370,7 +377,6 @@ public class SchedulerUtils extends GenericUtils {
         tJobFour.addResource(this.getHeavyInelasticResource());
         tJobFour.addResource(this.getMediumSchedulerElasticResource());
         Activity activityFour = new Activity(tJobFour);
-        activityFour.addPredecessor(activityOne);
         activityFour.addPredecessor(activityTwo);
         currentActivities.add(activityTwo);
         currentActivities.add(activityOne);
